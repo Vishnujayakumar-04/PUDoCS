@@ -1,120 +1,137 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { studentService } from '../../services/studentService';
-import Header from '../../components/Header';
 import Card from '../../components/Card';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import colors from '../../styles/colors';
 
 const StudentExams = () => {
+    const [view, setView] = useState('landing');
     const [exams, setExams] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [fadeAnim] = useState(new Animated.Value(0));
 
     useEffect(() => {
-        loadExams();
-    }, []);
+        Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+        }).start();
+    }, [view]);
 
-    const loadExams = async () => {
+    const loadExams = async (program) => {
+        setLoading(true);
         try {
-            const data = await studentService.getExams();
-            setExams(data);
+            const data = await studentService.getExams(program, 'I'); // Defaulting to year I for now
+            setExams(data || []);
+            setView('exams');
         } catch (error) {
             console.error('Error loading exams:', error);
+            setExams([]);
         } finally {
             setLoading(false);
         }
     };
 
-    if (loading) {
-        return <LoadingSpinner />;
-    }
+    const formatDate = (dateValue) => {
+        if (!dateValue) return '';
+        try {
+            if (dateValue.toDate) return dateValue.toDate().toLocaleDateString();
+            return new Date(dateValue).toLocaleDateString();
+        } catch (e) {
+            return dateValue.toString();
+        }
+    };
+
+    const renderLanding = () => (
+        <Animated.View style={[styles.viewContainer, { opacity: fadeAnim }]}>
+            <Text style={styles.landingTitle}>Exam Schedules</Text>
+            <Text style={styles.landingSubtitle}>Select your program level to view schedules</Text>
+
+            <TouchableOpacity style={styles.programCard} onPress={() => loadExams('UG')}>
+                <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.programGradient}>
+                    <MaterialCommunityIcons name="book-education" size={32} color={colors.white} />
+                    <View style={styles.programInfo}>
+                        <Text style={styles.programText}>Undergraduate (UG)</Text>
+                        <Text style={styles.programSubtext}>B.Tech, B.Sc Computer Science</Text>
+                    </View>
+                    <MaterialCommunityIcons name="chevron-right" size={24} color={colors.white} />
+                </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.programCard} onPress={() => loadExams('PG')}>
+                <LinearGradient colors={[colors.secondary, colors.primaryDark]} style={styles.programGradient}>
+                    <MaterialCommunityIcons name="school" size={32} color={colors.white} />
+                    <View style={styles.programInfo}>
+                        <Text style={styles.programText}>Postgraduate (PG)</Text>
+                        <Text style={styles.programSubtext}>M.Sc, MCA, M.Tech Programs</Text>
+                    </View>
+                    <MaterialCommunityIcons name="chevron-right" size={24} color={colors.white} />
+                </LinearGradient>
+            </TouchableOpacity>
+        </Animated.View>
+    );
+
+    const renderExams = () => (
+        <View style={styles.flex1}>
+            <View style={styles.examsHeader}>
+                <TouchableOpacity onPress={() => setView('landing')} style={styles.backButton}>
+                    <MaterialCommunityIcons name="arrow-left" size={24} color={colors.primary} />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>Examination Schedule</Text>
+            </View>
+
+            <Animated.ScrollView
+                style={[styles.viewContainer, { opacity: fadeAnim }]}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+            >
+                {exams.length === 0 ? (
+                    <View style={styles.emptyState}>
+                        <MaterialCommunityIcons name="calendar-blank" size={60} color={colors.gray300} />
+                        <Text style={styles.emptyText}>No exams scheduled yet</Text>
+                    </View>
+                ) : (
+                    exams.map((exam, index) => (
+                        <View key={index} style={styles.timelineItem}>
+                            <View style={styles.timelineSide}>
+                                <View style={styles.timelineDot} />
+                                {index !== exams.length - 1 && <View style={styles.timelineLine} />}
+                            </View>
+                            <Card style={styles.examCard}>
+                                <Text style={styles.examSubject}>{exam.subject}</Text>
+                                <Text style={styles.examCourse}>{exam.course}</Text>
+
+                                <View style={styles.examMeta}>
+                                    <View style={styles.metaItem}>
+                                        <MaterialCommunityIcons name="calendar" size={16} color={colors.primary} />
+                                        <Text style={styles.metaText}>{formatDate(exam.date)}</Text>
+                                    </View>
+                                    <View style={styles.metaItem}>
+                                        <MaterialCommunityIcons name="clock-outline" size={16} color={colors.primary} />
+                                        <Text style={styles.metaText}>{exam.time}</Text>
+                                    </View>
+                                    <View style={styles.metaItem}>
+                                        <MaterialCommunityIcons name="map-marker" size={16} color={colors.secondary} />
+                                        <Text style={styles.metaText}>{exam.venue}</Text>
+                                    </View>
+                                </View>
+                            </Card>
+                        </View>
+                    ))
+                )}
+            </Animated.ScrollView>
+        </View>
+    );
+
+    if (loading) return <LoadingSpinner />;
 
     return (
         <SafeAreaView style={styles.container}>
-            <Header title="Exams" subtitle="Exam Schedule & Seat Allocation" />
-
-            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-                {exams.length === 0 ? (
-                    <Card>
-                        <Text style={styles.noDataText}>No exams scheduled</Text>
-                    </Card>
-                ) : (
-                    exams.map((exam) => (
-                        <Card key={exam._id}>
-                            <View style={styles.examHeader}>
-                                <Text style={styles.examName}>{exam.name}</Text>
-                                <View style={[styles.typeBadge, { backgroundColor: colors.secondary }]}>
-                                    <Text style={styles.typeBadgeText}>{exam.examType}</Text>
-                                </View>
-                            </View>
-
-                            <Text style={styles.subject}>{exam.subject}</Text>
-
-                            <View style={styles.infoRow}>
-                                <Text style={styles.label}>📅 Date:</Text>
-                                <Text style={styles.value}>
-                                    {new Date(exam.date).toLocaleDateString()}
-                                </Text>
-                            </View>
-
-                            <View style={styles.infoRow}>
-                                <Text style={styles.label}>⏰ Time:</Text>
-                                <Text style={styles.value}>
-                                    {exam.startTime} - {exam.endTime}
-                                </Text>
-                            </View>
-
-                            <View style={styles.infoRow}>
-                                <Text style={styles.label}>⏱️ Duration:</Text>
-                                <Text style={styles.value}>{exam.duration} minutes</Text>
-                            </View>
-
-                            {exam.mySeat && (
-                                <View style={styles.seatAllocation}>
-                                    <Text style={styles.seatTitle}>🪑 Your Seat Allocation</Text>
-                                    <View style={styles.seatDetails}>
-                                        <View style={styles.seatInfo}>
-                                            <Text style={styles.seatLabel}>Hall:</Text>
-                                            <Text style={styles.seatValue}>
-                                                {exam.mySeat.classroom?.name}
-                                            </Text>
-                                        </View>
-                                        <View style={styles.seatInfo}>
-                                            <Text style={styles.seatLabel}>Building:</Text>
-                                            <Text style={styles.seatValue}>
-                                                {exam.mySeat.classroom?.building}
-                                            </Text>
-                                        </View>
-                                        <View style={styles.seatInfo}>
-                                            <Text style={styles.seatLabel}>Seat Number:</Text>
-                                            <Text style={[styles.seatValue, styles.seatNumber]}>
-                                                {exam.mySeat.seatNumber}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                </View>
-                            )}
-
-                            {!exam.mySeat && exam.isSeatsAllocated && (
-                                <View style={styles.noSeatContainer}>
-                                    <Text style={styles.noSeatText}>
-                                        ⚠️ You are not allocated a seat for this exam
-                                    </Text>
-                                </View>
-                            )}
-
-                            {!exam.isSeatsAllocated && (
-                                <View style={styles.pendingContainer}>
-                                    <Text style={styles.pendingText}>
-                                        ⏳ Seat allocation pending
-                                    </Text>
-                                </View>
-                            )}
-                        </Card>
-                    ))
-                )}
-            </ScrollView>
+            {view === 'landing' ? renderLanding() : renderExams()}
         </SafeAreaView>
     );
 };
@@ -124,122 +141,134 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.background,
     },
-    scrollView: {
+    flex1: {
         flex: 1,
     },
-    scrollContent: {
-        padding: 16,
+    viewContainer: {
+        flex: 1,
+        paddingHorizontal: 20,
     },
-    examHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 8,
-    },
-    examName: {
-        fontSize: 18,
+    landingTitle: {
+        fontSize: 28,
         fontWeight: 'bold',
         color: colors.textPrimary,
+        marginTop: 20,
+        paddingHorizontal: 20,
+    },
+    landingSubtitle: {
+        fontSize: 16,
+        color: colors.textSecondary,
+        marginBottom: 30,
+        marginTop: 5,
+        paddingHorizontal: 20,
+    },
+    programCard: {
+        marginBottom: 20,
+        borderRadius: 20,
+        overflow: 'hidden',
+        elevation: 5,
+        marginHorizontal: 20,
+    },
+    programGradient: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 24,
+    },
+    programInfo: {
         flex: 1,
-        marginRight: 8,
+        marginLeft: 20,
     },
-    typeBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 8,
-    },
-    typeBadgeText: {
-        fontSize: 11,
-        fontWeight: '600',
+    programText: {
+        fontSize: 20,
+        fontWeight: 'bold',
         color: colors.white,
     },
-    subject: {
-        fontSize: 16,
-        color: colors.primary,
-        fontWeight: '600',
-        marginBottom: 12,
+    programSubtext: {
+        fontSize: 13,
+        color: colors.white,
+        opacity: 0.8,
+        marginTop: 4,
     },
-    infoRow: {
+    examsHeader: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.borderLight,
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 15,
+        backgroundColor: colors.background,
     },
-    label: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: colors.textPrimary,
+    backButton: {
+        padding: 8,
+        marginRight: 10,
     },
-    value: {
-        fontSize: 14,
-        color: colors.textSecondary,
-    },
-    seatAllocation: {
-        marginTop: 16,
-        padding: 12,
-        backgroundColor: colors.gray50,
-        borderRadius: 8,
-        borderWidth: 2,
-        borderColor: colors.success,
-    },
-    seatTitle: {
-        fontSize: 16,
+    headerTitle: {
+        fontSize: 22,
         fontWeight: 'bold',
-        color: colors.success,
-        marginBottom: 12,
-    },
-    seatDetails: {
-        gap: 8,
-    },
-    seatInfo: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    seatLabel: {
-        fontSize: 14,
-        fontWeight: '600',
         color: colors.textPrimary,
     },
-    seatValue: {
-        fontSize: 14,
-        color: colors.textSecondary,
+    scrollContent: {
+        paddingBottom: 40,
     },
-    seatNumber: {
+    timelineItem: {
+        flexDirection: 'row',
+    },
+    timelineSide: {
+        width: 30,
+        alignItems: 'center',
+    },
+    timelineDot: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        backgroundColor: colors.primary,
+        marginTop: 20,
+        zIndex: 1,
+    },
+    timelineLine: {
+        width: 2,
+        flex: 1,
+        backgroundColor: colors.gray200,
+        marginTop: -10,
+    },
+    examCard: {
+        flex: 1,
+        marginLeft: 10,
+        marginBottom: 20,
+        padding: 16,
+    },
+    examSubject: {
         fontSize: 18,
         fontWeight: 'bold',
-        color: colors.success,
+        color: colors.textPrimary,
     },
-    noSeatContainer: {
-        marginTop: 12,
-        padding: 12,
-        backgroundColor: colors.warning + '20',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: colors.warning,
+    examCourse: {
+        fontSize: 13,
+        fontWeight: '600',
+        color: colors.primary,
+        marginTop: 2,
+        marginBottom: 12,
+        textTransform: 'uppercase',
     },
-    noSeatText: {
-        fontSize: 14,
-        color: colors.warning,
-        textAlign: 'center',
+    examMeta: {
+        gap: 8,
     },
-    pendingContainer: {
-        marginTop: 12,
-        padding: 12,
-        backgroundColor: colors.info + '20',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: colors.info,
+    metaItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
-    pendingText: {
-        fontSize: 14,
-        color: colors.info,
-        textAlign: 'center',
-    },
-    noDataText: {
+    metaText: {
         fontSize: 14,
         color: colors.textSecondary,
-        textAlign: 'center',
+        marginLeft: 8,
+    },
+    emptyState: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 100,
+    },
+    emptyText: {
+        fontSize: 16,
+        color: colors.textSecondary,
+        marginTop: 15,
     },
 });
 

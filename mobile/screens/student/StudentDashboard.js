@@ -1,23 +1,39 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Animated } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { studentService } from '../../services/studentService';
-import Header from '../../components/Header';
+import PremiumHeader from '../../components/PremiumHeader';
+import PremiumCard from '../../components/PremiumCard';
 import Marquee from '../../components/Marquee';
-import Card from '../../components/Card';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import colors from '../../styles/colors';
 
 const StudentDashboard = ({ navigation }) => {
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
     const [notices, setNotices] = useState([]);
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
+    // Animation Values
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(20)).current;
+
     useEffect(() => {
         loadData();
+        Animated.parallel([
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 600,
+                useNativeDriver: true,
+            }),
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 600,
+                useNativeDriver: true,
+            }),
+        ]).start();
     }, []);
 
     const loadData = async () => {
@@ -26,7 +42,7 @@ const StudentDashboard = ({ navigation }) => {
                 studentService.getNotices(),
                 studentService.getEvents(),
             ]);
-            setNotices(noticesData.slice(0, 5));
+            setNotices(noticesData.slice(0, 3)); // Max 3 notices
             setEvents(eventsData.slice(0, 5));
         } catch (error) {
             console.error('Error loading data:', error);
@@ -45,25 +61,53 @@ const StudentDashboard = ({ navigation }) => {
         return <LoadingSpinner />;
     }
 
+    const formatDate = (dateValue) => {
+        if (!dateValue) return '';
+        try {
+            if (dateValue.toDate) return dateValue.toDate().toLocaleDateString();
+            return new Date(dateValue).toLocaleDateString();
+        } catch (e) {
+            return dateValue.toString();
+        }
+    };
+
     const marqueeItems = [
-        ...notices.map(n => n.title),
-        ...events.map(e => e.name),
+        "📢 Exam Results Published! Check Results tab.",
+        "🏖️ Winter Vacation starts from 24th Dec to 2nd Jan.",
+        ...notices.map(n => n.title).filter(Boolean),
+        ...events.map(e => e.name).filter(Boolean),
     ];
 
+    // Quick Access Features with icons
     const features = [
-        { title: 'Profile', icon: '👤', screen: 'Profile' },
-        { title: 'Timetable', icon: '📅', screen: 'Timetable' },
-        { title: 'Notices', icon: '📢', screen: 'Notices' },
-        { title: 'Exams', icon: '📝', screen: 'Exams' },
-        { title: 'Events', icon: '🎉', screen: 'Events' },
-        { title: 'Results', icon: '📊', screen: 'Results' },
-        { title: 'Staff', icon: '👨‍🏫', screen: 'Staff' },
-        { title: 'Letters', icon: '📄', screen: 'Letters' },
+        { title: 'Profile', screen: 'Profile', icon: 'account-outline', color: colors.primary },
+        { title: 'Timetable', screen: 'Timetable', icon: 'calendar-clock', color: colors.secondary },
+        { title: 'Notices', screen: 'Notices', icon: 'bell-outline', color: colors.accent },
+        { title: 'Exams', screen: 'Exams', icon: 'file-document-outline', color: colors.warning },
+        { title: 'Events', screen: 'Events', icon: 'calendar-star', color: colors.info },
+        { title: 'Results', screen: 'Results', icon: 'trophy-outline', color: colors.success },
+        { title: 'Faculty', screen: 'Staff', icon: 'account-group-outline', color: '#6366F1' },
+        { title: 'Letters', screen: 'Letters', icon: 'email-outline', color: colors.primaryDark },
     ];
+
+    const getCategoryColor = (category) => {
+        switch (category?.toLowerCase()) {
+            case 'academic': return colors.primary;
+            case 'exam': return colors.warning;
+            case 'event': return colors.info;
+            case 'fees': return colors.accent;
+            default: return colors.gray500;
+        }
+    };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <Header title="PUDoCS" subtitle="Department of Computer Science" />
+        <View style={styles.container}>
+            <PremiumHeader 
+                title="PUDoCS" 
+                subtitle="Department of Computer Science"
+                showAvatar={true}
+                onAvatarPress={() => navigation.navigate('Profile')}
+            />
             <Marquee items={marqueeItems} />
 
             <ScrollView
@@ -72,53 +116,86 @@ const StudentDashboard = ({ navigation }) => {
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                 }
+                showsVerticalScrollIndicator={false}
             >
-                <Card>
-                    <Text style={styles.welcomeText}>
-                        Welcome, {user?.profile?.name || 'Student'}!
-                    </Text>
-                    <Text style={styles.registerNumber}>
-                        {user?.profile?.registerNumber}
-                    </Text>
-                </Card>
+                {/* Welcome Card */}
+                <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+                    <PremiumCard style={styles.welcomeCard}>
+                        <Text style={styles.welcomeText}>Welcome, {user?.profile?.name?.split(' ')[0] || 'Student'}!</Text>
+                        <Text style={styles.welcomeSubtext}>Stay updated with your academic activities</Text>
+                    </PremiumCard>
+                </Animated.View>
 
-                <Text style={styles.sectionTitle}>Quick Access</Text>
-                <View style={styles.featuresGrid}>
-                    {features.map((feature, index) => (
-                        <TouchableOpacity
-                            key={index}
-                            style={styles.featureCard}
-                            onPress={() => navigation.navigate(feature.screen)}
-                        >
-                            <Text style={styles.featureIcon}>{feature.icon}</Text>
-                            <Text style={styles.featureTitle}>{feature.title}</Text>
-                        </TouchableOpacity>
-                    ))}
+                {/* Quick Access Section */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Quick Access</Text>
+                    <View style={styles.featuresGrid}>
+                        {features.map((feature, index) => (
+                            <TouchableOpacity
+                                key={index}
+                                style={styles.featureCard}
+                                onPress={() => navigation.navigate(feature.screen)}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.iconBackground, { backgroundColor: feature.color + '15' }]}>
+                                    <MaterialCommunityIcons 
+                                        name={feature.icon} 
+                                        size={24} 
+                                        color={feature.color} 
+                                    />
+                                </View>
+                                <Text style={styles.featureTitle}>{feature.title}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
                 </View>
 
-                <Text style={styles.sectionTitle}>Recent Notices</Text>
-                {notices.map((notice) => (
-                    <Card key={notice._id}>
-                        <View style={styles.noticeHeader}>
-                            <Text style={styles.noticeTitle}>{notice.title}</Text>
-                            <View style={[styles.badge, { backgroundColor: colors.primary }]}>
-                                <Text style={styles.badgeText}>{notice.category}</Text>
-                            </View>
-                        </View>
-                        <Text style={styles.noticeContent} numberOfLines={2}>
-                            {notice.content}
-                        </Text>
-                        <Text style={styles.noticeDate}>
-                            {new Date(notice.createdAt).toLocaleDateString()}
-                        </Text>
-                    </Card>
-                ))}
+                {/* Recent Notices Section */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Recent Notices</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate('Notices')}>
+                            <Text style={styles.seeAllText}>See All</Text>
+                        </TouchableOpacity>
+                    </View>
 
-                <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-                    <Text style={styles.logoutText}>Logout</Text>
-                </TouchableOpacity>
+                    {notices.length === 0 ? (
+                        <PremiumCard style={styles.emptyCard}>
+                            <MaterialCommunityIcons name="bell-off-outline" size={32} color={colors.gray300} />
+                            <Text style={styles.emptyText}>No recent notices</Text>
+                        </PremiumCard>
+                    ) : (
+                        notices.map((notice, idx) => (
+                            <PremiumCard key={notice.id || idx} style={styles.noticeCard}>
+                                <View style={styles.noticeContent}>
+                                    <View style={[styles.categoryIndicator, { backgroundColor: getCategoryColor(notice.category) }]} />
+                                    <View style={styles.noticeTextContainer}>
+                                        <View style={styles.noticeHeader}>
+                                            <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor(notice.category) + '15' }]}>
+                                                <Text style={[styles.categoryText, { color: getCategoryColor(notice.category) }]}>
+                                                    {notice.category || 'General'}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                        <Text style={styles.noticeTitle} numberOfLines={2}>{notice.title}</Text>
+                                        {notice.content && (
+                                            <Text style={styles.noticeDescription} numberOfLines={2}>
+                                                {notice.content}
+                                            </Text>
+                                        )}
+                                        <Text style={styles.noticeDate}>
+                                            {formatDate(notice.createdAt)}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </PremiumCard>
+                        ))
+                    )}
+                </View>
+
+                <View style={{ height: 100 }} />
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 };
 
@@ -131,98 +208,141 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        padding: 16,
+        padding: 20,
+    },
+    welcomeCard: {
+        marginBottom: 8,
     },
     welcomeText: {
-        fontSize: 20,
-        fontWeight: 'bold',
+        fontSize: 22,
+        fontWeight: '700',
         color: colors.textPrimary,
+        marginBottom: 4,
     },
-    registerNumber: {
+    welcomeSubtext: {
         fontSize: 14,
         color: colors.textSecondary,
-        marginTop: 4,
+        fontWeight: '400',
+    },
+    section: {
+        marginTop: 24,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
     },
     sectionTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
+        fontSize: 20,
+        fontWeight: '700',
         color: colors.textPrimary,
-        marginTop: 16,
-        marginBottom: 12,
+        letterSpacing: -0.3,
     },
     featuresGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        marginBottom: 16,
+        marginTop: 8,
     },
     featureCard: {
         width: '23%',
+        aspectRatio: 1,
         backgroundColor: colors.white,
-        borderRadius: 12,
+        borderRadius: 16,
         padding: 12,
         alignItems: 'center',
-        marginBottom: 12,
+        justifyContent: 'center',
+        marginBottom: 16,
         shadowColor: colors.black,
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 2,
+        borderWidth: 1,
+        borderColor: colors.gray100,
     },
-    featureIcon: {
-        fontSize: 32,
+    iconBackground: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
         marginBottom: 8,
     },
     featureTitle: {
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: '600',
         color: colors.textPrimary,
         textAlign: 'center',
     },
-    noticeHeader: {
+    noticeCard: {
+        padding: 0,
+        overflow: 'hidden',
+        marginBottom: 12,
+    },
+    noticeContent: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
+        padding: 16,
+    },
+    categoryIndicator: {
+        width: 4,
+        borderRadius: 2,
+        marginRight: 16,
+    },
+    noticeTextContainer: {
+        flex: 1,
+    },
+    noticeHeader: {
         marginBottom: 8,
     },
-    noticeTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: colors.textPrimary,
-        flex: 1,
-        marginRight: 8,
-    },
-    badge: {
-        paddingHorizontal: 8,
+    categoryBadge: {
+        alignSelf: 'flex-start',
+        paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 8,
     },
-    badgeText: {
-        fontSize: 10,
+    categoryText: {
+        fontSize: 11,
         fontWeight: '600',
-        color: colors.white,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
-    noticeContent: {
+    noticeTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: colors.textPrimary,
+        marginBottom: 6,
+        lineHeight: 22,
+    },
+    noticeDescription: {
         fontSize: 14,
         color: colors.textSecondary,
         marginBottom: 8,
+        lineHeight: 20,
     },
     noticeDate: {
         fontSize: 12,
         color: colors.textLight,
+        fontWeight: '400',
     },
-    logoutButton: {
-        backgroundColor: colors.error,
-        paddingVertical: 14,
-        borderRadius: 8,
-        alignItems: 'center',
-        marginTop: 24,
-        marginBottom: 32,
-    },
-    logoutText: {
-        color: colors.white,
-        fontSize: 16,
+    seeAllText: {
+        fontSize: 14,
+        color: colors.primary,
         fontWeight: '600',
+    },
+    emptyCard: {
+        alignItems: 'center',
+        paddingVertical: 32,
+        backgroundColor: colors.gray50,
+        borderStyle: 'dashed',
+        borderWidth: 1,
+        borderColor: colors.gray200,
+    },
+    emptyText: {
+        fontSize: 14,
+        color: colors.textSecondary,
+        marginTop: 12,
     },
 });
 

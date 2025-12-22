@@ -40,10 +40,11 @@ const OfficeDashboard = ({ navigation }) => {
     }
 
     const quickActions = [
-        { title: 'Fee Management', icon: '💰', screen: 'Fees', color: colors.success },
-        { title: 'Exam Eligibility', icon: '✅', screen: 'Eligibility', color: colors.warning },
-        { title: 'Results', icon: '📊', screen: 'Results', color: colors.info },
-        { title: 'Notices', icon: '📢', screen: 'Notices', color: colors.error },
+        { title: 'Fee Management', screen: 'Fees', color: colors.success },
+        { title: 'Exam Eligibility', screen: 'Eligibility', color: colors.warning },
+        { title: 'Results', screen: 'Results', color: colors.info },
+        { title: 'Notices', screen: 'Notices', color: colors.error },
+        { title: 'Staff Faculty', screen: 'StaffDirectory', color: colors.primary }, // Added
     ];
 
     return (
@@ -124,10 +125,12 @@ const OfficeDashboard = ({ navigation }) => {
                     {quickActions.map((action, index) => (
                         <TouchableOpacity
                             key={index}
-                            style={[styles.actionCard, { borderLeftColor: action.color }]}
+                            style={[
+                                styles.actionCard,
+                                { borderLeftColor: action.color }
+                            ]}
                             onPress={() => navigation.navigate(action.screen)}
                         >
-                            <Text style={styles.actionIcon}>{action.icon}</Text>
                             <Text style={styles.actionTitle}>{action.title}</Text>
                         </TouchableOpacity>
                     ))}
@@ -239,7 +242,7 @@ const styles = StyleSheet.create({
         width: '48%',
         backgroundColor: colors.white,
         borderRadius: 12,
-        padding: 16,
+        padding: 20,
         marginBottom: 12,
         borderLeftWidth: 4,
         shadowColor: colors.black,
@@ -248,13 +251,12 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 3,
         alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 80,
     },
-    actionIcon: {
-        fontSize: 36,
-        marginBottom: 8,
-    },
+    // actionIcon removed
     actionTitle: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: '600',
         color: colors.textPrimary,
         textAlign: 'center',

@@ -10,7 +10,6 @@ const WelcomeScreen = ({ navigation }) => {
             <View style={styles.content}>
                 <View style={styles.header}>
                     <Text style={styles.title}>PUDoCS</Text>
-                    <Text style={[styles.subtitle, { color: 'white' }]}>Debug: Welcome Loaded</Text>
                     <Text style={styles.subtitle}>Department of Computer Science</Text>
                     <Text style={styles.university}>Pondicherry University</Text>
                 </View>

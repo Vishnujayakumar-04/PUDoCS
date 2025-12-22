@@ -15,9 +15,9 @@ import Button from '../components/Button';
 import colors from '../styles/colors';
 
 const LoginScreen = ({ route, navigation }) => {
+    const { login, register } = useAuth();
     const { role } = route.params;
-    const { login } = useAuth();
-
+    const [isRegistering, setIsRegistering] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -28,30 +28,28 @@ const LoginScreen = ({ route, navigation }) => {
             return;
         }
 
+        // Optional: Warn if not using university email, but allow it for flexibility if needed
+        // or strict enforcement:
+        if (!email.toLowerCase().includes('@pondiuni.ac.in') && !email.toLowerCase().includes('@pu.edu')) {
+            Alert.alert('Invalid Email', 'Please use your official university email (@pondiuni.ac.in)');
+            return;
+        }
+
         setLoading(true);
         try {
-            await login(email, password, role);
-            // Navigation will be handled by AuthContext
+            if (isRegistering) {
+                await register(email, password, role);
+                Alert.alert('Success', 'Account created successfully!');
+            } else {
+                await login(email, password, role);
+            }
         } catch (error) {
             Alert.alert(
-                'Login Failed',
-                error.message || 'Invalid credentials. Please try again.'
+                isRegistering ? 'Registration Failed' : 'Login Failed',
+                error.message || 'Something went wrong.'
             );
         } finally {
             setLoading(false);
-        }
-    };
-
-    const getRoleIcon = () => {
-        switch (role) {
-            case 'Student':
-                return '👨‍🎓';
-            case 'Staff':
-                return '👨‍🏫';
-            case 'Office':
-                return '🏢';
-            default:
-                return '🎓';
         }
     };
 
@@ -61,57 +59,89 @@ const LoginScreen = ({ route, navigation }) => {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
             >
-                <View style={styles.header}>
-                    <Text style={styles.icon}>{getRoleIcon()}</Text>
-                    <Text style={styles.title}>{role} Login</Text>
-                    <Text style={styles.subtitle}>PUDoCS Department Management</Text>
-                </View>
-
-                <View style={styles.form}>
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Email</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter your email"
-                            placeholderTextColor={colors.gray400}
-                            value={email}
-                            onChangeText={setEmail}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                            autoCorrect={false}
-                        />
+                <View style={styles.content}>
+                    {/* Top Bar for Role Badge */}
+                    <View style={styles.topBar}>
+                        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backLink}>
+                            <Text style={styles.backLinkText}>← Change Role</Text>
+                        </TouchableOpacity>
+                        <View style={[styles.roleBadge, { backgroundColor: getRoleColor(role) }]}>
+                            <Text style={styles.roleBadgeText}>{role}</Text>
+                        </View>
                     </View>
 
-                    <View style={styles.inputContainer}>
-                        <Text style={styles.label}>Password</Text>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Enter your password"
-                            placeholderTextColor={colors.gray400}
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry
-                            autoCapitalize="none"
-                        />
+                    {/* Main Login Card Area */}
+                    <View style={styles.mainSection}>
+                        <View style={styles.headerTextContainer}>
+                            <Text style={styles.welcomeTitle}>{isRegistering ? 'Create Account' : 'Welcome Back'}</Text>
+                            <Text style={styles.welcomeSub}>{isRegistering ? 'Enter details to register' : 'Enter your credentials to access'}</Text>
+                        </View>
+
+                        <View style={styles.formContainer}>
+                            <View style={styles.inputWrapper}>
+                                <Text style={styles.label}>University Email</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="e.g. 24mscscpy0054@pondiuni.ac.in"
+                                    placeholderTextColor={colors.gray400}
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                    autoCorrect={false}
+                                />
+                            </View>
+
+                            <View style={styles.inputWrapper}>
+                                <Text style={styles.label}>Password</Text>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="••••••••"
+                                    placeholderTextColor={colors.gray400}
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    secureTextEntry
+                                    autoCapitalize="none"
+                                />
+                            </View>
+
+                            <Button
+                                title={isRegistering ? "Sign Up" : "Login"}
+                                onPress={handleLogin}
+                                loading={loading}
+                                style={styles.actionButton}
+                            />
+
+                            {/* Demo Credentials Hint (Only in Login Mode) */}
+                            {!isRegistering && (
+                                <View style={styles.demoHint}>
+                                    <Text style={styles.demoText}>Use your official University ID & Password</Text>
+                                </View>
+                            )}
+
+                            <TouchableOpacity
+                                onPress={() => setIsRegistering(!isRegistering)}
+                                style={styles.toggleButton}
+                            >
+                                <Text style={styles.toggleText}>
+                                    {isRegistering
+                                        ? "Already valid? Login here"
+                                        : "New User? Create Account"}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
-
-                    <Button
-                        title="Login"
-                        onPress={handleLogin}
-                        loading={loading}
-                        style={styles.loginButton}
-                    />
-
-                    <TouchableOpacity
-                        onPress={() => navigation.goBack()}
-                        style={styles.backButton}
-                    >
-                        <Text style={styles.backButtonText}>Change Role</Text>
-                    </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
+};
+
+// Helper for badge color
+const getRoleColor = (role) => {
+    if (role === 'Student') return colors.primaryLight;
+    if (role === 'Staff') return colors.secondary;
+    return colors.accent;
 };
 
 const styles = StyleSheet.create({
@@ -122,60 +152,103 @@ const styles = StyleSheet.create({
     keyboardView: {
         flex: 1,
     },
-    header: {
-        backgroundColor: colors.primary,
-        padding: 40,
-        alignItems: 'center',
-    },
-    icon: {
-        fontSize: 60,
-        marginBottom: 16,
-    },
-    title: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: colors.white,
-    },
-    subtitle: {
-        fontSize: 14,
-        color: colors.white,
-        marginTop: 8,
-        opacity: 0.9,
-    },
-    form: {
+    content: {
         flex: 1,
         padding: 24,
     },
-    inputContainer: {
-        marginBottom: 20,
+    topBar: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 40,
+    },
+    backLinkText: {
+        color: colors.gray500,
+        fontSize: 15,
+        fontWeight: '500',
+    },
+    roleBadge: {
+        paddingVertical: 6,
+        paddingHorizontal: 16,
+        borderRadius: 20,
+    },
+    roleBadgeText: {
+        color: colors.white,
+        fontWeight: '700',
+        fontSize: 13,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    mainSection: {
+        flex: 1,
+        justifyContent: 'center', // Center vertically
+        paddingBottom: 80, // Push up slightly
+    },
+    headerTextContainer: {
+        marginBottom: 32,
+    },
+    welcomeTitle: {
+        fontSize: 30,
+        fontWeight: '800',
+        color: colors.gray900,
+        marginBottom: 8,
+        letterSpacing: -0.5,
+    },
+    welcomeSub: {
+        fontSize: 16,
+        color: colors.gray500,
+    },
+    formContainer: {
+        gap: 20,
+    },
+    inputWrapper: {
+        gap: 8,
     },
     label: {
         fontSize: 14,
         fontWeight: '600',
-        color: colors.textPrimary,
-        marginBottom: 8,
+        color: colors.gray700,
+        marginLeft: 4,
     },
     input: {
-        backgroundColor: colors.white,
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: 8,
+        backgroundColor: colors.surface,
+        borderWidth: 1.5,
+        borderColor: colors.gray200,
+        borderRadius: 12,
         paddingVertical: 14,
         paddingHorizontal: 16,
         fontSize: 16,
         color: colors.textPrimary,
+        height: 56, // Tall inputs
     },
-    loginButton: {
-        marginTop: 12,
+    actionButton: {
+        marginTop: 8,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.25,
+        shadowRadius: 16,
+        elevation: 8,
     },
-    backButton: {
-        marginTop: 16,
+    demoHint: {
         alignItems: 'center',
+        padding: 12,
+        backgroundColor: colors.gray100,
+        borderRadius: 8,
+        marginTop: 8,
     },
-    backButtonText: {
+    demoText: {
+        color: colors.gray600,
+        fontSize: 13,
+    },
+    toggleButton: {
+        alignItems: 'center',
+        marginTop: 16,
+        padding: 8,
+    },
+    toggleText: {
         color: colors.primary,
-        fontSize: 16,
         fontWeight: '600',
+        fontSize: 15,
     },
 });
 

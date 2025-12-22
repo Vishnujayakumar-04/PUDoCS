@@ -1,54 +1,57 @@
 export default {
     // Primary colors - Navy and Indigo theme
-    primary: '#1e3a8a', // Navy blue
-    primaryDark: '#1e293b',
-    primaryLight: '#3b82f6',
+    primary: '#1E3A8A', // Navy Blue (Header / Main actions)
+    primaryDark: '#172554',
+    primaryLight: '#3B82F6',
 
     // Secondary colors
-    secondary: '#6366f1', // Indigo
-    secondaryDark: '#4f46e5',
-    secondaryLight: '#818cf8',
+    secondary: '#4F46E5', // Indigo (Highlights)
+    secondaryDark: '#4338CA',
+    secondaryLight: '#818CF8',
 
     // Accent colors
-    accent: '#06b6d4', // Cyan
-    accentLight: '#22d3ee',
+    accent: '#06B6D4', // Cyan (Important tags)
+    accentLight: '#22D3EE',
 
     // Neutral colors
-    white: '#ffffff',
-    black: '#000000',
-    gray50: '#f9fafb',
-    gray100: '#f3f4f6',
-    gray200: '#e5e7eb',
-    gray300: '#d1d5db',
-    gray400: '#9ca3af',
-    gray500: '#6b7280',
-    gray600: '#4b5563',
-    gray700: '#374151',
-    gray800: '#1f2937',
-    gray900: '#111827',
+    white: '#FFFFFF',
+    black: '#09090b', // Softer black
+    gray50: '#F9FAFB', // Background Soft Off-White
+    gray100: '#F3F4F6',
+    gray200: '#E5E7EB',
+    gray300: '#D1D5DB', // Borders
+    gray400: '#9CA3AF', // Meta text/Icons
+    gray500: '#6B7280', // Body text
+    gray600: '#4B5563',
+    gray700: '#374151', // Titles
+    gray800: '#1F2937',
+    gray900: '#111827', // Dark Headings
 
     // Semantic colors
-    success: '#10b981',
-    warning: '#f59e0b',
-    error: '#ef4444',
-    info: '#3b82f6',
+    success: '#10B981', // Green
+    warning: '#F59E0B', // Amber
+    error: '#EF4444',   // Red
+    info: '#3B82F6',
 
     // Background colors
-    background: '#f9fafb',
-    surface: '#ffffff',
+    background: '#F9FAFB', // Soft Off-White
+    surface: '#FFFFFF',    // Pure White
 
     // Text colors
     textPrimary: '#111827',
-    textSecondary: '#6b7280',
-    textLight: '#9ca3af',
-    textOnPrimary: '#ffffff',
+    textSecondary: '#6B7280',
+    textLight: '#9CA3AF',
+    textOnPrimary: '#FFFFFF',
 
     // Border colors
-    border: '#e5e7eb',
-    borderLight: '#f3f4f6',
+    border: '#E5E7EB',
+    borderLight: '#F3F4F6',
 
-    // Status colors
-    paid: '#10b981',
-    notPaid: '#ef4444',
-    pending: '#f59e0b',
+    // Shadows
+    shadowColor: '#000000',
+
+    // Status
+    paid: '#10B981',
+    notPaid: '#EF4444',
+    pending: '#F59E0B',
 };

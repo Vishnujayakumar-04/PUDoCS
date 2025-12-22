@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "41744174106",
+    "project_id": "pudocs-depofcs",
+    "storage_bucket": "pudocs-depofcs.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:41744174106:android:418f3d3239a07a925615a3",
+        "android_client_info": {
+          "package_name": "com.pudocs.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCaT7tbMpPhWLW6GZPsweUAtFBk9sWF_UU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

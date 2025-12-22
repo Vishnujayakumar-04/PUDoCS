@@ -40,12 +40,12 @@ const StaffDashboard = ({ navigation }) => {
     }
 
     const quickActions = [
-        { title: 'Students', icon: '👥', screen: 'Students', color: colors.primary },
-        { title: 'Attendance', icon: '✅', screen: 'Attendance', color: colors.secondary },
-        { title: 'Timetable', icon: '📅', screen: 'Timetable', color: colors.accent },
-        { title: 'Exams', icon: '📝', screen: 'Exams', color: colors.warning },
-        { title: 'Internals', icon: '📊', screen: 'Internals', color: colors.info },
-        { title: 'Notices', icon: '📢', screen: 'Notices', color: colors.success },
+        { title: 'Students', screen: 'Students', color: colors.primary },
+        { title: 'Attendance', screen: 'Attendance', color: colors.secondary },
+        { title: 'Timetable', screen: 'Timetable', color: colors.accent },
+        { title: 'Exams', screen: 'Exams', color: colors.warning },
+        { title: 'Internals', screen: 'Internals', color: colors.info },
+        { title: 'Staff Faculty', screen: 'StaffDirectory', color: colors.primaryDark }, // Added
     ];
 
     return (
@@ -70,10 +70,12 @@ const StaffDashboard = ({ navigation }) => {
                     {quickActions.map((action, index) => (
                         <TouchableOpacity
                             key={index}
-                            style={[styles.actionCard, { borderLeftColor: action.color }]}
+                            style={[
+                                styles.actionCard,
+                                { borderLeftColor: action.color }
+                            ]}
                             onPress={() => navigation.navigate(action.screen)}
                         >
-                            <Text style={styles.actionIcon}>{action.icon}</Text>
                             <Text style={styles.actionTitle}>{action.title}</Text>
                         </TouchableOpacity>
                     ))}
@@ -179,7 +181,7 @@ const styles = StyleSheet.create({
         width: '48%',
         backgroundColor: colors.white,
         borderRadius: 12,
-        padding: 16,
+        padding: 20,
         marginBottom: 12,
         borderLeftWidth: 4,
         shadowColor: colors.black,
@@ -188,15 +190,15 @@ const styles = StyleSheet.create({
         shadowRadius: 4,
         elevation: 3,
         alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 80, // Taller for text balance
     },
-    actionIcon: {
-        fontSize: 36,
-        marginBottom: 8,
-    },
+    // actionIcon removed specific style
     actionTitle: {
-        fontSize: 14,
+        fontSize: 16, // Larger font
         fontWeight: '600',
         color: colors.textPrimary,
+        textAlign: 'center',
     },
     classHeader: {
         flexDirection: 'row',

@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Helper to fetch user role
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    // Helper to check for specific roles
+    function isStudent() {
+      return isAuthenticated() && getUserRole() == 'Student';
+    }
+    
+    function isStaff() {
+      return isAuthenticated() && getUserRole() == 'Staff';
+    }
+    
+    function isOffice() {
+      return isAuthenticated() && getUserRole() == 'Office';
+    }
+
+    // --- COLLECTION RULES ---
+
+    // USERS: Users can read/write their own profile
+    match /users/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+
+    // STUDENTS: 
+    // - Read: All authenticated users (Students see themselves, Staff/Office see all)
+    // - Write: Staff (add students, mark attendance), Office (fees)
+    match /students/{studentId} {
+      allow read: if isAuthenticated();
+      allow create, delete: if isStaff() || isOffice();
+      allow update: if isStaff() || isOffice();
+    }
+
+    // STAFF: 
+    // - Read: All authenticated users (for directory)
+    // - Write: Office only (or self for profile updates)
+    match /staff/{staffId} {
+      allow read: if isAuthenticated();
+      allow write: if isOffice() || (isAuthenticated() && request.auth.uid == staffId);
+    }
+
+    // EXAMS:
+    // - Read: All authenticated users
+    // - Write: Staff only (create exams, allocate seats)
+    match /exams/{examId} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff();
+    }
+
+    // NOTICES:
+    // - Read: All authenticated users
+    // - Write: Staff or Office
+    match /notices/{noticeId} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff() || isOffice();
+    }
+
+    // EVENTS:
+    // - Read: All authenticated users
+    // - Write: Staff or Office
+    match /events/{eventId} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff() || isOffice();
+    }
+    
+    // TIMETABLES:
+    // - Read: All
+    // - Write: Staff or Office
+    match /timetables/{tableId} {
+      allow read: if isAuthenticated();
+      allow write: if isStaff() || isOffice();
+    }
+  }
+}

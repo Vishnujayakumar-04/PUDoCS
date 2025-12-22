@@ -31,9 +31,10 @@ export const AuthProvider = ({ children }) => {
 
     const login = async (email, password, selectedRole) => {
         try {
+            // Role is now determined by the backend (Firestore) or passed for auto-creation
             const data = await authService.login(email, password, selectedRole);
-            setUser(data);
-            setRole(selectedRole);
+            setUser(data.user);
+            setRole(data.role);
             setIsAuthenticated(true);
             return data;
         } catch (error) {
@@ -52,12 +53,25 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const register = async (email, password, role) => {
+        try {
+            const data = await authService.register(email, password, role);
+            setUser(data.user);
+            setRole(data.role);
+            setIsAuthenticated(true);
+            return data;
+        } catch (error) {
+            throw error;
+        }
+    };
+
     const value = {
         user,
         role,
         loading,
         isAuthenticated,
         login,
+        register,
         logout,
     };
 

@@ -147,7 +147,7 @@ const StudentStaffDirectory = () => {
                                             style={styles.contactButton}
                                             onPress={() => handlePhonePress(selectedStaff.contact)}
                                         >
-                                            <Text style={styles.contactIcon}>📞</Text>
+                                            <Text style={styles.contactLabel}>Mobile</Text>
                                             <Text style={styles.contactText}>{selectedStaff.contact}</Text>
                                         </TouchableOpacity>
 
@@ -155,7 +155,7 @@ const StudentStaffDirectory = () => {
                                             style={styles.contactButton}
                                             onPress={() => handleEmailPress(selectedStaff.email)}
                                         >
-                                            <Text style={styles.contactIcon}>✉️</Text>
+                                            <Text style={styles.contactLabel}>Email</Text>
                                             <Text style={styles.contactText} numberOfLines={1}>
                                                 {selectedStaff.email}
                                             </Text>
@@ -341,14 +341,19 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.border,
     },
-    contactIcon: {
-        fontSize: 20,
+    contactLabel: {
+        fontSize: 12,
+        color: colors.textSecondary,
         marginRight: 12,
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        width: 60, // Fixed width for alignment
     },
     contactText: {
         fontSize: 14,
         color: colors.primary,
         flex: 1,
+        fontWeight: '500',
     },
     closeButton: {
         backgroundColor: colors.primary,

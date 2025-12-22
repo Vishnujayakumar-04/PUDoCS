@@ -1,7 +1,8 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Text } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import FloatingTabBar from '../components/FloatingTabBar';
 import colors from '../styles/colors';
 
 // Staff screens
@@ -13,6 +14,7 @@ import StaffAttendance from '../screens/staff/StaffAttendance';
 import StaffTimetable from '../screens/staff/StaffTimetable';
 import StaffInternals from '../screens/staff/StaffInternals';
 import StaffNotices from '../screens/staff/StaffNotices';
+import StudentStaffDirectory from '../screens/student/StudentStaffDirectory';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -30,47 +32,68 @@ const ExamStack = () => {
 const StaffNavigator = () => {
     return (
         <Tab.Navigator
+            tabBar={(props) => <FloatingTabBar {...props} />}
             screenOptions={{
                 headerShown: false,
-                tabBarActiveTintColor: colors.secondary,
-                tabBarInactiveTintColor: colors.gray500,
-                tabBarStyle: {
-                    paddingBottom: 8,
-                    paddingTop: 8,
-                    height: 60,
-                },
-                tabBarLabelStyle: {
-                    fontSize: 12,
-                    fontWeight: '600',
-                },
             }}
         >
             <Tab.Screen
                 name="Dashboard"
                 component={StaffDashboard}
                 options={{
-                    tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>🏠</Text>,
+                    tabBarIcon: ({ focused, color, size }) => (
+                        <MaterialCommunityIcons 
+                            name="home-outline" 
+                            size={size || 24} 
+                            color={color} 
+                        />
+                    ),
                 }}
             />
             <Tab.Screen
                 name="Students"
                 component={StaffStudentManagement}
                 options={{
-                    tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>👥</Text>,
+                    tabBarIcon: ({ focused, color, size }) => (
+                        <MaterialCommunityIcons 
+                            name="account-group-outline" 
+                            size={size || 24} 
+                            color={color} 
+                        />
+                    ),
                 }}
             />
             <Tab.Screen
                 name="Exams"
                 component={ExamStack}
                 options={{
-                    tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>📝</Text>,
+                    tabBarIcon: ({ focused, color, size }) => (
+                        <MaterialCommunityIcons 
+                            name="file-document-outline" 
+                            size={size || 24} 
+                            color={color} 
+                        />
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="Notices"
+                component={StaffNotices}
+                options={{
+                    tabBarIcon: ({ focused, color, size }) => (
+                        <MaterialCommunityIcons 
+                            name="bell-outline" 
+                            size={size || 24} 
+                            color={color} 
+                        />
+                    ),
                 }}
             />
             <Tab.Screen
                 name="Attendance"
                 component={StaffAttendance}
                 options={{
-                    tabBarButton: () => null, // Hidden from tab bar, accessible from dashboard
+                    tabBarButton: () => null,
                 }}
             />
             <Tab.Screen
@@ -88,10 +111,10 @@ const StaffNavigator = () => {
                 }}
             />
             <Tab.Screen
-                name="Notices"
-                component={StaffNotices}
+                name="StaffDirectory"
+                component={StudentStaffDirectory}
                 options={{
-                    tabBarIcon: ({ color }) => <Text style={{ fontSize: 20 }}>📢</Text>,
+                    tabBarButton: () => null, // Accessible via Dashboard
                 }}
             />
         </Tab.Navigator>

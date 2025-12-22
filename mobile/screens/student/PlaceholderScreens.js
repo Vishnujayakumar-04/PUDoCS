@@ -49,14 +49,8 @@ const styles = StyleSheet.create({
     },
 });
 
-export const StudentEvents = () => (
-    <PlaceholderScreen title="Events & Gallery" subtitle="Upcoming and Past Events" />
-);
-
-export const StudentResults = () => (
-    <PlaceholderScreen title="Results" subtitle="Internal Marks & Semester Results" />
-);
-
-export const StudentLetterFormats = () => (
-    <PlaceholderScreen title="Letter Formats" subtitle="Official Document Templates" />
+// All core features have real screens now. 
+// Adding generic placeholder for future expansion.
+export const FutureExpansion = () => (
+    <PlaceholderScreen title="Coming Soon" subtitle="New feature in development" />
 );

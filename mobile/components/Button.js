@@ -46,37 +46,51 @@ const Button = ({
 const styles = StyleSheet.create({
     button: {
         backgroundColor: colors.primary,
-        paddingVertical: 14,
+        paddingVertical: 16, // Taller button
         paddingHorizontal: 24,
-        borderRadius: 8,
+        borderRadius: 12, // More rounded 12px
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: 48,
+        minHeight: 56, // Larger touch target
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2, // Subtle colored shadow
+        shadowRadius: 8,
+        elevation: 4,
     },
     buttonSecondary: {
-        backgroundColor: colors.secondary,
+        backgroundColor: colors.surface,
+        borderWidth: 1.5,
+        borderColor: colors.border,
+        shadowColor: colors.black,
+        shadowOpacity: 0.05,
     },
     buttonOutline: {
         backgroundColor: 'transparent',
-        borderWidth: 2,
+        borderWidth: 1.5, // Thinner border
         borderColor: colors.primary,
+        elevation: 0,
+        shadowOpacity: 0,
     },
     buttonDisabled: {
-        backgroundColor: colors.gray300,
+        backgroundColor: colors.gray200,
+        shadowOpacity: 0,
+        elevation: 0,
     },
     buttonText: {
         color: colors.white,
         fontSize: 16,
         fontWeight: '600',
+        letterSpacing: 0.5,
     },
     buttonSecondaryText: {
-        color: colors.white,
+        color: colors.textPrimary,
     },
     buttonOutlineText: {
         color: colors.primary,
     },
     buttonDisabledText: {
-        color: colors.gray500,
+        color: colors.gray400,
     },
 });
 
