@@ -116,6 +116,23 @@ const LoginScreen = ({ route, navigation }) => {
                             {!isRegistering && (
                                 <View style={styles.demoHint}>
                                     <Text style={styles.demoText}>Use your official University ID & Password</Text>
+                                    {(role === 'Staff' || role === 'Office') && (
+                                        <View style={styles.credentialsBox}>
+                                            <Text style={styles.credentialsTitle}>Default Test Accounts:</Text>
+                                            {role === 'Staff' && (
+                                                <Text style={styles.credentialsText}>
+                                                    Email: staff@pondiuni.ac.in{'\n'}
+                                                    Password: Staff@123
+                                                </Text>
+                                            )}
+                                            {role === 'Office' && (
+                                                <Text style={styles.credentialsText}>
+                                                    Email: office@pondiuni.ac.in{'\n'}
+                                                    Password: Office@123
+                                                </Text>
+                                            )}
+                                        </View>
+                                    )}
                                 </View>
                             )}
 
@@ -235,10 +252,34 @@ const styles = StyleSheet.create({
         backgroundColor: colors.gray100,
         borderRadius: 8,
         marginTop: 8,
+        width: '100%',
     },
     demoText: {
         color: colors.gray600,
         fontSize: 13,
+        marginBottom: 8,
+    },
+    credentialsBox: {
+        marginTop: 12,
+        padding: 12,
+        backgroundColor: colors.white,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: colors.primary + '30',
+        width: '100%',
+    },
+    credentialsTitle: {
+        fontSize: 11,
+        fontWeight: '600',
+        color: colors.primary,
+        marginBottom: 6,
+        textTransform: 'uppercase',
+    },
+    credentialsText: {
+        fontSize: 11,
+        color: colors.textPrimary,
+        fontFamily: 'monospace',
+        lineHeight: 16,
     },
     toggleButton: {
         alignItems: 'center',

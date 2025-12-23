@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Dimensions, Modal, TouchableOpacity, StatusBar } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, FlatList, Image, Dimensions, Modal, TouchableOpacity, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { GestureHandlerRootView, PinchGestureHandler, PanGestureHandler, State } from 'react-native-gesture-handler';
 import Animated, {
@@ -9,6 +9,9 @@ import Animated, {
     withTiming,
     runOnJS,
 } from 'react-native-reanimated';
+import * as Sharing from 'expo-sharing';
+import { Asset } from 'expo-asset';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Header from '../../components/Header';
 import colors from '../../styles/colors';
 
@@ -151,22 +154,47 @@ const CalendarImageItem = ({ imageSource, index, total, onImagePress }) => {
     );
 };
 
-// ... imports
-import * as Sharing from 'expo-sharing';
-import { Asset } from 'expo-asset';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-
-// ... existing code ...
+// Calendar images array (30 pages: 0001-0030)
+// Note: React Native require() doesn't support template literals, so all images must be explicitly listed
+const CALENDAR_IMAGES = [
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0001.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0002.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0003.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0004.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0005.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0006.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0007.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0008.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0009.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0010.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0011.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0012.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0013.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0014.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0015.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0016.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0017.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0018.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0019.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0020.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0021.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0022.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0023.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0024.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0025.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0026.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0027.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0028.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0029.jpg'),
+    require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0030.jpg'),
+];
 
 const StudentCalendar = () => {
     const [selectedImage, setSelectedImage] = useState(null);
     const [selectedIndex, setSelectedIndex] = useState(null);
 
-    // Calendar images in order (0001-0030)
-    const calendarImages = [
-        require('../../assets/Calender/Academic-Calendar-2025-26-for-all-UG-PG-Programs-affiliated-colleges-22082025_page-0001.jpg'),
-        // ... (keep existing images logic, assume it's there or I need to restate it if I replace the whole block but I am targeting the end of the component)
-    ];
+    // Use the pre-defined calendar images array
+    const calendarImages = CALENDAR_IMAGES;
 
     const handleImagePress = (imageSource, index) => {
         setSelectedImage(imageSource);
@@ -197,34 +225,58 @@ const StudentCalendar = () => {
         }
     };
 
+    // Calculate item layout for FlatList optimization
+    const getItemLayout = (data, index) => {
+        const imageWidth = SCREEN_WIDTH - 16;
+        const aspectRatio = 1.4; // Default aspect ratio
+        const imageHeight = imageWidth * aspectRatio;
+        const itemHeight = imageHeight + 40; // Image height + padding + text
+        return {
+            length: itemHeight,
+            offset: itemHeight * index,
+            index,
+        };
+    };
+
+    // Render item for FlatList with lazy loading
+    const renderItem = ({ item, index }) => (
+        <CalendarImageItem
+            imageSource={item}
+            index={index}
+            total={calendarImages.length}
+            onImagePress={handleImagePress}
+        />
+    );
+
+    // Render footer with download button
+    const renderFooter = () => (
+        <View>
+            <View style={styles.downloadSection}>
+                <TouchableOpacity style={styles.downloadButton} onPress={handleDownloadPDF}>
+                    <MaterialCommunityIcons name="file-pdf-box" size={24} color={colors.white} />
+                    <Text style={styles.downloadButtonText}>Download Original PDF</Text>
+                </TouchableOpacity>
+            </View>
+            <View style={{ height: 40 }} />
+        </View>
+    );
+
     return (
         <SafeAreaView style={styles.container}>
             <Header title="Academic Calendar" subtitle="2025-26 Academic Year" />
-            <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
+            <FlatList
+                data={calendarImages}
+                renderItem={renderItem}
+                keyExtractor={(item, index) => `calendar-page-${index}`}
+                getItemLayout={getItemLayout}
+                ListFooterComponent={renderFooter}
+                initialNumToRender={3}
+                maxToRenderPerBatch={5}
+                windowSize={5}
+                removeClippedSubviews={true}
                 showsVerticalScrollIndicator={true}
-            >
-                {/* Images */}
-                {calendarImages.map((imageSource, index) => (
-                    <CalendarImageItem
-                        key={index}
-                        imageSource={imageSource}
-                        index={index}
-                        total={calendarImages.length}
-                        onImagePress={handleImagePress}
-                    />
-                ))}
-
-                <View style={styles.downloadSection}>
-                    <TouchableOpacity style={styles.downloadButton} onPress={handleDownloadPDF}>
-                        <MaterialCommunityIcons name="file-pdf-box" size={24} color={colors.white} />
-                        <Text style={styles.downloadButtonText}>Download Original PDF</Text>
-                    </TouchableOpacity>
-                </View>
-
-                <View style={{ height: 40 }} />
-            </ScrollView>
+                contentContainerStyle={styles.scrollContent}
+            />
 
             {selectedImage && (
                 <ZoomableImage
@@ -240,9 +292,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.background,
-    },
-    scrollView: {
-        flex: 1,
     },
     scrollContent: {
         padding: 0,

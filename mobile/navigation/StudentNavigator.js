@@ -16,7 +16,10 @@ import StudentDirectory from '../screens/student/StudentDirectory';
 import StudentResults from '../screens/student/StudentResults';
 import StudentEvents from '../screens/student/StudentEvents';
 import StudentLetters from '../screens/student/StudentLetters';
+import StudentDocuments from '../screens/student/StudentDocuments';
 import StudentCalendar from '../screens/student/StudentCalendar';
+import StudentComplaint from '../screens/student/StudentComplaint';
+import StudentDetailView from '../screens/student/StudentDetailView';
 
 const Tab = createBottomTabNavigator();
 
@@ -43,12 +46,12 @@ const StudentNavigator = () => {
                 }}
             />
             <Tab.Screen
-                name="Timetable"
-                component={StudentTimetable}
+                name="Students"
+                component={StudentDirectory}
                 options={{
                     tabBarIcon: ({ focused, color, size }) => (
                         <MaterialCommunityIcons 
-                            name="calendar" 
+                            name="account-group-outline" 
                             size={size || 24} 
                             color={color} 
                         />
@@ -109,13 +112,28 @@ const StudentNavigator = () => {
                 options={{ tabBarButton: () => null }}
             />
             <Tab.Screen
+                name="Documents"
+                component={StudentDocuments}
+                options={{ tabBarButton: () => null }}
+            />
+            <Tab.Screen
                 name="Calendar"
                 component={StudentCalendar}
                 options={{ tabBarButton: () => null }}
             />
             <Tab.Screen
-                name="Students"
-                component={StudentDirectory}
+                name="Timetable"
+                component={StudentTimetable}
+                options={{ tabBarButton: () => null }}
+            />
+            <Tab.Screen
+                name="Complaint"
+                component={StudentComplaint}
+                options={{ tabBarButton: () => null }}
+            />
+            <Tab.Screen
+                name="StudentDetail"
+                component={StudentDetailView}
                 options={{ tabBarButton: () => null }}
             />
         </Tab.Navigator>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Animated, Dimensions } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { studentService } from '../../services/studentService';
@@ -8,11 +8,15 @@ import PremiumCard from '../../components/PremiumCard';
 import Marquee from '../../components/Marquee';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import colors from '../../styles/colors';
+import { moderateScale, getFontSize, getPadding, getMargin } from '../../utils/responsive';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const StudentDashboard = ({ navigation }) => {
     const { user } = useAuth();
     const [notices, setNotices] = useState([]);
     const [events, setEvents] = useState([]);
+    const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -44,6 +48,16 @@ const StudentDashboard = ({ navigation }) => {
             ]);
             setNotices(noticesData.slice(0, 3)); // Max 3 notices
             setEvents(eventsData.slice(0, 5));
+            
+            // Load profile if user is available
+            if (user?.uid) {
+                try {
+                    const profileData = await studentService.getProfile(user.uid);
+                    setProfile(profileData);
+                } catch (error) {
+                    console.error('Error loading profile:', error);
+                }
+            }
         } catch (error) {
             console.error('Error loading data:', error);
         } finally {
@@ -72,15 +86,14 @@ const StudentDashboard = ({ navigation }) => {
     };
 
     const marqueeItems = [
-        "📢 Exam Results Published! Check Results tab.",
-        "🏖️ Winter Vacation starts from 24th Dec to 2nd Jan.",
+        "Exam Results Published! Check Results tab.",
+        "Winter Vacation starts from 24th Dec to 2nd Jan.",
         ...notices.map(n => n.title).filter(Boolean),
         ...events.map(e => e.name).filter(Boolean),
     ];
 
     // Quick Access Features with icons
     const features = [
-        { title: 'Profile', screen: 'Profile', icon: 'account-outline', color: colors.primary },
         { title: 'Timetable', screen: 'Timetable', icon: 'calendar-clock', color: colors.secondary },
         { title: 'Notices', screen: 'Notices', icon: 'bell-outline', color: colors.accent },
         { title: 'Exams', screen: 'Exams', icon: 'file-document-outline', color: colors.warning },
@@ -88,6 +101,8 @@ const StudentDashboard = ({ navigation }) => {
         { title: 'Results', screen: 'Results', icon: 'trophy-outline', color: colors.success },
         { title: 'Faculty', screen: 'Staff', icon: 'account-group-outline', color: '#6366F1' },
         { title: 'Letters', screen: 'Letters', icon: 'email-outline', color: colors.primaryDark },
+        { title: 'Certificates', screen: 'Letters', icon: 'certificate', color: '#F59E0B' },
+        { title: 'Complaint', screen: 'Complaint', icon: 'alert-circle-outline', color: '#EF4444' },
     ];
 
     const getCategoryColor = (category) => {
@@ -107,6 +122,8 @@ const StudentDashboard = ({ navigation }) => {
                 subtitle="Department of Computer Science"
                 showAvatar={true}
                 onAvatarPress={() => navigation.navigate('Profile')}
+                user={user}
+                profile={profile}
             />
             <Marquee items={marqueeItems} />
 
@@ -131,21 +148,24 @@ const StudentDashboard = ({ navigation }) => {
                     <Text style={styles.sectionTitle}>Quick Access</Text>
                     <View style={styles.featuresGrid}>
                         {features.map((feature, index) => (
-                            <TouchableOpacity
+                            <PremiumCard
                                 key={index}
                                 style={styles.featureCard}
                                 onPress={() => navigation.navigate(feature.screen)}
-                                activeOpacity={0.7}
+                                delay={200}
+                                index={index}
                             >
                                 <View style={[styles.iconBackground, { backgroundColor: feature.color + '15' }]}>
                                     <MaterialCommunityIcons 
                                         name={feature.icon} 
-                                        size={24} 
+                                        size={moderateScale(24)} 
                                         color={feature.color} 
                                     />
                                 </View>
-                                <Text style={styles.featureTitle}>{feature.title}</Text>
-                            </TouchableOpacity>
+                                <Text style={styles.featureTitle} numberOfLines={1} adjustsFontSizeToFit>
+                                    {feature.title}
+                                </Text>
+                            </PremiumCard>
                         ))}
                     </View>
                 </View>
@@ -166,7 +186,12 @@ const StudentDashboard = ({ navigation }) => {
                         </PremiumCard>
                     ) : (
                         notices.map((notice, idx) => (
-                            <PremiumCard key={notice.id || idx} style={styles.noticeCard}>
+                            <PremiumCard 
+                                key={notice.id || idx} 
+                                style={styles.noticeCard}
+                                delay={300}
+                                index={idx}
+                            >
                                 <View style={styles.noticeContent}>
                                     <View style={[styles.categoryIndicator, { backgroundColor: getCategoryColor(notice.category) }]} />
                                     <View style={styles.noticeTextContainer}>
@@ -193,7 +218,7 @@ const StudentDashboard = ({ navigation }) => {
                     )}
                 </View>
 
-                <View style={{ height: 100 }} />
+                <View style={{ height: getMargin(100) }} />
             </ScrollView>
         </View>
     );
@@ -208,141 +233,141 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        padding: 20,
+        padding: getPadding(20),
+        paddingBottom: getPadding(100),
     },
     welcomeCard: {
-        marginBottom: 8,
+        marginBottom: getMargin(8),
     },
     welcomeText: {
-        fontSize: 22,
+        fontSize: getFontSize(22),
         fontWeight: '700',
         color: colors.textPrimary,
-        marginBottom: 4,
+        marginBottom: getMargin(4),
+        lineHeight: getFontSize(28),
     },
     welcomeSubtext: {
-        fontSize: 14,
+        fontSize: getFontSize(14),
         color: colors.textSecondary,
         fontWeight: '400',
+        lineHeight: getFontSize(20),
     },
     section: {
-        marginTop: 24,
+        marginTop: getMargin(24),
     },
     sectionHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: getMargin(16),
+        paddingHorizontal: getPadding(2),
     },
     sectionTitle: {
-        fontSize: 20,
+        fontSize: getFontSize(20),
         fontWeight: '700',
         color: colors.textPrimary,
         letterSpacing: -0.3,
+        lineHeight: getFontSize(26),
     },
     featuresGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        marginTop: 8,
+        marginTop: getMargin(8),
     },
     featureCard: {
-        width: '23%',
-        aspectRatio: 1,
-        backgroundColor: colors.white,
-        borderRadius: 16,
-        padding: 12,
+        width: (SCREEN_WIDTH - getPadding(60)) / 2,
+        maxWidth: moderateScale(180),
+        padding: getPadding(16),
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 16,
-        shadowColor: colors.black,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 2,
-        borderWidth: 1,
-        borderColor: colors.gray100,
+        marginBottom: getMargin(12),
+        minHeight: moderateScale(100),
     },
     iconBackground: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: moderateScale(48),
+        height: moderateScale(48),
+        borderRadius: moderateScale(24),
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 8,
+        marginBottom: getMargin(8),
     },
     featureTitle: {
-        fontSize: 12,
+        fontSize: getFontSize(12),
         fontWeight: '600',
         color: colors.textPrimary,
         textAlign: 'center',
+        lineHeight: getFontSize(16),
+        maxWidth: '100%',
     },
     noticeCard: {
         padding: 0,
         overflow: 'hidden',
-        marginBottom: 12,
+        marginBottom: getMargin(12),
     },
     noticeContent: {
         flexDirection: 'row',
-        padding: 16,
+        padding: getPadding(16),
     },
     categoryIndicator: {
-        width: 4,
-        borderRadius: 2,
-        marginRight: 16,
+        width: moderateScale(4),
+        borderRadius: moderateScale(2),
+        marginRight: getMargin(16),
     },
     noticeTextContainer: {
         flex: 1,
+        minWidth: 0, // Prevents text overflow
     },
     noticeHeader: {
-        marginBottom: 8,
+        marginBottom: getMargin(8),
     },
     categoryBadge: {
         alignSelf: 'flex-start',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 8,
+        paddingHorizontal: getPadding(10),
+        paddingVertical: getPadding(4),
+        borderRadius: moderateScale(8),
     },
     categoryText: {
-        fontSize: 11,
+        fontSize: getFontSize(11),
         fontWeight: '600',
         textTransform: 'uppercase',
         letterSpacing: 0.5,
     },
     noticeTitle: {
-        fontSize: 16,
+        fontSize: getFontSize(16),
         fontWeight: '700',
         color: colors.textPrimary,
-        marginBottom: 6,
-        lineHeight: 22,
+        marginBottom: getMargin(6),
+        lineHeight: getFontSize(22),
     },
     noticeDescription: {
-        fontSize: 14,
+        fontSize: getFontSize(14),
         color: colors.textSecondary,
-        marginBottom: 8,
-        lineHeight: 20,
+        marginBottom: getMargin(8),
+        lineHeight: getFontSize(20),
     },
     noticeDate: {
-        fontSize: 12,
+        fontSize: getFontSize(12),
         color: colors.textLight,
         fontWeight: '400',
     },
     seeAllText: {
-        fontSize: 14,
+        fontSize: getFontSize(14),
         color: colors.primary,
         fontWeight: '600',
     },
     emptyCard: {
         alignItems: 'center',
-        paddingVertical: 32,
+        paddingVertical: getPadding(32),
         backgroundColor: colors.gray50,
         borderStyle: 'dashed',
         borderWidth: 1,
         borderColor: colors.gray200,
     },
     emptyText: {
-        fontSize: 14,
+        fontSize: getFontSize(14),
         color: colors.textSecondary,
-        marginTop: 12,
+        marginTop: getMargin(12),
     },
 });
 

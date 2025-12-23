@@ -1,39 +1,110 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import PropTypes from 'prop-types';
 import colors from '../styles/colors';
+import { moderateScale, getPadding } from '../utils/responsive';
 
-const PremiumCard = ({ children, style, onPress, activeOpacity = 0.7 }) => {
+const PremiumCard = ({ 
+    children, 
+    style, 
+    onPress, 
+    activeOpacity = 0.7,
+    delay = 0,
+    index = 0,
+    animated = true,
+}) => {
     const Container = onPress ? TouchableOpacity : View;
+    
+    // Animation values
+    const fadeAnim = useRef(new Animated.Value(animated ? 0 : 1)).current;
+    const scaleAnim = useRef(new Animated.Value(animated ? 0.95 : 1)).current;
+    const translateY = useRef(new Animated.Value(animated ? 15 : 0)).current;
+
+    useEffect(() => {
+        if (animated) {
+            // Staggered entrance animation
+            Animated.parallel([
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 400,
+                    delay: delay + (index * 50),
+                    useNativeDriver: true,
+                }),
+                Animated.spring(scaleAnim, {
+                    toValue: 1,
+                    delay: delay + (index * 50),
+                    tension: 50,
+                    friction: 7,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(translateY, {
+                    toValue: 0,
+                    duration: 400,
+                    delay: delay + (index * 50),
+                    useNativeDriver: true,
+                }),
+            ]).start();
+        }
+    }, [animated]);
+
+    const animatedStyle = animated ? {
+        opacity: fadeAnim,
+        transform: [
+            { scale: scaleAnim },
+            { translateY },
+        ],
+    } : {};
 
     return (
-        <Container
-            style={[styles.card, style]}
-            onPress={onPress}
-            activeOpacity={onPress ? activeOpacity : 1}
-        >
-            {children}
-        </Container>
+        <Animated.View style={animatedStyle}>
+            <Container
+                style={[styles.card, style]}
+                onPress={onPress}
+                activeOpacity={onPress ? activeOpacity : 1}
+            >
+                {children}
+            </Container>
+        </Animated.View>
     );
 };
 
 const styles = StyleSheet.create({
     card: {
         backgroundColor: colors.white,
-        borderRadius: 16,
-        padding: 20,
-        marginBottom: 16,
+        borderRadius: moderateScale(16),
+        padding: getPadding(20),
+        marginBottom: moderateScale(16),
         shadowColor: colors.black,
         shadowOffset: {
             width: 0,
             height: 2,
         },
-        shadowOpacity: 0.08,
-        shadowRadius: 8,
-        elevation: 3,
+        shadowOpacity: 0.1,
+        shadowRadius: moderateScale(8),
+        elevation: 4,
         borderWidth: 1,
         borderColor: colors.gray100,
     },
 });
+
+PremiumCard.propTypes = {
+    children: PropTypes.node.isRequired,
+    style: PropTypes.oneOfType([PropTypes.object, PropTypes.array]),
+    onPress: PropTypes.func,
+    activeOpacity: PropTypes.number,
+    delay: PropTypes.number,
+    index: PropTypes.number,
+    animated: PropTypes.bool,
+};
+
+PremiumCard.defaultProps = {
+    style: null,
+    onPress: null,
+    activeOpacity: 0.7,
+    delay: 0,
+    index: 0,
+    animated: true,
+};
 
 export default PremiumCard;
 

@@ -1,5 +1,5 @@
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "./firebaseConfig";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -104,11 +104,52 @@ export const checkAuthStatus = async () => {
     }
 };
 
+// Change password function
+export const changePassword = async (currentPassword, newPassword, userId) => {
+    try {
+        const user = auth.currentUser;
+        if (!user) {
+            throw new Error('User not authenticated');
+        }
+
+        // Check if password has been changed before (for students - only once)
+        const userDocRef = doc(db, "users", userId);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            
+            // For students, check if password was already changed
+            if (userData.role === 'Student' && userData.passwordChanged === true) {
+                throw new Error('Password can only be changed once. Please contact office for password reset.');
+            }
+        }
+
+        // Re-authenticate user with current password
+        const credential = EmailAuthProvider.credential(user.email, currentPassword);
+        await reauthenticateWithCredential(user, credential);
+
+        // Update password
+        await updatePassword(user, newPassword);
+
+        // Update passwordChanged flag in Firestore
+        await updateDoc(userDocRef, {
+            passwordChanged: true,
+            passwordChangedAt: new Date().toISOString()
+        });
+
+        return { success: true };
+    } catch (error) {
+        throw error;
+    }
+};
+
 // Export as an object for backward compatibility if needed, 
 // but we will mainly use named exports.
 export const authService = {
     login: loginUser,
     register: registerUser,
     logout: logoutUser,
-    getStoredUser: checkAuthStatus
+    getStoredUser: checkAuthStatus,
+    changePassword: changePassword
 };

@@ -1,6 +1,6 @@
 # PUDoCS - Department Management Mobile App
 
-A comprehensive, role-based mobile application for the Department of Computer Science, Pondicherry University, built with React Native Expo and Node.js.
+A comprehensive, role-based mobile application for the Department of Computer Science, Pondicherry University, built with React Native Expo and Firebase.
 
 ## 🎯 Project Overview
 
@@ -15,62 +15,29 @@ PUDoCS is a production-ready university department management system that digiti
 
 ```
 PUDoCS/
-├── backend/                 # Node.js + Express + MongoDB
-│   ├── models/             # Mongoose schemas
-│   ├── controllers/        # Business logic
-│   ├── routes/             # API routes
-│   ├── middleware/         # Auth & validation
-│   ├── config/             # Database config
-│   └── server.js           # Entry point
-│
-└── mobile/                 # React Native Expo
-    ├── screens/            # UI screens
-    │   ├── student/       # Student module
-    │   ├── staff/         # Staff module
-    │   └── office/        # Office module
-    ├── components/         # Reusable components
-    ├── navigation/         # Navigation setup
-    ├── services/           # API services
-    ├── context/            # Auth context
-    ├── styles/             # Styling
-    └── App.js              # Entry point
+├── mobile/                 # React Native Expo App
+│   ├── screens/            # UI screens
+│   │   ├── student/       # Student module
+│   │   ├── staff/         # Staff module
+│   │   └── office/        # Office module
+│   ├── components/         # Reusable components
+│   ├── navigation/         # Navigation setup
+│   ├── services/           # Firebase services
+│   ├── context/            # Auth context
+│   ├── styles/             # Styling
+│   ├── docs/               # Documentation
+│   └── App.js              # Entry point
+├── firestore.rules         # Firestore security rules
+└── google-services.json    # Firebase configuration
 ```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 - Node.js (v16 or higher)
-- MongoDB Atlas account
+- Firebase account with Firestore enabled
 - Expo CLI
 - iOS Simulator or Android Emulator (or Expo Go app)
-
-### Backend Setup
-
-1. Navigate to backend directory:
-```bash
-cd backend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Create `.env` file:
-```env
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_secret_key
-PORT=5000
-NODE_ENV=development
-CLIENT_URL=http://localhost:19006
-```
-
-4. Start the server:
-```bash
-npm run dev
-```
-
-Server will run on `http://localhost:5000`
 
 ### Mobile App Setup
 
@@ -84,12 +51,10 @@ cd mobile
 npm install
 ```
 
-3. Update API base URL in `services/api.js`:
-```javascript
-const API_BASE_URL = 'http://your-backend-url:5000/api';
-// For local development: 'http://localhost:5000/api'
-// For Render deployment: 'https://your-app.onrender.com/api'
-```
+3. Configure Firebase:
+   - The Firebase configuration is in `mobile/services/firebaseConfig.js`
+   - Ensure your Firebase project has Firestore enabled
+   - See `mobile/docs/FIREBASE_COLLECTIONS.md` for collection structure
 
 4. Start Expo:
 ```bash
@@ -119,10 +84,10 @@ Students must have both semester and exam fees marked as "Paid" to be eligible f
 - Blocks ineligible students from exam seat allocation
 
 ### Role-Based Access Control
-- JWT-based authentication
-- Strict permission enforcement
+- Firebase Authentication with email/password
+- Firestore security rules for data access
 - UI visibility based on user role
-- API-level authorization checks
+- Service-level authorization checks
 
 ## 📱 Mobile App Screens
 
@@ -134,100 +99,95 @@ Students must have both semester and exam fees marked as "Paid" to be eligible f
 ### Student Module (Implemented)
 - ✅ Dashboard with marquee
 - ✅ Profile with attendance & fees
-- ✅ Timetable (day-wise)
+- ✅ Timetable (day-wise, PDF viewer for even semester)
+- ✅ Academic Calendar (30 pages with zoom)
 - ✅ Notices
 - ✅ Exams with seat allocation
-- 🚧 Events & Gallery (placeholder)
-- 🚧 Results (placeholder)
-- 🚧 Staff Directory (placeholder)
-- 🚧 Letter Formats (placeholder)
+- ✅ Staff Directory with photos
+- ✅ Student Directory
+- ✅ Results
+- ✅ Events
+- 🚧 Letters (placeholder)
 
-### Staff & Office Modules
-- 🚧 Placeholder screens (backend APIs ready)
+### Staff Module
+- ✅ Dashboard
+- ✅ Student Management (CRUD)
+- ✅ Attendance Marking
+- ✅ Timetable Creation
+- ✅ Exam Management
+- ✅ Seat Allocation
+- ✅ Internals Upload
+- ✅ Notices & Events Posting
+
+### Office Module
+- ✅ Dashboard
+- ✅ Fee Management
+- ✅ Exam Eligibility Report
+- ✅ Results Upload
+- ✅ Official Notices
 
 ## 🛠️ Technology Stack
 
 ### Backend
-- **Runtime**: Node.js
-- **Framework**: Express.js
-- **Database**: MongoDB with Mongoose
-- **Authentication**: JWT + bcrypt
-- **CORS**: Enabled for mobile app
+- **Platform**: Firebase (Firestore + Authentication)
+- **Database**: Cloud Firestore
+- **Authentication**: Firebase Auth with email/password
+- **Storage**: AsyncStorage for local session
 
 ### Mobile
-- **Framework**: React Native (Expo)
-- **Navigation**: React Navigation (Stack + Bottom Tabs)
+- **Framework**: React Native (Expo SDK 54)
+- **Navigation**: React Navigation v7 (Stack + Bottom Tabs)
 - **State Management**: React Context API
-- **HTTP Client**: Axios
-- **Storage**: AsyncStorage
-- **UI**: Custom components with professional styling
+- **Animations**: React Native Reanimated v4.1.1
+- **UI**: Custom premium components with modern design
 
 ## 🎨 Design System
 
-- **Color Palette**: Navy/Indigo theme
+- **Color Palette**: Navy/Indigo theme (`#1E3A8A` primary, `#4F46E5` secondary)
 - **Typography**: Clean, readable fonts
 - **Components**: Cards, buttons, badges, headers
 - **Layout**: Mobile-first, responsive
 - **Animations**: Smooth transitions, marquee scrolling
+- **Navigation**: Floating pill-shaped bottom navigation with animated indicator
 
-## 📡 API Endpoints
+## 📡 Firebase Collections
 
-### Authentication
-- `POST /api/auth/register` - Register user
-- `POST /api/auth/login` - Login
-- `GET /api/auth/verify` - Verify token
+The app uses the following Firestore collections:
+- `users` - User authentication and roles
+- `students` - Student profiles and academic data
+- `timetables` - Class schedules
+- `exams` - Examination schedules and seat allocations
+- `classrooms` - Examination halls
+- `notices` - Announcements
+- `events` - Department events
 
-### Student (Protected)
-- `GET /api/student/profile`
-- `GET /api/student/timetable`
-- `GET /api/student/notices`
-- `GET /api/student/exams`
-- `GET /api/student/events`
-- `GET /api/student/results`
-- `GET /api/student/staff`
-- `GET /api/student/attendance`
-
-### Staff (Protected)
-- `POST /api/staff/students` - Add student
-- `PUT /api/staff/students/:id` - Update student
-- `POST /api/staff/attendance` - Mark attendance
-- `POST /api/staff/exams` - Create exam
-- `POST /api/staff/exams/:id/allocate-seats` - Auto-allocate seats
-- `PUT /api/staff/exams/:id/lock-seats` - Lock allocation
-- `POST /api/staff/internals` - Upload marks
-- `POST /api/staff/notices` - Post notice
-
-### Office (Protected)
-- `PUT /api/office/fees/:studentId` - Update fees
-- `GET /api/office/exam-eligibility` - Get eligibility report
-- `POST /api/office/results` - Upload results
-- `POST /api/office/notices` - Post official notice
-- `PUT /api/office/notices/:id/approve` - Approve notice
+See `mobile/docs/FIREBASE_COLLECTIONS.md` for detailed collection structures and security rules.
 
 ## 🔐 Security
 
-- Password hashing with bcrypt
-- JWT token-based authentication
-- Role-based authorization middleware
-- Protected API routes
+- Firebase Authentication with email/password
+- Firestore security rules for role-based access
 - Secure token storage in AsyncStorage
+- Protected routes based on user role
 
 ## 📝 Development Status
 
 ### ✅ Completed
-- Complete backend infrastructure
-- All MongoDB models
+- Complete Firebase integration
+- All Firestore collections defined
 - Authentication system
-- All API endpoints
 - Mobile app navigation
 - Student module core screens
 - Professional UI components
-- Service layer for API calls
+- Service layer for Firebase calls
+- Custom floating tab bar navigation
+- Academic calendar with zoom
+- Timetable PDF viewer
 
 ### 🚧 In Progress
-- Remaining student screens (Events, Results, Staff, Letters)
-- Staff module screens
-- Office module screens
+- Remaining student screens (Letters)
+- Performance optimizations
+- Error handling improvements
 
 ### 📋 Pending
 - Image upload functionality
@@ -237,12 +197,6 @@ Students must have both semester and exam fees marked as "Paid" to be eligible f
 - Unit tests
 
 ## 🚢 Deployment
-
-### Backend (Render)
-1. Create new Web Service on Render
-2. Connect GitHub repository
-3. Set environment variables
-4. Deploy
 
 ### Mobile (Expo)
 1. Build for production:
@@ -257,6 +211,19 @@ eas submit --platform android
 eas submit --platform ios
 ```
 
+### Firebase Setup
+1. Create Firebase project at [Firebase Console](https://console.firebase.google.com)
+2. Enable Firestore Database
+3. Enable Authentication (Email/Password)
+4. Configure security rules (see `firestore.rules`)
+5. Update `mobile/services/firebaseConfig.js` with your Firebase config
+
+## 📚 Documentation
+
+- **Firebase Collections**: `mobile/docs/FIREBASE_COLLECTIONS.md` - Detailed collection structures
+- **Project Structure**: See project structure section above
+- **Quick Start**: Follow the "Getting Started" section
+
 ## 👥 Contributing
 
 This is an academic project for Pondicherry University. For contributions or issues, please contact the development team.
@@ -269,8 +236,9 @@ This project is developed for academic purposes at Pondicherry University.
 
 - Department of Computer Science, Pondicherry University
 - React Native and Expo communities
-- MongoDB and Express.js teams
+- Firebase team
 
 ---
 
 **Built with ❤️ for PUDoCS**
+

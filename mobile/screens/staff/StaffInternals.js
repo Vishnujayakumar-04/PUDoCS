@@ -50,7 +50,8 @@ const StaffInternalsScreen = () => {
             // Initialize marks
             const initialMarks = {};
             data.forEach(student => {
-                initialMarks[student._id] = '';
+                const studentId = student.id || student._id || student.registerNumber;
+                initialMarks[studentId] = '';
             });
             setInternalsData(prev => ({ ...prev, marks: initialMarks }));
         } catch (error) {
@@ -156,23 +157,26 @@ const StaffInternalsScreen = () => {
                             </Text>
                         </Card>
 
-                        {students.map((student) => (
-                            <Card key={student._id}>
-                                <View style={styles.studentRow}>
-                                    <View style={styles.studentInfo}>
-                                        <Text style={styles.studentName}>{student.name}</Text>
-                                        <Text style={styles.registerNumber}>{student.registerNumber}</Text>
+                        {students.map((student) => {
+                            const studentId = student.id || student._id || student.registerNumber;
+                            return (
+                                <Card key={studentId}>
+                                    <View style={styles.studentRow}>
+                                        <View style={styles.studentInfo}>
+                                            <Text style={styles.studentName}>{student.name}</Text>
+                                            <Text style={styles.registerNumber}>{student.registerNumber}</Text>
+                                        </View>
+                                        <TextInput
+                                            style={styles.marksInput}
+                                            placeholder="Marks"
+                                            value={internalsData.marks[studentId] || ''}
+                                            onChangeText={(text) => updateMarks(studentId, text)}
+                                            keyboardType="numeric"
+                                        />
                                     </View>
-                                    <TextInput
-                                        style={styles.marksInput}
-                                        placeholder="Marks"
-                                        value={internalsData.marks[student._id]}
-                                        onChangeText={(text) => updateMarks(student._id, text)}
-                                        keyboardType="numeric"
-                                    />
-                                </View>
-                            </Card>
-                        ))}
+                                </Card>
+                            );
+                        })}
 
                         <Button
                             title="Submit Internal Marks"

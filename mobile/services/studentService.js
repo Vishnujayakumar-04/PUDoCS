@@ -1,14 +1,38 @@
 import { db } from './firebaseConfig';
-import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, setDoc } from 'firebase/firestore';
+import { studentStorageService } from './studentStorageService';
+import { getCollectionFromDisplayName } from '../utils/collectionMapper';
 
 export const studentService = {
-    // Get profile
+    // Get profile - searches across all collections
     getProfile: async (studentId) => {
         try {
-            const docRef = doc(db, "students", studentId);
-            const docSnap = await getDoc(docRef);
+            // Try the old students collection first (for backward compatibility)
+            let docRef = doc(db, "students", studentId);
+            let docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
                 return docSnap.data();
+            }
+            
+            // If not found, search in all student collections
+            const collections = [
+                'students_ug_btech_1', 'students_ug_btech_2', 'students_ug_btech_3', 'students_ug_btech_4',
+                'students_ug_bsc_cs_1', 'students_ug_bsc_cs_2', 'students_ug_bsc_cs_3',
+                'students_pg_msc_cs_1', 'students_pg_msc_cs_2',
+                'students_pg_msc_ds_1',
+                'students_pg_msc_cs_int_5', 'students_pg_msc_cs_int_6',
+                'students_pg_mca_1', 'students_pg_mca_2',
+                'students_pg_mtech_da_1',
+                'students_pg_mtech_nis_2',
+                'students_pg_mtech_cse_1', 'students_pg_mtech_cse_2',
+            ];
+            
+            for (const collName of collections) {
+                docRef = doc(db, collName, studentId);
+                docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    return docSnap.data();
+                }
             }
         } catch (error) {
             console.error("Error fetching profile:", error);
@@ -160,19 +184,109 @@ export const studentService = {
         ];
     },
 
-    // Get students for directory
+    // Get students for directory - uses separate collections
     getStudentsByProgram: async (program, year) => {
         try {
-            const q = query(
-                collection(db, "students"),
-                where("program", "==", program),
-                where("academicYear", "==", year)
-            );
+            console.log("Fetching students - Program:", program, "Year:", year, "Type:", typeof year);
+            
+            // Ensure year is a number
+            const yearNum = typeof year === 'string' ? parseInt(year, 10) : year;
+            
+            // Get the correct collection name
+            const collectionName = getCollectionFromDisplayName(program, yearNum);
+            console.log(`Using collection: ${collectionName}`);
+            
+            // First try local storage
+            let students = await studentStorageService.filterStudents(program, yearNum);
+            
+            if (students.length > 0) {
+                console.log(`Found ${students.length} students from local storage for ${program} Year ${yearNum}`);
+                
+                // Sync with Firestore in background
+                try {
+                    const q = query(collection(db, collectionName));
+                    const snapshot = await getDocs(q);
+                    const firestoreStudents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    
+                    if (firestoreStudents.length > 0) {
+                        await studentStorageService.addStudentsBulk(firestoreStudents);
+                        // Return Firestore data if it's different
+                        if (firestoreStudents.length !== students.length) {
+                            return firestoreStudents;
+                        }
+                    }
+                } catch (syncError) {
+                    console.warn("Background sync failed, using local data:", syncError);
+                }
+                
+                return students;
+            }
+            
+            // If no local data, fetch from Firestore
+            console.log(`No local data, fetching from Firestore collection: ${collectionName}`);
+            const q = query(collection(db, collectionName));
             const snapshot = await getDocs(q);
-            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            students = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            
+            console.log(`Found ${students.length} students from Firestore collection ${collectionName}`);
+            
+            // Also check old students collection for backward compatibility
+            if (students.length === 0) {
+                console.log("Checking old 'students' collection for backward compatibility...");
+                try {
+                    const oldQ = query(
+                        collection(db, "students"),
+                        where("program", "==", program),
+                        where("year", "==", yearNum)
+                    );
+                    const oldSnapshot = await getDocs(oldQ);
+                    students = oldSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    console.log(`Found ${students.length} students in old collection`);
+                } catch (oldError) {
+                    console.warn("Error checking old collection:", oldError);
+                }
+            }
+            
+            // Save to local storage for next time
+            if (students.length > 0) {
+                await studentStorageService.addStudentsBulk(students);
+            }
+            
+            return students;
         } catch (error) {
             console.error("Error fetching students:", error);
-            return [];
+            console.error("Error details:", error.message, error.code);
+            
+            // Fallback to local storage
+            try {
+                console.log("Attempting fallback: checking local storage...");
+                const yearNum = typeof year === 'string' ? parseInt(year, 10) : year;
+                const localStudents = await studentStorageService.filterStudents(program, yearNum);
+                console.log(`Fallback found ${localStudents.length} students from local storage`);
+                return localStudents;
+            } catch (fallbackError) {
+                console.error("Fallback also failed:", fallbackError);
+                return [];
+            }
+        }
+    },
+    
+    // Save student profile - saves to correct collection
+    saveProfile: async (studentId, studentData) => {
+        try {
+            const { course, program, year } = studentData;
+            const collectionName = getCollectionFromDisplayName(program, year);
+            
+            const docRef = doc(db, collectionName, studentId);
+            await setDoc(docRef, studentData, { merge: true });
+            
+            // Also update local storage
+            await studentStorageService.updateStudent(studentId, studentData);
+            
+            return true;
+        } catch (error) {
+            console.error("Error saving profile:", error);
+            throw error;
         }
     }
 };

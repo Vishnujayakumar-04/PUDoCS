@@ -42,7 +42,8 @@ const StaffAttendanceScreen = () => {
             // Initialize attendance state
             const initialAttendance = {};
             data.forEach(student => {
-                initialAttendance[student._id] = 'Present';
+                const studentId = student.id || student._id || student.registerNumber;
+                initialAttendance[studentId] = 'Present';
             });
             setAttendance(initialAttendance);
         } catch (error) {
@@ -144,36 +145,39 @@ const StaffAttendanceScreen = () => {
             </View>
 
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-                {students.map((student) => (
-                    <TouchableOpacity
-                        key={student._id}
-                        style={[
-                            styles.studentCard,
-                            attendance[student._id] === 'Absent' && styles.studentCardAbsent
-                        ]}
-                        onPress={() => toggleAttendance(student._id)}
-                    >
-                        <View style={styles.studentInfo}>
-                            <Text style={styles.studentName}>{student.name}</Text>
-                            <Text style={styles.registerNumber}>{student.registerNumber}</Text>
-                        </View>
-                        <View
+                {students.map((student) => {
+                    const studentId = student.id || student._id || student.registerNumber;
+                    return (
+                        <TouchableOpacity
+                            key={studentId}
                             style={[
-                                styles.statusBadge,
-                                {
-                                    backgroundColor:
-                                        attendance[student._id] === 'Present'
-                                            ? colors.success
-                                            : colors.error
-                                }
+                                styles.studentCard,
+                                attendance[studentId] === 'Absent' && styles.studentCardAbsent
                             ]}
+                            onPress={() => toggleAttendance(studentId)}
                         >
-                            <Text style={styles.statusText}>
-                                {attendance[student._id] === 'Present' ? '✓' : '✗'}
-                            </Text>
-                        </View>
-                    </TouchableOpacity>
-                ))}
+                            <View style={styles.studentInfo}>
+                                <Text style={styles.studentName}>{student.name}</Text>
+                                <Text style={styles.registerNumber}>{student.registerNumber}</Text>
+                            </View>
+                            <View
+                                style={[
+                                    styles.statusBadge,
+                                    {
+                                        backgroundColor:
+                                            attendance[studentId] === 'Present'
+                                                ? colors.success
+                                                : colors.error
+                                    }
+                                ]}
+                            >
+                                <Text style={styles.statusText}>
+                                    {attendance[studentId] === 'Present' ? '✓' : '✗'}
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+                    );
+                })}
             </ScrollView>
 
             <View style={styles.footer}>

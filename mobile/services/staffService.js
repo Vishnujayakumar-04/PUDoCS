@@ -1,41 +1,381 @@
 import { db } from './firebaseConfig';
 import { collection, doc, getDoc, getDocs, addDoc, updateDoc, deleteDoc, query, where, orderBy, setDoc } from 'firebase/firestore';
 import { allocateSeatsLogic } from '../utils/seatAllocation';
+import { studentStorageService } from './studentStorageService';
+import { getCollectionFromDisplayName, getAllStudentCollections, getStudentCollectionName } from '../utils/collectionMapper';
 
 export const staffService = {
-    // Get dashboard stats
-    getDashboard: async (userId) => {
-        // Fetch simplified stats
-        return { assignedClasses: [], upcomingExams: [], recentNotices: [] };
+    // Get staff profile from 'users' collection (for authentication)
+    getProfile: async (userId) => {
+        try {
+            const userDocRef = doc(db, "users", userId);
+            const userDoc = await getDoc(userDocRef);
+            
+            if (userDoc.exists()) {
+                return userDoc.data();
+            }
+            return null;
+        } catch (error) {
+            console.error("Error fetching staff profile:", error);
+            return null;
+        }
     },
 
-    // Student management
+    // Get staff details from 'staff' collection
+    getStaffDetails: async (email) => {
+        try {
+            const staffDocRef = doc(db, "staff", email.toLowerCase().trim());
+            const staffDoc = await getDoc(staffDocRef);
+            
+            if (staffDoc.exists()) {
+                return staffDoc.data();
+            }
+            return null;
+        } catch (error) {
+            console.error("Error fetching staff details:", error);
+            return null;
+        }
+    },
+
+    // Get all staff from 'staff' collection
+    getAllStaff: async () => {
+        try {
+            const staffCollection = collection(db, "staff");
+            const staffSnapshot = await getDocs(staffCollection);
+            
+            return staffSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+        } catch (error) {
+            console.error("Error fetching all staff:", error);
+            return [];
+        }
+    },
+
+    // Get dashboard stats
+    getDashboard: async (userId) => {
+        try {
+            // Fetch upcoming exams
+            const examsQuery = query(
+                collection(db, "exams"),
+                orderBy("date", "asc")
+            );
+            const examsSnapshot = await getDocs(examsQuery);
+            const upcomingExams = examsSnapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .filter(exam => {
+                    const examDate = exam.date?.toDate ? exam.date.toDate() : new Date(exam.date);
+                    return examDate >= new Date();
+                })
+                .slice(0, 5);
+
+            // Fetch recent notices
+            const noticesQuery = query(
+                collection(db, "notices"),
+                orderBy("createdAt", "desc")
+            );
+            const noticesSnapshot = await getDocs(noticesQuery);
+            const recentNotices = noticesSnapshot.docs
+                .map(doc => ({ id: doc.id, ...doc.data() }))
+                .slice(0, 5);
+
+            return {
+                assignedClasses: [], // Can be populated later if needed
+                upcomingExams,
+                recentNotices
+            };
+        } catch (error) {
+            console.error('Error loading dashboard:', error);
+            return { assignedClasses: [], upcomingExams: [], recentNotices: [] };
+        }
+    },
+
+    // Student management - fetches from all collections
     getStudents: async (filters = {}) => {
-        let q = collection(db, "students");
-        // Apply filters if needed (requires composite indexes)
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        try {
+            // First try to get from local storage
+            let students = await studentStorageService.getStudents();
+            
+            // Ensure students is always an array
+            if (!Array.isArray(students)) {
+                console.warn('Students data is not an array, converting...');
+                students = [];
+            }
+            
+            // If local storage has data, use it (for faster access)
+            if (students.length > 0) {
+                console.log(`Using ${students.length} students from local storage`);
+                
+                // Apply filters if provided
+                if (filters.course) {
+                    students = students.filter(s => s.course === filters.course);
+                }
+                if (filters.program) {
+                    students = students.filter(s => s.program === filters.program);
+                }
+                if (filters.year) {
+                    const yearNum = typeof filters.year === 'string' ? parseInt(filters.year, 10) : filters.year;
+                    students = students.filter(s => 
+                        s.year === yearNum || s.year === yearNum.toString() || parseInt(s.year) === yearNum
+                    );
+                }
+                if (filters.section) {
+                    students = students.filter(s => s.section === filters.section);
+                }
+                
+                // Also fetch from Firestore in background to sync
+                getAllStudentCollections().forEach(async (collName) => {
+                    try {
+                        const snapshot = await getDocs(collection(db, collName));
+                        const firestoreStudents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        if (firestoreStudents.length > 0) {
+                            await studentStorageService.addStudentsBulk(firestoreStudents);
+                        }
+                    } catch (err) {
+                        console.error(`Background sync error for ${collName}:`, err);
+                    }
+                });
+                
+                return students;
+            }
+            
+            // If no local data, fetch from all Firestore collections
+            console.log('No local data, fetching from all Firestore collections...');
+            const allStudents = [];
+            const collections = getAllStudentCollections();
+            
+            for (const collName of collections) {
+                try {
+                    const snapshot = await getDocs(collection(db, collName));
+                    const collStudents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    allStudents.push(...collStudents);
+                } catch (error) {
+                    console.error(`Error fetching from ${collName}:`, error);
+                }
+            }
+            
+            // Also check old students collection for backward compatibility
+            try {
+                const oldSnapshot = await getDocs(collection(db, "students"));
+                const oldStudents = oldSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                allStudents.push(...oldStudents);
+            } catch (oldError) {
+                console.warn('Error checking old collection:', oldError);
+            }
+            
+            // Ensure allStudents is always an array
+            const safeFirestoreStudents = Array.isArray(allStudents) ? allStudents : [];
+            
+            // Save to local storage for next time
+            if (safeFirestoreStudents.length > 0) {
+                await studentStorageService.saveStudents(safeFirestoreStudents);
+            }
+            
+            // Apply filters
+            let filtered = safeFirestoreStudents;
+            if (filters.course) {
+                filtered = filtered.filter(s => s.course === filters.course);
+            }
+            if (filters.program) {
+                filtered = filtered.filter(s => s.program === filters.program);
+            }
+            if (filters.year) {
+                const yearNum = typeof filters.year === 'string' ? parseInt(filters.year, 10) : filters.year;
+                filtered = filtered.filter(s => 
+                    s.year === yearNum || s.year === yearNum.toString() || parseInt(s.year) === yearNum
+                );
+            }
+            if (filters.section) {
+                filtered = filtered.filter(s => s.section === filters.section);
+            }
+            
+            // Ensure filtered is always an array
+            return Array.isArray(filtered) ? filtered : [];
+        } catch (error) {
+            console.error('Error getting students:', error);
+            // Fallback to local storage on error
+            try {
+                const fallbackStudents = await studentStorageService.getStudents();
+                return Array.isArray(fallbackStudents) ? fallbackStudents : [];
+            } catch (fallbackError) {
+                console.error('Fallback error:', fallbackError);
+                return []; // Return empty array as last resort
+            }
+        }
     },
 
     addStudent: async (studentData) => {
-        // Add to 'students' collection
-        const docRef = await addDoc(collection(db, "students"), {
-            ...studentData,
-            isActive: true,
-            createdAt: new Date().toISOString()
-        });
-        return { id: docRef.id, ...studentData };
+        try {
+            const studentWithMeta = {
+                ...studentData,
+                isActive: true,
+                createdAt: new Date().toISOString()
+            };
+            
+            // Get the correct collection name
+            const collectionName = getStudentCollectionName(
+                studentData.course || 'PG',
+                studentData.program || '',
+                studentData.year || 1
+            );
+            
+            // Use registerNumber as document ID if available
+            const docId = studentData.registerNumber || studentData.id;
+            let savedStudent;
+            
+            if (docId) {
+                // Use setDoc with registerNumber as ID
+                const docRef = doc(db, collectionName, docId);
+                await setDoc(docRef, studentWithMeta, { merge: true });
+                savedStudent = { id: docId, ...studentWithMeta };
+            } else {
+                // Fallback to addDoc if no registerNumber
+                const docRef = await addDoc(collection(db, collectionName), studentWithMeta);
+                savedStudent = { id: docRef.id, ...studentWithMeta };
+            }
+            
+            // Also save to local storage
+            await studentStorageService.addStudent(savedStudent);
+            
+            console.log(`✓ Student added to ${collectionName} and local storage: ${savedStudent.name}`);
+            return savedStudent;
+        } catch (error) {
+            console.error('Error adding student:', error);
+            throw error;
+        }
+    },
+
+    // Bulk add students - saves to correct collections
+    addStudentsBulk: async (studentsList) => {
+        const results = [];
+        const errors = [];
+        
+        for (const student of studentsList) {
+            try {
+                const studentData = {
+                    ...student,
+                    isActive: true,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Get the correct collection name
+                const collectionName = getStudentCollectionName(
+                    studentData.course || 'PG',
+                    studentData.program || '',
+                    studentData.year || 1
+                );
+                
+                // Use registerNumber as document ID if available
+                const docId = studentData.registerNumber || studentData.id;
+                let savedStudent;
+                
+                if (docId) {
+                    // Use setDoc with registerNumber as ID
+                    const docRef = doc(db, collectionName, docId);
+                    await setDoc(docRef, studentData, { merge: true });
+                    savedStudent = { id: docId, ...studentData };
+                } else {
+                    // Fallback to addDoc if no registerNumber
+                    const docRef = await addDoc(collection(db, collectionName), studentData);
+                    savedStudent = { id: docRef.id, ...studentData };
+                }
+                
+                results.push(savedStudent);
+                
+                // Also save to local storage
+                await studentStorageService.addStudent(savedStudent);
+            } catch (error) {
+                errors.push({ student, error: error.message });
+            }
+        }
+        
+        // Sync all students to local storage after bulk add
+        if (results.length > 0) {
+            await studentStorageService.addStudentsBulk(results);
+        }
+        
+        console.log(`✓ Bulk added ${results.length} students to correct collections and local storage`);
+        return { success: results, errors };
     },
 
     updateStudent: async (id, studentData) => {
-        const docRef = doc(db, "students", id);
-        await updateDoc(docRef, studentData);
-        return { id, ...studentData };
+        try {
+            // Determine the correct collection
+            const collectionName = getStudentCollectionName(
+                studentData.course || 'PG',
+                studentData.program || '',
+                studentData.year || 1
+            );
+            
+            // Update in Firestore
+            const docRef = doc(db, collectionName, id);
+            await setDoc(docRef, studentData, { merge: true });
+            const updatedStudent = { id, ...studentData };
+            
+            // Also update in local storage
+            await studentStorageService.updateStudent(id, studentData);
+            
+            console.log(`✓ Student updated in ${collectionName} and local storage: ${id}`);
+            return updatedStudent;
+        } catch (error) {
+            console.error('Error updating student:', error);
+            throw error;
+        }
     },
 
     deleteStudent: async (id) => {
-        const docRef = doc(db, "students", id);
-        await updateDoc(docRef, { isActive: false }); // Soft delete
+        try {
+            // Search across all collections to find the student
+            const collections = getAllStudentCollections();
+            let deleted = false;
+            
+            for (const collName of collections) {
+                try {
+                    const docRef = doc(db, collName, id);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        // Soft delete
+                        await updateDoc(docRef, { isActive: false });
+                        deleted = true;
+                        console.log(`✓ Student soft deleted from ${collName}: ${id}`);
+                        break;
+                    }
+                } catch (error) {
+                    // Continue searching other collections
+                    continue;
+                }
+            }
+            
+            // Also check old students collection
+            if (!deleted) {
+                try {
+                    const docRef = doc(db, "students", id);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        await updateDoc(docRef, { isActive: false });
+                        deleted = true;
+                        console.log(`✓ Student soft deleted from old students collection: ${id}`);
+                    }
+                } catch (error) {
+                    console.warn('Error checking old collection:', error);
+                }
+            }
+            
+            // Also update in local storage
+            await studentStorageService.updateStudent(id, { isActive: false });
+            
+            if (deleted) {
+                console.log(`✓ Student soft deleted from Firestore and local storage: ${id}`);
+            } else {
+                console.warn(`⚠️ Student not found in any collection: ${id}`);
+            }
+            
+            return deleted;
+        } catch (error) {
+            console.error('Error deleting student:', error);
+            throw error;
+        }
     },
 
     // Attendance
@@ -147,5 +487,35 @@ export const staffService = {
             createdAt: new Date().toISOString()
         });
         return { id: docRef.id, ...eventData };
+    },
+
+    // Get notices
+    getNotices: async () => {
+        try {
+            const noticesQuery = query(
+                collection(db, "notices"),
+                orderBy("createdAt", "desc")
+            );
+            const snapshot = await getDocs(noticesQuery);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error('Error getting notices:', error);
+            return [];
+        }
+    },
+
+    // Get events
+    getEvents: async () => {
+        try {
+            const eventsQuery = query(
+                collection(db, "events"),
+                orderBy("createdAt", "desc")
+            );
+            const snapshot = await getDocs(eventsQuery);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error('Error getting events:', error);
+            return [];
+        }
     }
 };

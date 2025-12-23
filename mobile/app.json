@@ -27,15 +27,6 @@
     },
     "plugins": [
       "expo-asset"
-    ],
-    "updates": {
-      "enabled": false,
-      "fallbackToCacheTimeout": 0,
-      "checkAutomatically": "NEVER",
-      "url": ""
-    },
-    "runtimeVersion": {
-      "policy": "nativeVersion"
-    }
+    ]
   }
 }

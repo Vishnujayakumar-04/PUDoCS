@@ -34,11 +34,14 @@ service cloud.firestore {
 
     // STUDENTS: 
     // - Read: All authenticated users (Students see themselves, Staff/Office see all)
-    // - Write: Staff (add students, mark attendance), Office (fees)
+    // - Write: Staff (add students, mark attendance), Office (fees), Students (update own profile)
     match /students/{studentId} {
       allow read: if isAuthenticated();
       allow create, delete: if isStaff() || isOffice();
-      allow update: if isStaff() || isOffice();
+      // Students can update their own document (by registerNumber)
+      // Office and Staff can update any student
+      allow update: if isStaff() || isOffice() || 
+        (isStudent() && request.resource.data.registerNumber == studentId);
     }
 
     // STAFF: 

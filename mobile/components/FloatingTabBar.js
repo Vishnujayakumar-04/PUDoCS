@@ -7,6 +7,7 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import PropTypes from 'prop-types';
 import colors from '../styles/colors';
 
 // Optional haptic feedback (gracefully handle if not available)
@@ -139,14 +140,14 @@ const FloatingTabBar = ({ state, descriptors, navigation }) => {
                             style={[styles.tabButton, { width: tabWidth }]}
                             activeOpacity={0.7}
                         >
-                            <Animated.View
+                            <View
                                 style={[
                                     styles.iconContainer,
                                     isFocused && styles.iconContainerActive,
                                 ]}
                             >
                                 {iconElement}
-                            </Animated.View>
+                            </View>
                         </AnimatedTouchable>
                     );
                 })}
@@ -221,10 +222,37 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         justifyContent: 'center',
         alignItems: 'center',
+        flexShrink: 0,
     },
     iconContainerActive: {
         backgroundColor: 'transparent',
     },
 });
+
+FloatingTabBar.propTypes = {
+    state: PropTypes.shape({
+        index: PropTypes.number.isRequired,
+        routes: PropTypes.arrayOf(
+            PropTypes.shape({
+                key: PropTypes.string.isRequired,
+                name: PropTypes.string.isRequired,
+            })
+        ).isRequired,
+    }).isRequired,
+    descriptors: PropTypes.objectOf(
+        PropTypes.shape({
+            options: PropTypes.shape({
+                tabBarButton: PropTypes.func,
+                tabBarIcon: PropTypes.func,
+                tabBarAccessibilityLabel: PropTypes.string,
+                tabBarTestID: PropTypes.string,
+            }),
+        })
+    ).isRequired,
+    navigation: PropTypes.shape({
+        navigate: PropTypes.func.isRequired,
+        emit: PropTypes.func.isRequired,
+    }).isRequired,
+};
 
 export default FloatingTabBar;

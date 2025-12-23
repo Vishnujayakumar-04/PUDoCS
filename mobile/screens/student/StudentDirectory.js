@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Dimensions, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Dimensions, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -27,12 +27,37 @@ const StudentDirectory = () => {
 
     const loadStudents = async (program, year) => {
         setLoading(true);
+        setStudents([]); // Clear previous students
         try {
+            console.log('=== Loading Students ===');
+            console.log('Program:', program);
+            console.log('Year:', year, '(type:', typeof year, ')');
+            
             const data = await studentService.getStudentsByProgram(program, year);
-            setStudents(data);
+            
+            console.log('=== Results ===');
+            console.log('Received students data:', data?.length || 0, 'students');
+            
+            if (data && data.length > 0) {
+                console.log('First student sample:', JSON.stringify(data[0], null, 2));
+            }
+            
+            setStudents(data || []);
             setView('directory');
+            
+            if (!data || data.length === 0) {
+                console.warn('⚠️ No students found. Possible reasons:');
+                console.warn('1. Students not added to Firestore yet');
+                console.warn('2. Program/year values don\'t match');
+                console.warn('3. Firestore index not created');
+                console.warn('Check console logs above for details.');
+            }
         } catch (error) {
-            console.error('Error loading students:', error);
+            console.error('=== Error Loading Students ===');
+            console.error('Error:', error);
+            console.error('Error message:', error.message);
+            console.error('Error code:', error.code);
+            Alert.alert('Error', `Failed to load students: ${error.message || 'Unknown error'}`);
         } finally {
             setLoading(false);
         }
@@ -117,8 +142,16 @@ const StudentDirectory = () => {
                 <ProgramSection
                     title="M.Sc – Master of Science"
                     items={[
-                        { label: 'M.Sc Computer Science – 2nd Year', name: 'Computer Science', year: 2, category: 'PG' },
-                        { label: 'M.Sc Data Science – 1st Year', name: 'Data Science', year: 1, category: 'PG' },
+                        { label: 'M.Sc Computer Science – 1st Year', name: 'M.Sc CS', year: 1, category: 'PG' },
+                        { label: 'M.Sc Computer Science – 2nd Year', name: 'M.Sc CS', year: 2, category: 'PG' },
+                        { label: 'M.Sc CS Integrated – 5th Year', name: 'M.Sc CS Integrated', year: 5, category: 'PG' },
+                        { label: 'M.Sc CS Integrated – 6th Year', name: 'M.Sc CS Integrated', year: 6, category: 'PG' },
+                    ]}
+                />
+                <ProgramSection
+                    title="M.Sc Data Science"
+                    items={[
+                        { label: 'M.Sc Data Science – 1st Year', name: 'M.Sc DS', year: 1, category: 'PG' },
                     ]}
                 />
                 <ProgramSection
@@ -131,7 +164,7 @@ const StudentDirectory = () => {
                 <ProgramSection
                     title="M.Tech – Master of Technology"
                     items={[
-                        { label: 'M.Tech Data Analytics – 1st Year', name: 'M.Tech DA', year: 1, category: 'PG' },
+                        { label: 'M.Tech Data Science & AI – 1st Year', name: 'M.Tech DS', year: 1, category: 'PG' },
                         { label: 'M.Tech NIS – 2nd Year', name: 'M.Tech NIS', year: 2, category: 'PG' },
                         { label: 'M.Tech CSE – 1st Year', name: 'M.Tech CSE', year: 1, category: 'PG' },
                         { label: 'M.Tech CSE – 2nd Year', name: 'M.Tech CSE', year: 2, category: 'PG' },
@@ -144,43 +177,114 @@ const StudentDirectory = () => {
     const renderDirectory = () => (
         <Animated.View style={[styles.directoryContainer, { opacity: fadeAnim }]}>
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {students.length === 0 ? (
+                {loading ? (
+                    <View style={styles.emptyState}>
+                        <LoadingSpinner />
+                        <Text style={styles.emptyText}>Loading students...</Text>
+                    </View>
+                ) : students.length === 0 ? (
                     <View style={styles.emptyState}>
                         <MaterialCommunityIcons name="account-search-outline" size={60} color={colors.gray300} />
-                        <Text style={styles.emptyText}>No students found in this class</Text>
+                        <Text style={styles.emptyText}>No students found</Text>
+                        <Text style={styles.emptySubtext}>
+                            {selectedClass ? `${selectedClass.label}` : 'in this class'}
+                        </Text>
+                        {selectedClass && (
+                            <Text style={styles.debugInfo}>
+                                Searching: Program = "{selectedClass.name}", Year = {selectedClass.year}
+                            </Text>
+                        )}
+                        <Text style={styles.emptyHint}>
+                            Students may not be added to Firestore yet.{'\n'}
+                            Check console logs for detailed debugging information.
+                        </Text>
                     </View>
                 ) : (
-                    students.map((student, index) => (
-                        <Card key={index} style={styles.studentCard}>
-                            <View style={styles.studentInfo}>
-                                <View style={styles.avatar}>
-                                    <Text style={styles.avatarText}>
-                                        {student.name?.charAt(0).toUpperCase()}
-                                    </Text>
-                                </View>
-                                <View style={styles.details}>
-                                    <Text style={styles.studentName}>{student.name}</Text>
-                                    <Text style={styles.regNo}>{student.registerNumber}</Text>
-                                </View>
-                            </View>
-                            <View style={styles.contactActions}>
+                    <>
+                        <View style={styles.studentCount}>
+                            <Text style={styles.studentCountText}>
+                                {students.length} {students.length === 1 ? 'Student' : 'Students'}
+                            </Text>
+                        </View>
+                        {students.map((student, index) => {
+                            // Debug: Log each student being rendered
+                            if (index === 0) {
+                                console.log('Rendering first student:', {
+                                    id: student.id,
+                                    name: student.name,
+                                    registerNumber: student.registerNumber,
+                                    program: student.program,
+                                    year: student.year,
+                                });
+                            }
+                            
+                            return (
                                 <TouchableOpacity
-                                    style={styles.contactBtn}
-                                    onPress={() => Linking.openURL(`mailto:${student.email}`)}
+                                    key={student.id || student.registerNumber || `student-${index}`}
+                                    style={styles.studentCard}
+                                    onPress={() => navigation.navigate('StudentDetail', {
+                                        studentId: student.id,
+                                        studentRegisterNumber: student.registerNumber || student.RegisterNumber
+                                    })}
+                                    activeOpacity={0.7}
                                 >
-                                    <MaterialCommunityIcons name="email-outline" size={20} color={colors.primary} />
+                                    <Card>
+                                        <View style={styles.cardContent}>
+                                            <View style={styles.studentInfo}>
+                                                <View style={styles.avatar}>
+                                                    <Text style={styles.avatarText}>
+                                                        {student.name?.charAt(0)?.toUpperCase() || '?'}
+                                                    </Text>
+                                                </View>
+                                                <View style={styles.details}>
+                                                    <Text style={styles.studentName}>
+                                                        {student.name || student.Name || 'Unknown'}
+                                                    </Text>
+                                                    <Text style={styles.regNo}>
+                                                        {student.registerNumber || student.RegisterNumber || 'No Reg. No.'}
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                            <MaterialCommunityIcons name="chevron-right" size={20} color={colors.gray400} />
+                                        </View>
+                                    </Card>
                                 </TouchableOpacity>
-                                {student.phone && (
-                                    <TouchableOpacity
-                                        style={styles.contactBtn}
-                                        onPress={() => Linking.openURL(`tel:${student.phone}`)}
-                                    >
-                                        <MaterialCommunityIcons name="phone-outline" size={20} color={colors.primary} />
-                                    </TouchableOpacity>
-                                )}
+                            );
+                        })}
+                    </>
+                )}
+
+                {/* Class Representatives and Coordinators */}
+                {selectedClass && (
+                    <View style={styles.representativesSection}>
+                        <Text style={styles.representativesTitle}>Class Representatives & Coordinators</Text>
+                        <Card style={styles.representativesCard}>
+                            <View style={styles.representativeRow}>
+                                <Text style={styles.representativeLabel}>Class Representative (Boy):</Text>
+                                <Text style={styles.representativeValue}>
+                                    {selectedClass.classRepBoy || 'Not assigned'}
+                                </Text>
+                            </View>
+                            <View style={styles.representativeRow}>
+                                <Text style={styles.representativeLabel}>Class Representative (Girl):</Text>
+                                <Text style={styles.representativeValue}>
+                                    {selectedClass.classRepGirl || 'Not assigned'}
+                                </Text>
+                            </View>
+                            <View style={styles.representativeRow}>
+                                <Text style={styles.representativeLabel}>Staff Coordinator:</Text>
+                                <Text style={styles.representativeValue}>
+                                    {selectedClass.staffCoordinator || 'Not assigned'}
+                                </Text>
+                            </View>
+                            <View style={[styles.representativeRow, { borderBottomWidth: 0 }]}>
+                                <Text style={styles.representativeLabel}>Course Coordinator:</Text>
+                                <Text style={styles.representativeValue}>
+                                    {selectedClass.courseCoordinator || 'Not assigned'}
+                                </Text>
                             </View>
                         </Card>
-                    ))
+                    </View>
                 )}
             </ScrollView>
         </Animated.View>
@@ -399,11 +503,85 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: 100,
+        paddingHorizontal: 40,
     },
     emptyText: {
-        fontSize: 16,
+        fontSize: 18,
+        fontWeight: '600',
         color: colors.textSecondary,
         marginTop: 15,
+        textAlign: 'center',
+    },
+    emptySubtext: {
+        fontSize: 14,
+        color: colors.textLight,
+        marginTop: 8,
+        textAlign: 'center',
+    },
+    emptyHint: {
+        fontSize: 12,
+        color: colors.textLight,
+        marginTop: 12,
+        textAlign: 'center',
+        fontStyle: 'italic',
+    },
+    debugInfo: {
+        fontSize: 11,
+        color: colors.primary,
+        marginTop: 8,
+        textAlign: 'center',
+        fontFamily: 'monospace',
+        backgroundColor: colors.gray50,
+        padding: 8,
+        borderRadius: 6,
+        marginHorizontal: 20,
+    },
+    studentCount: {
+        marginBottom: 16,
+        paddingBottom: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.gray100,
+    },
+    studentCountText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: colors.primary,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    representativesSection: {
+        marginTop: 24,
+        marginBottom: 12,
+    },
+    representativesTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: colors.textPrimary,
+        marginBottom: 12,
+    },
+    representativesCard: {
+        padding: 16,
+    },
+    representativeRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.gray100,
+    },
+    representativeLabel: {
+        fontSize: 14,
+        color: colors.textSecondary,
+        fontWeight: '500',
+        flex: 1,
+    },
+    representativeValue: {
+        fontSize: 14,
+        color: colors.textPrimary,
+        fontWeight: '600',
+        flex: 1,
+        textAlign: 'right',
     },
 });
 

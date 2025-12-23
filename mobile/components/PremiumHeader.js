@@ -1,11 +1,48 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import PropTypes from 'prop-types';
 import colors from '../styles/colors';
+import staffImages from '../assets/staffImages';
+import { moderateScale, getFontSize, getPadding } from '../utils/responsive';
 
-const PremiumHeader = ({ title, subtitle, showAvatar = false, onAvatarPress }) => {
+const PremiumHeader = ({ title, subtitle, showAvatar = false, onAvatarPress, user, profile }) => {
+    // Get photo source from user or profile
+    const getPhotoSource = () => {
+        // Check if profile has imageKey (for staff photos)
+        if (profile?.imageKey && staffImages[profile.imageKey]) {
+            return staffImages[profile.imageKey];
+        }
+        // Check user.profile for imageKey
+        if (user?.profile?.imageKey && staffImages[user.profile.imageKey]) {
+            return staffImages[user.profile.imageKey];
+        }
+        // Check if profile has photoUrl or photo
+        if (profile?.photoUrl) {
+            return { uri: profile.photoUrl };
+        }
+        if (profile?.photo) {
+            return typeof profile.photo === 'string' ? { uri: profile.photo } : profile.photo;
+        }
+        // Check user.profile for photo
+        if (user?.profile?.photoUrl) {
+            return { uri: user.profile.photoUrl };
+        }
+        if (user?.profile?.photo) {
+            return typeof user.profile.photo === 'string' ? { uri: user.profile.photo } : user.profile.photo;
+        }
+        // Check Firebase Auth photoURL
+        if (user?.photoURL) {
+            return { uri: user.photoURL };
+        }
+        // Default photo if no photo is found
+        return require('../assets/Vishnu/VISHNU PHOTO.jpeg');
+    };
+
+    const photoSource = getPhotoSource();
+
     return (
         <LinearGradient
             colors={[colors.primary, colors.secondary]}
@@ -26,7 +63,11 @@ const PremiumHeader = ({ title, subtitle, showAvatar = false, onAvatarPress }) =
                             activeOpacity={0.8}
                         >
                             <View style={styles.avatarContainer}>
-                                <MaterialCommunityIcons name="account" size={24} color={colors.white} />
+                                <Image
+                                    source={photoSource}
+                                    style={styles.avatarImage}
+                                    resizeMode="cover"
+                                />
                             </View>
                         </TouchableOpacity>
                     )}
@@ -38,9 +79,9 @@ const PremiumHeader = ({ title, subtitle, showAvatar = false, onAvatarPress }) =
 
 const styles = StyleSheet.create({
     gradient: {
-        paddingBottom: 20,
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
+        paddingBottom: getPadding(20),
+        borderBottomLeftRadius: moderateScale(24),
+        borderBottomRightRadius: moderateScale(24),
     },
     safeArea: {
         width: '100%',
@@ -49,39 +90,66 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingTop: 8,
+        paddingHorizontal: getPadding(20),
+        paddingTop: getPadding(8),
+        minHeight: moderateScale(60),
     },
     textContainer: {
         flex: 1,
+        marginRight: getPadding(12),
     },
     title: {
-        fontSize: 24,
+        fontSize: getFontSize(24),
         fontWeight: 'bold',
         color: colors.white,
         letterSpacing: 0.5,
+        lineHeight: getFontSize(30),
     },
     subtitle: {
-        fontSize: 14,
+        fontSize: getFontSize(14),
         color: colors.white,
         opacity: 0.9,
-        marginTop: 4,
+        marginTop: getPadding(4),
         fontWeight: '400',
+        lineHeight: getFontSize(18),
     },
     avatarButton: {
-        marginLeft: 16,
+        marginLeft: getMargin(16),
     },
     avatarContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: moderateScale(40),
+        height: moderateScale(40),
+        borderRadius: moderateScale(20),
         backgroundColor: 'rgba(255, 255, 255, 0.2)',
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 2,
         borderColor: 'rgba(255, 255, 255, 0.3)',
+        overflow: 'hidden',
+    },
+    avatarImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: moderateScale(18),
     },
 });
+
+PremiumHeader.propTypes = {
+    title: PropTypes.string.isRequired,
+    subtitle: PropTypes.string,
+    showAvatar: PropTypes.bool,
+    onAvatarPress: PropTypes.func,
+    user: PropTypes.object,
+    profile: PropTypes.object,
+};
+
+PremiumHeader.defaultProps = {
+    subtitle: null,
+    showAvatar: false,
+    onAvatarPress: null,
+    user: null,
+    profile: null,
+};
 
 export default PremiumHeader;
 

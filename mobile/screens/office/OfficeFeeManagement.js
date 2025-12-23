@@ -7,14 +7,12 @@ import {
     TouchableOpacity,
     Modal,
     Alert,
-    Picker,
     TextInput,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { officeService } from '../../services/officeService';
-import Header from '../../components/Header';
-import Card from '../../components/Card';
-import Button from '../../components/Button';
+import PremiumHeader from '../../components/PremiumHeader';
+import PremiumCard from '../../components/PremiumCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import colors from '../../styles/colors';
 
@@ -61,7 +59,19 @@ const OfficeFeeManagement = () => {
 
     const handleSaveFee = async () => {
         try {
-            await officeService.updateFees(selectedStudent._id, feeData);
+            const studentId = selectedStudent.id || selectedStudent._id || selectedStudent.registerNumber;
+            
+            // Format fee data for Firestore
+            const feeUpdate = {
+                [feeData.feeType]: {
+                    status: feeData.status,
+                    amount: feeData.amount || null,
+                    paidDate: feeData.paidDate || null,
+                    reference: feeData.reference || null,
+                }
+            };
+            
+            await officeService.updateFees(studentId, feeUpdate);
             Alert.alert('Success', 'Fee status updated successfully');
             setModalVisible(false);
             loadStudents();
@@ -71,7 +81,7 @@ const OfficeFeeManagement = () => {
     };
 
     const getFeeStatusColor = (status) => {
-        return status === 'Paid' ? colors.paid : colors.notPaid;
+        return status === 'Paid' ? colors.success : colors.error;
     };
 
     if (loading) {
@@ -79,16 +89,26 @@ const OfficeFeeManagement = () => {
     }
 
     return (
-        <SafeAreaView style={styles.container}>
-            <Header title="Fee Management" subtitle="Manage Student Fees" />
+        <View style={styles.container}>
+            <PremiumHeader 
+                title="Fee Management" 
+                subtitle="Manage Student Fees"
+                showAvatar={false}
+            />
 
             <View style={styles.headerRow}>
                 <Text style={styles.countText}>{students.length} Students</Text>
             </View>
 
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-                {students.map((student) => (
-                    <Card key={student._id}>
+                {students.length === 0 ? (
+                    <PremiumCard style={styles.emptyCard}>
+                        <MaterialCommunityIcons name="account-off-outline" size={48} color={colors.gray300} />
+                        <Text style={styles.emptyText}>No students found</Text>
+                    </PremiumCard>
+                ) : (
+                    students.map((student) => (
+                        <PremiumCard key={student.id || student._id || student.registerNumber} style={styles.studentCard}>
                         <View style={styles.studentHeader}>
                             <View>
                                 <Text style={styles.studentName}>{student.name}</Text>
@@ -105,10 +125,10 @@ const OfficeFeeManagement = () => {
                                 <View
                                     style={[
                                         styles.feeStatus,
-                                        { backgroundColor: getFeeStatusColor(student.fees?.semester?.status) },
+                                        { backgroundColor: getFeeStatusColor(student.fees?.semester?.status || 'Not Paid') },
                                     ]}
                                 >
-                                    <Text style={styles.feeStatusText}>{student.fees?.semester?.status}</Text>
+                                    <Text style={styles.feeStatusText}>{student.fees?.semester?.status || 'Not Paid'}</Text>
                                 </View>
                             </View>
 
@@ -117,14 +137,14 @@ const OfficeFeeManagement = () => {
                                 <View
                                     style={[
                                         styles.feeStatus,
-                                        { backgroundColor: getFeeStatusColor(student.fees?.exam?.status) },
+                                        { backgroundColor: getFeeStatusColor(student.fees?.exam?.status || 'Not Paid') },
                                     ]}
                                 >
-                                    <Text style={styles.feeStatusText}>{student.fees?.exam?.status}</Text>
+                                    <Text style={styles.feeStatusText}>{student.fees?.exam?.status || 'Not Paid'}</Text>
                                 </View>
                             </View>
 
-                            {student.fees?.hostel?.status !== 'N/A' && (
+                            {student.fees?.hostel?.status && student.fees?.hostel?.status !== 'N/A' && (
                                 <View style={styles.feeRow}>
                                     <Text style={styles.feeLabel}>Hostel Fee:</Text>
                                     <View
@@ -143,10 +163,12 @@ const OfficeFeeManagement = () => {
                             style={styles.updateButton}
                             onPress={() => handleUpdateFee(student)}
                         >
+                            <MaterialCommunityIcons name="pencil" size={16} color={colors.white} />
                             <Text style={styles.updateButtonText}>Update Fee Status</Text>
                         </TouchableOpacity>
-                    </Card>
-                ))}
+                    </PremiumCard>
+                    ))
+                )}
             </ScrollView>
 
             {/* Update Fee Modal */}
@@ -168,25 +190,52 @@ const OfficeFeeManagement = () => {
                         )}
 
                         <Text style={styles.label}>Fee Type</Text>
-                        <Picker
-                            selectedValue={feeData.feeType}
-                            onValueChange={(value) => setFeeData({ ...feeData, feeType: value })}
-                            style={styles.input}
-                        >
-                            <Picker.Item label="Semester Fee" value="semester" />
-                            <Picker.Item label="Exam Fee" value="exam" />
-                            <Picker.Item label="Hostel Fee" value="hostel" />
-                        </Picker>
+                        <View style={styles.pickerContainer}>
+                            <TouchableOpacity
+                                style={[styles.pickerButton, feeData.feeType === 'semester' && styles.pickerButtonActive]}
+                                onPress={() => setFeeData({ ...feeData, feeType: 'semester' })}
+                            >
+                                <Text style={[styles.pickerButtonText, feeData.feeType === 'semester' && styles.pickerButtonTextActive]}>
+                                    Semester Fee
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.pickerButton, feeData.feeType === 'exam' && styles.pickerButtonActive]}
+                                onPress={() => setFeeData({ ...feeData, feeType: 'exam' })}
+                            >
+                                <Text style={[styles.pickerButtonText, feeData.feeType === 'exam' && styles.pickerButtonTextActive]}>
+                                    Exam Fee
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.pickerButton, feeData.feeType === 'hostel' && styles.pickerButtonActive]}
+                                onPress={() => setFeeData({ ...feeData, feeType: 'hostel' })}
+                            >
+                                <Text style={[styles.pickerButtonText, feeData.feeType === 'hostel' && styles.pickerButtonTextActive]}>
+                                    Hostel Fee
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
 
                         <Text style={styles.label}>Status</Text>
-                        <Picker
-                            selectedValue={feeData.status}
-                            onValueChange={(value) => setFeeData({ ...feeData, status: value })}
-                            style={styles.input}
-                        >
-                            <Picker.Item label="Paid" value="Paid" />
-                            <Picker.Item label="Not Paid" value="Not Paid" />
-                        </Picker>
+                        <View style={styles.pickerContainer}>
+                            <TouchableOpacity
+                                style={[styles.pickerButton, feeData.status === 'Paid' && styles.pickerButtonActive]}
+                                onPress={() => setFeeData({ ...feeData, status: 'Paid' })}
+                            >
+                                <Text style={[styles.pickerButtonText, feeData.status === 'Paid' && styles.pickerButtonTextActive]}>
+                                    Paid
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.pickerButton, feeData.status === 'Not Paid' && styles.pickerButtonActive]}
+                                onPress={() => setFeeData({ ...feeData, status: 'Not Paid' })}
+                            >
+                                <Text style={[styles.pickerButtonText, feeData.status === 'Not Paid' && styles.pickerButtonTextActive]}>
+                                    Not Paid
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
 
                         <TextInput
                             style={styles.input}
@@ -211,22 +260,23 @@ const OfficeFeeManagement = () => {
                         />
 
                         <View style={styles.modalButtons}>
-                            <Button
-                                title="Cancel"
-                                variant="outline"
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.modalButtonCancel]}
                                 onPress={() => setModalVisible(false)}
-                                style={styles.modalButton}
-                            />
-                            <Button
-                                title="Update"
+                            >
+                                <Text style={styles.modalButtonCancelText}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.modalButtonConfirm]}
                                 onPress={handleSaveFee}
-                                style={styles.modalButton}
-                            />
+                            >
+                                <Text style={styles.modalButtonConfirmText}>Update</Text>
+                            </TouchableOpacity>
                         </View>
                     </View>
                 </View>
             </Modal>
-        </SafeAreaView>
+        </View>
     );
 };
 
@@ -293,16 +343,33 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: colors.white,
     },
+    studentCard: {
+        marginBottom: 16,
+        padding: 16,
+    },
     updateButton: {
-        backgroundColor: colors.accent,
-        paddingVertical: 10,
-        borderRadius: 6,
+        backgroundColor: colors.primary,
+        paddingVertical: 12,
+        borderRadius: 12,
         alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
+        marginTop: 8,
     },
     updateButtonText: {
         color: colors.white,
         fontSize: 14,
         fontWeight: '600',
+        marginLeft: 8,
+    },
+    emptyCard: {
+        alignItems: 'center',
+        paddingVertical: 48,
+    },
+    emptyText: {
+        fontSize: 14,
+        color: colors.textSecondary,
+        marginTop: 12,
     },
     modalOverlay: {
         flex: 1,
@@ -360,6 +427,53 @@ const styles = StyleSheet.create({
     },
     modalButton: {
         flex: 1,
+        paddingVertical: 14,
+        borderRadius: 12,
+        alignItems: 'center',
+    },
+    modalButtonCancel: {
+        backgroundColor: colors.gray100,
+    },
+    modalButtonCancelText: {
+        color: colors.textSecondary,
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    modalButtonConfirm: {
+        backgroundColor: colors.primary,
+    },
+    modalButtonConfirmText: {
+        color: colors.white,
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    pickerContainer: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 12,
+    },
+    pickerButton: {
+        flex: 1,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        backgroundColor: colors.gray100,
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: 'transparent',
+    },
+    pickerButtonActive: {
+        backgroundColor: colors.primary + '15',
+        borderColor: colors.primary,
+    },
+    pickerButtonText: {
+        fontSize: 14,
+        color: colors.textSecondary,
+        fontWeight: '500',
+    },
+    pickerButtonTextActive: {
+        color: colors.primary,
+        fontWeight: '600',
     },
 });
 

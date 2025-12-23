@@ -11,6 +11,8 @@ import OfficeExamEligibility from '../screens/office/OfficeExamEligibility';
 import OfficeResults from '../screens/office/OfficeResults';
 import OfficeNotices from '../screens/office/OfficeNotices';
 import StudentStaffDirectory from '../screens/student/StudentStaffDirectory';
+import StudentEvents from '../screens/student/StudentEvents';
+import OfficeProfile from '../screens/office/OfficeProfile';
 
 const Tab = createBottomTabNavigator();
 
@@ -92,6 +94,20 @@ const OfficeNavigator = () => {
                 component={StudentStaffDirectory}
                 options={{
                     tabBarButton: () => null,
+                }}
+            />
+            <Tab.Screen
+                name="Events"
+                component={StudentEvents}
+                options={{
+                    tabBarButton: () => null, // Accessible via Dashboard
+                }}
+            />
+            <Tab.Screen
+                name="Profile"
+                component={OfficeProfile}
+                options={{
+                    tabBarButton: () => null, // Accessible via Dashboard avatar
                 }}
             />
         </Tab.Navigator>

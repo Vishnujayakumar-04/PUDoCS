@@ -47,36 +47,37 @@ const StudentTimetable = () => {
         }
     }, [timetable]);
 
-    // Define which classes have timetables (even semester classes)
-    // Even semester typically includes: 2nd year, 4th year UG and 2nd year PG
-    const hasTimetable = (program, year) => {
-        const timetableMap = {
-            'B.Tech': [2, 4], // B.Tech 2nd and 4th year have even semester timetables
-            'B.Sc CS': [2], // B.Sc CS 2nd year
-            'M.Sc CS': [2], // M.Sc CS 2nd year
-            'M.Sc DS': [2], // M.Sc DS 2nd year  
-            'MCA': [2], // MCA 2nd year
-            'M.Tech DA': [2], // M.Tech DA 2nd year
-            'M.Tech NIS': [2], // M.Tech NIS 2nd year
-            'M.Tech CSE': [2], // M.Tech CSE 2nd year
-        };
-        return timetableMap[program]?.includes(year) || false;
+    // Check if timetable exists in Firestore or show empty state
+    const hasTimetable = async (program, year) => {
+        try {
+            const timetableData = await studentService.getTimetable(program, year);
+            return timetableData && timetableData.schedule && timetableData.schedule.length > 0;
+        } catch (error) {
+            console.error('Error checking timetable:', error);
+            return false;
+        }
     };
 
     const loadTimetable = async (program, year) => {
         setLoading(true);
         try {
-            if (hasTimetable(program, year)) {
-                // For classes with timetable, show PDF viewer
-                setTimetable({ type: 'pdf', program, year });
+            // Try to fetch timetable from Firestore
+            const timetableData = await studentService.getTimetable(program, year);
+            
+            if (timetableData && timetableData.schedule && timetableData.schedule.length > 0) {
+                // Has schedule data - show schedule viewer
+                setTimetable({ ...timetableData, program, year });
                 setView('viewer');
             } else {
-                // For classes without timetable, show empty state
+                // No timetable data - show empty state
                 setTimetable({ type: 'empty', program, year });
                 setView('viewer');
             }
         } catch (error) {
             console.error('Error loading timetable:', error);
+            // On error, show empty state
+            setTimetable({ type: 'empty', program, year });
+            setView('viewer');
         } finally {
             setLoading(false);
         }
@@ -206,7 +207,15 @@ const StudentTimetable = () => {
                 <ProgramSection
                     title="M.Sc – Master of Science"
                     items={[
+                        { label: 'M.Sc Computer Science – 1st Year', name: 'M.Sc CS', year: 1, category: 'PG' },
                         { label: 'M.Sc Computer Science – 2nd Year', name: 'M.Sc CS', year: 2, category: 'PG' },
+                        { label: 'M.Sc CS Integrated – 5th Year', name: 'M.Sc CS Integrated', year: 5, category: 'PG' },
+                        { label: 'M.Sc CS Integrated – 6th Year', name: 'M.Sc CS Integrated', year: 6, category: 'PG' },
+                    ]}
+                />
+                <ProgramSection
+                    title="M.Sc Data Science"
+                    items={[
                         { label: 'M.Sc Data Science – 1st Year', name: 'M.Sc DS', year: 1, category: 'PG' },
                     ]}
                 />
@@ -220,7 +229,7 @@ const StudentTimetable = () => {
                 <ProgramSection
                     title="M.Tech – Master of Technology"
                     items={[
-                        { label: 'M.Tech Data Analytics – 1st Year', name: 'M.Tech DA', year: 1, category: 'PG' },
+                        { label: 'M.Tech Data Science & AI – 1st Year', name: 'M.Tech DS', year: 1, category: 'PG' },
                         { label: 'M.Tech NIS – 2nd Year', name: 'M.Tech NIS', year: 2, category: 'PG' },
                         { label: 'M.Tech CSE – 1st Year', name: 'M.Tech CSE', year: 1, category: 'PG' },
                         { label: 'M.Tech CSE – 2nd Year', name: 'M.Tech CSE', year: 2, category: 'PG' },
@@ -395,13 +404,14 @@ const StudentTimetable = () => {
     };
 
     const renderEmptyTimetable = () => {
+        const programLabel = selectedProgram?.label || timetable?.program || 'this class';
         return (
             <Animated.View style={[styles.viewerContainer, { opacity: fadeAnim }]}>
                 <View style={styles.emptyContainer}>
                     <MaterialCommunityIcons name="calendar-remove" size={80} color={colors.gray300} />
                     <Text style={styles.emptyTitle}>No Timetable Available</Text>
                     <Text style={styles.emptySubtext}>
-                        Timetable for {selectedProgram?.label} is not available at the moment.
+                        Timetable for {programLabel} is not available at the moment.
                     </Text>
                     <Text style={styles.emptyNote}>
                         Please check back later or contact the department office.
@@ -491,8 +501,8 @@ const styles = StyleSheet.create({
     },
     landingHeader: {
         alignItems: 'center',
-        marginBottom: 40,
-        marginTop: 20,
+        marginBottom: 16,
+        marginTop: 16,
     },
     landingTitle: {
         fontSize: 28,
@@ -507,9 +517,8 @@ const styles = StyleSheet.create({
         fontWeight: '400',
     },
     categoryContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        gap: 20,
+        marginTop: 8,
+        gap: 16,
     },
     categoryCard: {
         width: '100%',

@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Animated } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, StyleSheet, ScrollView, Animated } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { studentService } from '../../services/studentService';
 import PremiumCard from '../../components/PremiumCard';
@@ -11,13 +9,8 @@ import colors from '../../styles/colors';
 
 const StudentNotices = () => {
     const [notices, setNotices] = useState([]);
-    const [filteredNotices, setFilteredNotices] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [activeFilter, setActiveFilter] = useState('All');
     const [fadeAnim] = useState(new Animated.Value(0));
-
-    const categories = ['All', 'Exam', 'Event', 'Academic'];
 
     useEffect(() => {
         loadNotices();
@@ -26,8 +19,18 @@ const StudentNotices = () => {
     const formatDate = (dateValue) => {
         if (!dateValue) return '';
         try {
-            if (dateValue.toDate) return dateValue.toDate().toLocaleDateString();
-            return new Date(dateValue).toLocaleDateString();
+            if (dateValue.toDate) return dateValue.toDate().toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            return new Date(dateValue).toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
         } catch (e) {
             return dateValue.toString();
         }
@@ -36,8 +39,24 @@ const StudentNotices = () => {
     const loadNotices = async () => {
         try {
             const data = await studentService.getNotices();
-            setNotices(data || []);
-            setFilteredNotices(data || []);
+            // Filter only vacation/holiday notices
+            const vacationNotices = (data || []).filter(notice => {
+                const title = (notice.title || '').toLowerCase();
+                const content = (notice.content || '').toLowerCase();
+                const category = (notice.category || '').toLowerCase();
+                return (
+                    category === 'vacation' || 
+                    category === 'holiday' ||
+                    title.includes('vacation') ||
+                    title.includes('holiday') ||
+                    title.includes('reopen') ||
+                    title.includes('college reopen') ||
+                    content.includes('vacation') ||
+                    content.includes('holiday') ||
+                    content.includes('reopen')
+                );
+            });
+            setNotices(vacationNotices);
             Animated.timing(fadeAnim, {
                 toValue: 1,
                 duration: 600,
@@ -50,172 +69,100 @@ const StudentNotices = () => {
         }
     };
 
-    const handleFilter = (category) => {
-        setActiveFilter(category);
-        if (category === 'All') {
-            setFilteredNotices(notices);
-        } else {
-            setFilteredNotices(notices.filter(n => n.category === category));
-        }
-    };
-
-    const handleSearch = (text) => {
-        setSearchQuery(text);
-        const filtered = notices.filter(n =>
-            n.title.toLowerCase().includes(text.toLowerCase()) ||
-            n.content?.toLowerCase().includes(text.toLowerCase())
-        );
-        setFilteredNotices(filtered);
-    };
-
-    const getCategoryColor = (category) => {
-        switch (category?.toLowerCase()) {
-            case 'academic': return colors.primary;
-            case 'exam': return colors.warning;
-            case 'event': return colors.info;
-            case 'fees': return colors.accent;
-            default: return colors.gray500;
-        }
-    };
-
     if (loading) return <LoadingSpinner />;
-
-    // Separate pinned and regular notices
-    const pinnedNotices = filteredNotices.filter(n => n.isPriority);
-    const regularNotices = filteredNotices.filter(n => !n.isPriority);
 
     return (
         <View style={styles.container}>
             <PremiumHeader 
-                title="Notices" 
-                subtitle="Stay updated with department news"
+                title="Vacations & Holidays" 
+                subtitle="College reopening dates"
             />
-
-            {/* Filter Bar */}
-            <View style={styles.filterContainer}>
-                <ScrollView 
-                    horizontal 
-                    showsHorizontalScrollIndicator={false} 
-                    contentContainerStyle={styles.filterScroll}
-                >
-                    {categories.map(cat => (
-                        <TouchableOpacity
-                            key={cat}
-                            onPress={() => handleFilter(cat)}
-                            style={[
-                                styles.filterTab,
-                                activeFilter === cat && styles.filterTabActive
-                            ]}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={[
-                                styles.filterText,
-                                activeFilter === cat && styles.filterTextActive
-                            ]}>
-                                {cat}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-            </View>
 
             <Animated.ScrollView
                 style={[styles.content, { opacity: fadeAnim }]}
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Pinned Notices */}
-                {pinnedNotices.length > 0 && (
-                    <View style={styles.section}>
-                        {pinnedNotices.map((notice, index) => (
-                            <PremiumCard key={`pinned-${index}`} style={styles.noticeCard}>
-                                <View style={styles.noticeRow}>
-                                    <View style={[
-                                        styles.accentBar,
-                                        { backgroundColor: getCategoryColor(notice.category) }
-                                    ]} />
-                                    <View style={styles.noticeContent}>
-                                        <View style={styles.noticeHeader}>
-                                            <View style={[
-                                                styles.categoryBadge,
-                                                { backgroundColor: getCategoryColor(notice.category) + '15' }
-                                            ]}>
-                                                <Text style={[
-                                                    styles.categoryText,
-                                                    { color: getCategoryColor(notice.category) }
-                                                ]}>
-                                                    {notice.category || 'General'}
-                                                </Text>
-                                            </View>
-                                            <View style={styles.pinnedBadge}>
-                                                <MaterialCommunityIcons name="pin" size={12} color={colors.warning} />
-                                                <Text style={styles.pinnedText}>Pinned</Text>
-                                            </View>
-                                        </View>
-                                        <Text style={styles.noticeTitle}>{notice.title}</Text>
-                                        {notice.content && (
-                                            <Text style={styles.noticeDescription} numberOfLines={3}>
-                                                {notice.content}
-                                            </Text>
-                                        )}
-                                        <View style={styles.noticeFooter}>
-                                            <Text style={styles.postedBy}>
-                                                {notice.postedBy || 'Department Office'}
-                                            </Text>
-                                            <Text style={styles.noticeDate}>
-                                                {formatDate(notice.createdAt) || notice.date}
-                                            </Text>
-                                        </View>
-                                    </View>
-                                </View>
-                            </PremiumCard>
-                        ))}
-                    </View>
-                )}
-
-                {/* Regular Notices */}
-                {regularNotices.length === 0 && pinnedNotices.length === 0 ? (
+                {notices.length === 0 ? (
                     <View style={styles.emptyState}>
-                        <MaterialCommunityIcons name="bell-off-outline" size={64} color={colors.gray300} />
-                        <Text style={styles.emptyText}>No notices found</Text>
+                        <MaterialCommunityIcons name="calendar-blank-outline" size={64} color={colors.gray300} />
+                        <Text style={styles.emptyText}>No vacation notices</Text>
                         <Text style={styles.emptySubtext}>Check back later for updates</Text>
                     </View>
                 ) : (
-                    regularNotices.map((notice, index) => (
+                    notices.map((notice, index) => (
                         <PremiumCard key={index} style={styles.noticeCard}>
                             <View style={styles.noticeRow}>
-                                <View style={[
-                                    styles.accentBar,
-                                    { backgroundColor: getCategoryColor(notice.category) }
-                                ]} />
+                                <View style={styles.iconContainer}>
+                                    <MaterialCommunityIcons 
+                                        name="calendar-check" 
+                                        size={32} 
+                                        color={colors.primary} 
+                                    />
+                                </View>
                                 <View style={styles.noticeContent}>
-                                    <View style={styles.noticeHeader}>
-                                        <View style={[
-                                            styles.categoryBadge,
-                                            { backgroundColor: getCategoryColor(notice.category) + '15' }
-                                        ]}>
-                                            <Text style={[
-                                                styles.categoryText,
-                                                { color: getCategoryColor(notice.category) }
-                                            ]}>
-                                                {notice.category || 'General'}
-                                            </Text>
-                                        </View>
-                                    </View>
                                     <Text style={styles.noticeTitle}>{notice.title}</Text>
                                     {notice.content && (
-                                        <Text style={styles.noticeDescription} numberOfLines={3}>
+                                        <Text style={styles.noticeDescription}>
                                             {notice.content}
                                         </Text>
                                     )}
-                                    <View style={styles.noticeFooter}>
-                                        <Text style={styles.postedBy}>
-                                            {notice.postedBy || 'Department Office'}
+                                    {notice.vacationStartDate && (
+                                        <View style={styles.dateRow}>
+                                            <MaterialCommunityIcons 
+                                                name="calendar-start" 
+                                                size={16} 
+                                                color={colors.textSecondary} 
+                                            />
+                                            <Text style={styles.dateLabel}>Starts: </Text>
+                                            <Text style={styles.dateValue}>
+                                                {formatDate(notice.vacationStartDate)}
+                                            </Text>
+                                        </View>
+                                    )}
+                                    {notice.vacationEndDate && (
+                                        <View style={styles.dateRow}>
+                                            <MaterialCommunityIcons 
+                                                name="calendar-end" 
+                                                size={16} 
+                                                color={colors.textSecondary} 
+                                            />
+                                            <Text style={styles.dateLabel}>Ends: </Text>
+                                            <Text style={styles.dateValue}>
+                                                {formatDate(notice.vacationEndDate)}
+                                            </Text>
+                                        </View>
+                                    )}
+                                    {notice.reopenDate && (
+                                        <View style={styles.dateRow}>
+                                            <MaterialCommunityIcons 
+                                                name="calendar-clock" 
+                                                size={16} 
+                                                color={colors.success} 
+                                            />
+                                            <Text style={styles.reopenLabel}>College Reopens: </Text>
+                                            <Text style={styles.reopenValue}>
+                                                {formatDate(notice.reopenDate)}
+                                            </Text>
+                                        </View>
+                                    )}
+                                    {notice.date && !notice.vacationStartDate && !notice.reopenDate && (
+                                        <View style={styles.dateRow}>
+                                            <MaterialCommunityIcons 
+                                                name="calendar" 
+                                                size={16} 
+                                                color={colors.textSecondary} 
+                                            />
+                                            <Text style={styles.dateValue}>
+                                                {formatDate(notice.date)}
+                                            </Text>
+                                        </View>
+                                    )}
+                                    {notice.createdAt && (
+                                        <Text style={styles.postedDate}>
+                                            Posted: {formatDate(notice.createdAt)}
                                         </Text>
-                                        <Text style={styles.noticeDate}>
-                                            {formatDate(notice.createdAt) || notice.date}
-                                        </Text>
-                                    </View>
+                                    )}
                                 </View>
                             </View>
                         </PremiumCard>
@@ -233,121 +180,83 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.background,
     },
-    filterContainer: {
-        backgroundColor: colors.white,
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.gray100,
-    },
-    filterScroll: {
-        paddingHorizontal: 20,
-        gap: 12,
-    },
-    filterTab: {
-        paddingHorizontal: 20,
-        paddingVertical: 8,
-        borderRadius: 20,
-        backgroundColor: colors.gray50,
-        marginRight: 8,
-    },
-    filterTabActive: {
-        backgroundColor: colors.primary,
-    },
-    filterText: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: colors.textSecondary,
-    },
-    filterTextActive: {
-        color: colors.white,
-    },
     content: {
         flex: 1,
     },
     scrollContent: {
         padding: 20,
     },
-    section: {
-        marginBottom: 8,
-    },
     noticeCard: {
         padding: 0,
         overflow: 'hidden',
-        marginBottom: 16,
+        marginBottom: 20,
     },
     noticeRow: {
         flexDirection: 'row',
+        padding: 20,
     },
-    accentBar: {
-        width: 4,
-        borderRadius: 2,
+    iconContainer: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: colors.primary + '15',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 16,
     },
     noticeContent: {
         flex: 1,
-        padding: 16,
-    },
-    noticeHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 10,
-    },
-    categoryBadge: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 8,
-    },
-    categoryText: {
-        fontSize: 11,
-        fontWeight: '700',
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-    },
-    pinnedBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.warning + '15',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 8,
-        gap: 4,
-    },
-    pinnedText: {
-        fontSize: 10,
-        fontWeight: '600',
-        color: colors.warning,
     },
     noticeTitle: {
-        fontSize: 17,
+        fontSize: 18,
         fontWeight: '700',
         color: colors.textPrimary,
-        marginBottom: 8,
+        marginBottom: 12,
         lineHeight: 24,
     },
     noticeDescription: {
+        fontSize: 15,
+        color: colors.textSecondary,
+        lineHeight: 22,
+        marginBottom: 16,
+    },
+    dateRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    dateLabel: {
         fontSize: 14,
         color: colors.textSecondary,
-        lineHeight: 20,
-        marginBottom: 12,
-    },
-    noticeFooter: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    postedBy: {
-        fontSize: 12,
-        color: colors.textLight,
         fontWeight: '500',
+        marginLeft: 6,
     },
-    noticeDate: {
+    dateValue: {
+        fontSize: 14,
+        color: colors.textPrimary,
+        fontWeight: '600',
+    },
+    reopenLabel: {
+        fontSize: 15,
+        color: colors.success,
+        fontWeight: '600',
+        marginLeft: 6,
+    },
+    reopenValue: {
+        fontSize: 15,
+        color: colors.success,
+        fontWeight: '700',
+    },
+    postedDate: {
         fontSize: 12,
         color: colors.textLight,
+        marginTop: 12,
+        fontStyle: 'italic',
     },
     emptyState: {
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 60,
+        paddingVertical: 80,
     },
     emptyText: {
         fontSize: 18,
