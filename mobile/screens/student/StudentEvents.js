@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Card from '../../components/Card';
+import LoadingSpinner from '../../components/LoadingSpinner';
+import { studentService } from '../../services/studentService';
 import colors from '../../styles/colors';
 
 const { width } = Dimensions.get('window');
@@ -168,6 +170,7 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 20,
+        paddingBottom: 100, // Extra padding for tab bar
     },
     eventCard: {
         padding: 0,

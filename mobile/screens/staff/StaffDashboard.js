@@ -8,6 +8,7 @@ import PremiumCard from '../../components/PremiumCard';
 import Marquee from '../../components/Marquee';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import colors from '../../styles/colors';
+import { safeNavigate } from '../../utils/safeNavigation';
 
 const StaffDashboard = ({ navigation }) => {
     const { user } = useAuth();
@@ -90,6 +91,7 @@ const StaffDashboard = ({ navigation }) => {
     const features = [
         { title: 'Students', screen: 'Students', icon: 'account-group-outline', color: colors.primary },
         { title: 'Attendance', screen: 'Attendance', icon: 'account-check-outline', color: colors.secondary },
+        { title: 'Gallery', screen: 'Gallery', icon: 'image-multiple', color: '#9B59B6' },
         { title: 'Timetable', screen: 'Timetable', icon: 'calendar-clock', color: colors.accent },
         { title: 'Exams', screen: 'Exams', icon: 'file-document-outline', color: colors.warning },
         { title: 'Internals', screen: 'Internals', icon: 'book-edit-outline', color: colors.info },
@@ -114,7 +116,7 @@ const StaffDashboard = ({ navigation }) => {
                 title="Staff Portal" 
                 subtitle="Faculty Management"
                 showAvatar={true}
-                onAvatarPress={() => navigation.navigate('Profile')}
+                onAvatarPress={() => safeNavigate(navigation, 'Profile')}
                 user={user}
                 profile={user?.profile}
             />
@@ -146,7 +148,7 @@ const StaffDashboard = ({ navigation }) => {
                             <TouchableOpacity
                                 key={index}
                                 style={styles.featureCard}
-                                onPress={() => navigation.navigate(feature.screen)}
+                                onPress={() => safeNavigate(navigation, feature.screen)}
                                 activeOpacity={0.7}
                             >
                                 <View style={[styles.iconBackground, { backgroundColor: feature.color + '15' }]}>
@@ -167,7 +169,7 @@ const StaffDashboard = ({ navigation }) => {
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
                             <Text style={styles.sectionTitle}>Upcoming Exams</Text>
-                            <TouchableOpacity onPress={() => navigation.navigate('Exams')}>
+                            <TouchableOpacity onPress={() => safeNavigate(navigation, 'Exams')}>
                                 <Text style={styles.seeAllText}>See All</Text>
                             </TouchableOpacity>
                         </View>
@@ -196,7 +198,7 @@ const StaffDashboard = ({ navigation }) => {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Recent Notices</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('Notices')}>
+                        <TouchableOpacity onPress={() => safeNavigate(navigation, 'Notices')}>
                             <Text style={styles.seeAllText}>See All</Text>
                         </TouchableOpacity>
                     </View>

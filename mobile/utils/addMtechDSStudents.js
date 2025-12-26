@@ -3,7 +3,7 @@
 
 import { db } from '../services/firebaseConfig';
 import { collection, addDoc, setDoc, doc, getDoc } from 'firebase/firestore';
-import { M_TECH_DS_1ST_YEAR_STUDENTS, formatStudentData } from './mtechDSStudentList';
+import { M_TECH_DS_1ST_YEAR_STUDENTS, formatMtechDSStudentData, formatStudentData } from './mtechDSStudentList';
 import { studentStorageService } from '../services/studentStorageService';
 import { getStudentCollectionName } from './collectionMapper';
 

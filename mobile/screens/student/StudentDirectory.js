@@ -7,6 +7,7 @@ import { studentService } from '../../services/studentService';
 import Card from '../../components/Card';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import colors from '../../styles/colors';
+import { isSmallScreen } from '../../utils/responsive';
 
 const { width } = Dimensions.get('window');
 
@@ -33,7 +34,15 @@ const StudentDirectory = () => {
             console.log('Program:', program);
             console.log('Year:', year, '(type:', typeof year, ')');
             
-            const data = await studentService.getStudentsByProgram(program, year);
+            // Map program names to database format
+            let mappedProgram = program;
+            if (program === 'M.Tech DS') {
+                mappedProgram = 'M.Tech Data Analytics';
+            } else if (program === 'M.Sc DS') {
+                mappedProgram = 'M.Sc Data Analytics';
+            }
+            
+            const data = await studentService.getStudentsByProgram(mappedProgram, year);
             
             console.log('=== Results ===');
             console.log('Received students data:', data?.length || 0, 'students');
@@ -143,31 +152,121 @@ const StudentDirectory = () => {
                     title="M.Sc – Master of Science"
                     items={[
                         { label: 'M.Sc Computer Science – 1st Year', name: 'M.Sc CS', year: 1, category: 'PG' },
-                        { label: 'M.Sc Computer Science – 2nd Year', name: 'M.Sc CS', year: 2, category: 'PG' },
-                        { label: 'M.Sc CS Integrated – 5th Year', name: 'M.Sc CS Integrated', year: 5, category: 'PG' },
-                        { label: 'M.Sc CS Integrated – 6th Year', name: 'M.Sc CS Integrated', year: 6, category: 'PG' },
+                        { 
+                            label: 'M.Sc Computer Science – 2nd Year', 
+                            name: 'M.Sc CS', 
+                            year: 2, 
+                            category: 'PG',
+                            classRepBoy: 'Not assigned',
+                            classRepGirl: 'Not assigned',
+                            staffCoordinator: 'Not assigned',
+                            courseCoordinator: 'M.Sc Programmes'
+                        },
+                        { 
+                            label: 'M.Sc CS Integrated – 5th Year', 
+                            name: 'M.Sc CS Integrated', 
+                            year: 5, 
+                            category: 'PG',
+                            classRepBoy: 'Not assigned',
+                            classRepGirl: 'Not assigned',
+                            staffCoordinator: 'Not assigned',
+                            courseCoordinator: 'M.Sc Programmes'
+                        },
+                        { 
+                            label: 'M.Sc CS Integrated – 6th Year', 
+                            name: 'M.Sc CS Integrated', 
+                            year: 6, 
+                            category: 'PG',
+                            classRepBoy: 'Not assigned',
+                            classRepGirl: 'Not assigned',
+                            staffCoordinator: 'Not assigned',
+                            courseCoordinator: 'M.Sc Programmes'
+                        },
                     ]}
                 />
                 <ProgramSection
                     title="M.Sc Data Science"
                     items={[
-                        { label: 'M.Sc Data Science – 1st Year', name: 'M.Sc DS', year: 1, category: 'PG' },
+                        { 
+                            label: 'M.Sc Data Science – 1st Year', 
+                            name: 'M.Sc Data Analytics', 
+                            year: 1, 
+                            category: 'PG',
+                            classRepBoy: 'Not assigned',
+                            classRepGirl: 'Not assigned',
+                            staffCoordinator: 'Not assigned',
+                            courseCoordinator: 'M.Sc Data Science'
+                        },
                     ]}
                 />
                 <ProgramSection
                     title="MCA – Master of Applications"
                     items={[
-                        { label: 'MCA – 1st Year', name: 'MCA', year: 1, category: 'PG' },
-                        { label: 'MCA – 2nd Year', name: 'MCA', year: 2, category: 'PG' },
+                        { 
+                            label: 'MCA – 1st Year', 
+                            name: 'MCA', 
+                            year: 1, 
+                            category: 'PG',
+                            classRepBoy: 'Not assigned',
+                            classRepGirl: 'Not assigned',
+                            staffCoordinator: 'Not assigned',
+                            courseCoordinator: 'MCA Programme'
+                        },
+                        { 
+                            label: 'MCA – 2nd Year', 
+                            name: 'MCA', 
+                            year: 2, 
+                            category: 'PG',
+                            classRepBoy: 'Not assigned',
+                            classRepGirl: 'Not assigned',
+                            staffCoordinator: 'Not assigned',
+                            courseCoordinator: 'MCA Programme'
+                        },
                     ]}
                 />
                 <ProgramSection
                     title="M.Tech – Master of Technology"
                     items={[
-                        { label: 'M.Tech Data Science & AI – 1st Year', name: 'M.Tech DS', year: 1, category: 'PG' },
-                        { label: 'M.Tech NIS – 2nd Year', name: 'M.Tech NIS', year: 2, category: 'PG' },
-                        { label: 'M.Tech CSE – 1st Year', name: 'M.Tech CSE', year: 1, category: 'PG' },
-                        { label: 'M.Tech CSE – 2nd Year', name: 'M.Tech CSE', year: 2, category: 'PG' },
+                        { 
+                            label: 'M.Tech Data Science & AI – 1st Year', 
+                            name: 'M.Tech Data Analytics', 
+                            year: 1, 
+                            category: 'PG',
+                            classRepBoy: 'Not assigned',
+                            classRepGirl: 'Not assigned',
+                            staffCoordinator: 'Not assigned',
+                            courseCoordinator: 'M.Tech Data Analytics'
+                        },
+                        { 
+                            label: 'M.Tech NIS – 2nd Year', 
+                            name: 'M.Tech NIS', 
+                            year: 2, 
+                            category: 'PG',
+                            classRepBoy: 'Not assigned',
+                            classRepGirl: 'Not assigned',
+                            staffCoordinator: 'Not assigned',
+                            courseCoordinator: 'M.Tech NIS'
+                        },
+                        { 
+                            label: 'M.Tech CSE – 1st Year', 
+                            name: 'M.Tech CSE', 
+                            year: 1, 
+                            category: 'PG',
+                            classRepBoy: 'Not assigned',
+                            classRepGirl: 'Not assigned',
+                            staffCoordinator: 'Not assigned',
+                            courseCoordinator: 'M.Tech CSE'
+                        },
+                        { 
+                            label: 'M.Tech CSE – 2nd Year', 
+                            name: 'M.Tech CSE', 
+                            year: 2, 
+                            category: 'PG',
+                            classRepBoy: 'Not assigned',
+                            classRepGirl: 'Not assigned',
+                            staffCoordinator: 'Not assigned',
+                            courseCoordinator: 'M.Tech CSE'
+                        },
                     ]}
                 />
             </ScrollView>
@@ -176,7 +275,10 @@ const StudentDirectory = () => {
 
     const renderDirectory = () => (
         <Animated.View style={[styles.directoryContainer, { opacity: fadeAnim }]}>
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView 
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={true}
+            >
                 {loading ? (
                     <View style={styles.emptyState}>
                         <LoadingSpinner />
@@ -206,67 +308,59 @@ const StudentDirectory = () => {
                                 {students.length} {students.length === 1 ? 'Student' : 'Students'}
                             </Text>
                         </View>
-                        {students.map((student, index) => {
-                            // Debug: Log each student being rendered
-                            if (index === 0) {
-                                console.log('Rendering first student:', {
-                                    id: student.id,
-                                    name: student.name,
-                                    registerNumber: student.registerNumber,
-                                    program: student.program,
-                                    year: student.year,
-                                });
-                            }
+                        
+                        {/* Table Format */}
+                        <Card style={styles.tableCard}>
+                            {/* Table Header */}
+                            <View style={styles.tableHeader}>
+                                <Text style={[styles.tableHeaderText, styles.snoColumn]}>S. No</Text>
+                                <Text style={[styles.tableHeaderText, styles.regnoColumn]}>Reg No</Text>
+                                <Text style={[styles.tableHeaderText, styles.nameColumn]}>Name</Text>
+                            </View>
                             
-                            return (
-                                <TouchableOpacity
-                                    key={student.id || student.registerNumber || `student-${index}`}
-                                    style={styles.studentCard}
-                                    onPress={() => navigation.navigate('StudentDetail', {
-                                        studentId: student.id,
-                                        studentRegisterNumber: student.registerNumber || student.RegisterNumber
-                                    })}
-                                    activeOpacity={0.7}
-                                >
-                                    <Card>
-                                        <View style={styles.cardContent}>
-                                            <View style={styles.studentInfo}>
-                                                <View style={styles.avatar}>
-                                                    <Text style={styles.avatarText}>
-                                                        {student.name?.charAt(0)?.toUpperCase() || '?'}
-                                                    </Text>
-                                                </View>
-                                                <View style={styles.details}>
-                                                    <Text style={styles.studentName}>
-                                                        {student.name || student.Name || 'Unknown'}
-                                                    </Text>
-                                                    <Text style={styles.regNo}>
-                                                        {student.registerNumber || student.RegisterNumber || 'No Reg. No.'}
-                                                    </Text>
-                                                </View>
-                                            </View>
-                                            <MaterialCommunityIcons name="chevron-right" size={20} color={colors.gray400} />
-                                        </View>
-                                    </Card>
-                                </TouchableOpacity>
-                            );
-                        })}
+                            {/* Table Rows */}
+                            {students.map((student, index) => {
+                                return (
+                                    <TouchableOpacity
+                                        key={student.id || student.registerNumber || `student-${index}`}
+                                        style={[
+                                            styles.tableRow,
+                                            index % 2 === 0 && styles.tableRowEven
+                                        ]}
+                                        onPress={() => navigation.navigate('StudentDetail', {
+                                            studentId: student.id,
+                                            studentRegisterNumber: student.registerNumber || student.RegisterNumber
+                                        })}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Text style={[styles.tableCell, styles.snoColumn]}>
+                                            {index + 1}
+                                        </Text>
+                                        <Text style={[styles.tableCell, styles.regnoColumn]}>
+                                            {student.registerNumber || student.RegisterNumber || 'N/A'}
+                                        </Text>
+                                        <Text style={[styles.tableCell, styles.nameColumn]} numberOfLines={1}>
+                                            {student.name || student.Name || 'Unknown'}
+                                        </Text>
+                                    </TouchableOpacity>
+                                );
+                            })}
+                        </Card>
                     </>
                 )}
 
-                {/* Class Representatives and Coordinators */}
-                {selectedClass && (
+                {/* Class Representatives and Coordinators - Always show when students are loaded */}
+                {selectedClass && students.length > 0 && (
                     <View style={styles.representativesSection}>
-                        <Text style={styles.representativesTitle}>Class Representatives & Coordinators</Text>
                         <Card style={styles.representativesCard}>
                             <View style={styles.representativeRow}>
-                                <Text style={styles.representativeLabel}>Class Representative (Boy):</Text>
+                                <Text style={styles.representativeLabel}>Class Reps (Boy):</Text>
                                 <Text style={styles.representativeValue}>
                                     {selectedClass.classRepBoy || 'Not assigned'}
                                 </Text>
                             </View>
                             <View style={styles.representativeRow}>
-                                <Text style={styles.representativeLabel}>Class Representative (Girl):</Text>
+                                <Text style={styles.representativeLabel}>Class Reps (Girl):</Text>
                                 <Text style={styles.representativeValue}>
                                     {selectedClass.classRepGirl || 'Not assigned'}
                                 </Text>
@@ -446,7 +540,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        padding: 20,
+        padding: isSmallScreen() ? 16 : 20, // Less padding on small screens
+        paddingBottom: 120, // Extra padding to ensure class reps section and tab bar don't overlap
     },
     studentCard: {
         flexDirection: 'row',
@@ -582,6 +677,57 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         flex: 1,
         textAlign: 'right',
+    },
+    // Table Styles
+    tableCard: {
+        padding: 0,
+        overflow: 'hidden',
+        marginTop: 16,
+    },
+    tableHeader: {
+        flexDirection: 'row',
+        backgroundColor: colors.primary,
+        paddingVertical: isSmallScreen() ? 10 : 12,
+        paddingHorizontal: isSmallScreen() ? 8 : 12,
+        borderBottomWidth: 2,
+        borderBottomColor: colors.primaryDark,
+    },
+    tableHeaderText: {
+        fontSize: isSmallScreen() ? 11 : 12, // Smaller font for better fit on small screens
+        fontWeight: '700',
+        color: colors.white,
+        textTransform: 'uppercase',
+    },
+    tableRow: {
+        flexDirection: 'row',
+        paddingVertical: isSmallScreen() ? 10 : 12,
+        paddingHorizontal: isSmallScreen() ? 8 : 12,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.gray100,
+        minHeight: isSmallScreen() ? 40 : 44,
+    },
+    tableRowEven: {
+        backgroundColor: colors.gray50,
+    },
+    tableCell: {
+        fontSize: 12, // Smaller font for better fit on small screens
+        color: colors.textPrimary,
+        paddingVertical: 4,
+    },
+    snoColumn: {
+        width: 50, // Smaller width for small screens
+        minWidth: 40,
+        textAlign: 'center',
+    },
+    regnoColumn: {
+        flex: 1.2,
+        paddingHorizontal: 4, // Less padding on small screens
+        minWidth: 80,
+    },
+    nameColumn: {
+        flex: 2,
+        paddingHorizontal: 4, // Less padding on small screens
+        minWidth: 100,
     },
 });
 

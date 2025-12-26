@@ -28,6 +28,9 @@ export const M_TECH_DS_1ST_YEAR_STUDENTS = [
     { registerNumber: '25MTNISPY0026', name: 'Sivaprrasath S J' },
 ];
 
+// Export formatStudentData alias for backward compatibility
+export const formatStudentData = formatMtechDSStudentData;
+
 /**
  * Helper function to format student data for Firestore
  */

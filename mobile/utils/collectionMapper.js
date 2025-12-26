@@ -86,6 +86,8 @@ export const getCollectionFromDisplayName = (programDisplayName, year) => {
         'master of computer applications': { course: 'PG', collection: `students_pg_mca_${yearNum}` },
         'mtech data analytics': { course: 'PG', collection: `students_pg_mtech_da_${yearNum}` },
         'mtech ds & ai': { course: 'PG', collection: `students_pg_mtech_da_${yearNum}` },
+        'mtech ds': { course: 'PG', collection: `students_pg_mtech_da_${yearNum}` },
+        'm.tech ds': { course: 'PG', collection: `students_pg_mtech_da_${yearNum}` },
         'mtech nis': { course: 'PG', collection: `students_pg_mtech_nis_${yearNum}` },
         'mtech cse': { course: 'PG', collection: `students_pg_mtech_cse_${yearNum}` },
         'm.tech cse': { course: 'PG', collection: `students_pg_mtech_cse_${yearNum}` },

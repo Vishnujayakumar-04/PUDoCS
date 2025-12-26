@@ -1,5 +1,6 @@
 import { db } from './firebaseConfig';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs, orderBy, limit, setDoc } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { studentStorageService } from './studentStorageService';
 import { getCollectionFromDisplayName } from '../utils/collectionMapper';
 
@@ -40,70 +41,122 @@ export const studentService = {
         return null;
     },
 
-    // Get timetable
-    getTimetable: async (program, year) => {
-        try {
-            const q = query(
-                collection(db, "timetables"),
-                where("program", "==", program || "M.Sc. Computer Science"),
-                where("year", "==", year || "I")
-            );
-            const snapshot = await getDocs(q);
-            if (!snapshot.empty) {
-                return snapshot.docs[0].data();
+    // Get timetable - fetches from database first (to get latest updates), then falls back to local storage
+    getTimetable: async (program, year, forceRefresh = false) => {
+        // Normalize year to handle both string and number formats
+        const normalizedYear = typeof year === 'string' ? 
+            (year === 'I' ? 1 : year === 'II' ? 2 : year === 'III' ? 3 : year === 'IV' ? 4 : parseInt(year, 10)) : 
+            year;
+        
+        // Try database first to get latest updates (unless forceRefresh is false and we have cached data)
+        if (!forceRefresh) {
+            // Check local storage first for quick response
+            try {
+                const storageKeys = [
+                    `timetable_${program}_${normalizedYear}`,
+                    `timetable_${program}_${year}`,
+                    `timetable_${program}_I`, // Try string format for year 1
+                ];
+                
+                for (const storageKey of storageKeys) {
+                    const data = await AsyncStorage.getItem(storageKey);
+                    if (data) {
+                        const parsed = JSON.parse(data);
+                        // Return cached data immediately for faster response
+                        // But also fetch from database in background to update cache
+                        setTimeout(async () => {
+                            try {
+                                await studentService.getTimetable(program, year, true);
+                            } catch (e) {
+                                // Silent background update
+                            }
+                        }, 100);
+                        return parsed;
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching timetable from local storage:", error);
             }
-        } catch (error) {
-            console.error("Error fetching timetable:", error);
         }
 
-        // Fallback to mock data if Firestore is empty/fails
-        return {
-            program: "M.Sc. Computer Science",
-            year: "I",
-            schedule: [
-                {
-                    day: "Monday",
-                    slots: [
-                        { startTime: "09:30 AM", endTime: "10:30 AM", subject: "Advanced Database Systems", type: "Lecture", faculty: { name: "DR SUKHVINDER SINGH" }, room: "SH310" },
-                        { startTime: "10:30 AM", endTime: "11:30 AM", subject: "Advanced Database Systems", type: "Lecture", faculty: { name: "DR SUKHVINDER SINGH" }, room: "SH310" },
-                        { startTime: "11:30 AM", endTime: "12:30 PM", subject: "Intro to A.I. & Expert Systems", type: "Softcore", faculty: { name: "Dr V UMA" }, room: "SH310" },
-                        { startTime: "01:30 PM", endTime: "02:30 PM", subject: "Practical III - OS Lab", type: "Lab", faculty: { name: "Dr R SUNITHA" }, room: "Lab 1" },
-                        { startTime: "02:30 PM", endTime: "03:30 PM", subject: "Practical III - OS Lab", type: "Lab", faculty: { name: "Dr R SUNITHA" }, room: "Lab 1" },
-                        { startTime: "03:30 PM", endTime: "04:30 PM", subject: "Practical III - OS Lab", type: "Lab", faculty: { name: "Dr R SUNITHA" }, room: "Lab 1" },
-                    ]
-                },
-                {
-                    day: "Tuesday",
-                    slots: [
-                        { startTime: "09:30 AM", endTime: "10:30 AM", subject: "Modern Operating Systems", type: "Lecture", faculty: { name: "Dr R SUNITHA" }, room: "SH310" },
-                        { startTime: "10:30 AM", endTime: "11:30 AM", subject: "Modern Operating Systems", type: "Lecture", faculty: { name: "Dr R SUNITHA" }, room: "SH310" },
-                        { startTime: "11:30 AM", endTime: "12:30 PM", subject: "Optimization Techniques", type: "Lecture", faculty: { name: "Dr R SUBRAMANIAN" }, room: "SH310" },
-                    ]
-                },
-                {
-                    day: "Wednesday",
-                    slots: [
-                        { startTime: "09:30 AM", endTime: "11:30 AM", subject: "Advanced Database Systems", type: "Lecture", faculty: { name: "DR SUKHVINDER SINGH" }, room: "SH310" },
-                        { startTime: "11:30 AM", endTime: "12:30 PM", subject: "Intro to A.I. & Expert Systems", type: "Softcore", faculty: { name: "Dr V UMA" }, room: "SH310" },
-                        { startTime: "12:30 PM", endTime: "01:30 PM", subject: "Intro to A.I. & Expert Systems", type: "Softcore", faculty: { name: "Dr V UMA" }, room: "SH310" },
-                    ]
-                },
-                {
-                    day: "Thursday",
-                    slots: [
-                        { startTime: "09:30 AM", endTime: "12:30 PM", subject: "Practical IV - DB Lab", type: "Lab", faculty: { name: "DR SUKHVINDER SINGH" }, room: "Lab 2" },
-                        { startTime: "02:30 PM", endTime: "04:30 PM", subject: "Social Network Analytics", type: "Softcore", faculty: { name: "Dr R SUNITHA" }, room: "SH310" },
-                    ]
-                },
-                {
-                    day: "Friday",
-                    slots: [
-                        { startTime: "10:30 AM", endTime: "11:30 AM", subject: "Modern Operating Systems", type: "Lecture", faculty: { name: "Dr R SUNITHA" }, room: "SH310" },
-                        { startTime: "11:30 AM", endTime: "01:30 PM", subject: "Optimization Techniques", type: "Lecture", faculty: { name: "Dr R SUBRAMANIAN" }, room: "SH310" },
-                    ]
+        // Try database to get latest data
+        try {
+            const queries = [
+                query(
+                    collection(db, "timetables"),
+                    where("program", "==", program),
+                    where("year", "==", normalizedYear)
+                ),
+                query(
+                    collection(db, "timetables"),
+                    where("program", "==", program),
+                    where("year", "==", year) // Try original format too
+                )
+            ];
+
+            // Use Promise.race to add timeout
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Query timeout')), 5000)
+            );
+
+            for (const q of queries) {
+                try {
+                    const snapshot = await Promise.race([
+                        getDocs(q),
+                        timeoutPromise
+                    ]);
+                    
+                    if (!snapshot.empty) {
+                        const timetableData = snapshot.docs[0].data();
+                        // Save to local storage for offline access
+                        const storageKeys = [
+                            `timetable_${program}_${normalizedYear}`,
+                            `timetable_${program}_${year}`,
+                        ];
+                        for (const storageKey of storageKeys) {
+                            try {
+                                await AsyncStorage.setItem(storageKey, JSON.stringify(timetableData));
+                            } catch (e) {
+                                console.error("Error saving to local storage:", e);
+                            }
+                        }
+                        return timetableData;
+                    }
+                } catch (queryError) {
+                    // Skip this query and try next one
+                    if (queryError.message !== 'Query timeout') {
+                        console.error("Error in query:", queryError);
+                    }
+                    continue;
                 }
-            ]
-        };
+            }
+        } catch (error) {
+            console.error("Error fetching timetable from database:", error);
+        }
+
+        // If database fetch failed and we're not forcing refresh, try local storage as fallback
+        if (!forceRefresh) {
+            try {
+                const storageKeys = [
+                    `timetable_${program}_${normalizedYear}`,
+                    `timetable_${program}_${year}`,
+                    `timetable_${program}_I`,
+                ];
+                
+                for (const storageKey of storageKeys) {
+                    const data = await AsyncStorage.getItem(storageKey);
+                    if (data) {
+                        const parsed = JSON.parse(data);
+                        return parsed;
+                    }
+                }
+            } catch (error) {
+                console.error("Error fetching timetable from local storage (fallback):", error);
+            }
+        }
+
+        // Return null if nothing found
+        return null;
     },
 
     // Get exams

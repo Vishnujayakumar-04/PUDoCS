@@ -1,0 +1,116 @@
+{
+  "program": "B.Tech",
+  "year": 1,
+  "class": "I BTECH CS",
+  "room": "SH 221 - I Floor",
+  "schedule": [
+    {
+      "day": "Monday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Programming for Problem Solving",
+          "subjectCode": "CSES204",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr VAITHEKI"
+          },
+          "room": "SH 221"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Programming for Problem Solving",
+          "subjectCode": "CSES204",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr VAITHEKI"
+          },
+          "room": "SH 221"
+        }
+      ]
+    },
+    {
+      "day": "Tuesday",
+      "slots": []
+    },
+    {
+      "day": "Wednesday",
+      "slots": [
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Programming for Problem Solving",
+          "subjectCode": "CSES204",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr VAITHEKI"
+          },
+          "room": "SH 221"
+        },
+        {
+          "startTime": "01:30 PM",
+          "endTime": "02:30 PM",
+          "subject": "Programming for Problem Solving Lab",
+          "subjectCode": "CSEL202",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr VAITHEKI, Dr G KRISHNAPRIYA"
+          },
+          "room": "SH 221"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Programming for Problem Solving Lab",
+          "subjectCode": "CSEL202",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr VAITHEKI, Dr G KRISHNAPRIYA"
+          },
+          "room": "SH 221"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Programming for Problem Solving Lab",
+          "subjectCode": "CSEL202",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr VAITHEKI, Dr G KRISHNAPRIYA"
+          },
+          "room": "SH 221"
+        }
+      ]
+    },
+    {
+      "day": "Thursday",
+      "slots": []
+    },
+    {
+      "day": "Friday",
+      "slots": []
+    }
+  ],
+  "subjects": [
+    {
+      "code": "CSES204",
+      "name": "Programming for Problem Solving",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr VAITHEKI"
+    },
+    {
+      "code": "CSEL202",
+      "name": "Programming for Problem Solving Lab",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr VAITHEKI, Dr G KRISHNAPRIYA"
+    }
+  ],
+  "notes": [
+    "PHY, PHY LAB, ENG, MATHS II, YOGA, UHV II, WORKSHOP, SPORTS – OTHER DEPARTMENT"
+  ]
+}
+

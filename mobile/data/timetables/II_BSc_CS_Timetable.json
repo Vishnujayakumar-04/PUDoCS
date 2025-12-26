@@ -1,0 +1,385 @@
+{
+  "program": "B.Sc CS",
+  "year": 2,
+  "class": "II B.Sc CS",
+  "room": "103, Ground Floor – Annexe Building",
+  "schedule": [
+    {
+      "day": "Monday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Computer System Architecture",
+          "subjectCode": "BCMA251",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr S RAVI"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Design & Analysis of Algorithms",
+          "subjectCode": "BCMA252",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr G KRISHNAPRIYA"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Computer System Architecture Lab",
+          "subjectCode": "BCMA251L",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr S RAVI"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Computer System Architecture Lab",
+          "subjectCode": "BCMA251L",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr S RAVI"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Embedded Application Development",
+          "subjectCode": "BCMI254",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr AMRITHA SARAVANAN"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Embedded Application Development",
+          "subjectCode": "BCMI254",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr AMRITHA SARAVANAN"
+          },
+          "room": "103"
+        }
+      ]
+    },
+    {
+      "day": "Tuesday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Design & Analysis of Algorithms",
+          "subjectCode": "BCMA252",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr G KRISHNAPRIYA"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Design & Analysis of Algorithms",
+          "subjectCode": "BCMA252",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr G KRISHNAPRIYA"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Database Management Systems",
+          "subjectCode": "BCMA253",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr SL JAYALAKSHMI"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Database Management Systems",
+          "subjectCode": "BCMA253",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr SL JAYALAKSHMI"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Design & Analysis of Algorithms Lab",
+          "subjectCode": "BCMA252L",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr G KRISHNAPRIYA"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Design & Analysis of Algorithms Lab",
+          "subjectCode": "BCMA252L",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr G KRISHNAPRIYA"
+          },
+          "room": "103"
+        }
+      ]
+    },
+    {
+      "day": "Wednesday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Database Management Systems",
+          "subjectCode": "BCMA253",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr SL JAYALAKSHMI"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Computer System Architecture",
+          "subjectCode": "BCMA251",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr S RAVI"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Computer System Architecture",
+          "subjectCode": "BCMA251",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr S RAVI"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "01:30 PM",
+          "endTime": "02:30 PM",
+          "subject": "Community Engagement & Service",
+          "subjectCode": "BCMA255",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "FACULTY ADVISOR"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Community Engagement & Service",
+          "subjectCode": "BCMA255",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "FACULTY ADVISOR"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Community Engagement & Service",
+          "subjectCode": "BCMA255",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "FACULTY ADVISOR"
+          },
+          "room": "103"
+        }
+      ]
+    },
+    {
+      "day": "Thursday",
+      "slots": [
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Database Systems Lab",
+          "subjectCode": "BCMA253L",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr SL JAYALAKSHMI"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Database Systems Lab",
+          "subjectCode": "BCMA253L",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr SL JAYALAKSHMI"
+          },
+          "room": "103"
+        }
+      ]
+    },
+    {
+      "day": "Friday",
+      "slots": [
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Embedded Application Development",
+          "subjectCode": "BCMI254",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr AMRITHA SARAVANAN"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Embedded Application Development",
+          "subjectCode": "BCMI254",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr AMRITHA SARAVANAN"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Embedded Application Development",
+          "subjectCode": "BCMI254",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr AMRITHA SARAVANAN"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Community Engagement & Service",
+          "subjectCode": "BCMA255",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "FACULTY ADVISOR"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Community Engagement & Service",
+          "subjectCode": "BCMA255",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "FACULTY ADVISOR"
+          },
+          "room": "103"
+        },
+        {
+          "startTime": "04:30 PM",
+          "endTime": "05:30 PM",
+          "subject": "Community Engagement & Service",
+          "subjectCode": "BCMA255",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "FACULTY ADVISOR"
+          },
+          "room": "103"
+        }
+      ]
+    }
+  ],
+  "subjects": [
+    {
+      "code": "BCMA251",
+      "name": "Computer System Architecture",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr S RAVI"
+    },
+    {
+      "code": "BCMA251L",
+      "name": "Computer System Architecture Lab",
+      "type": "Hardcore",
+      "hours": 2,
+      "faculty": "Dr S RAVI"
+    },
+    {
+      "code": "BCMA252",
+      "name": "Design & Analysis of Algorithms",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr G KRISHNAPRIYA"
+    },
+    {
+      "code": "BCMA252L",
+      "name": "Design & Analysis of Algorithms Lab",
+      "type": "Hardcore",
+      "hours": 2,
+      "faculty": "Dr G KRISHNAPRIYA"
+    },
+    {
+      "code": "BCMA253",
+      "name": "Database Management Systems",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr SL JAYALAKSHMI"
+    },
+    {
+      "code": "BCMA253L",
+      "name": "Database Systems Lab",
+      "type": "Hardcore",
+      "hours": 2,
+      "faculty": "Dr SL JAYALAKSHMI"
+    },
+    {
+      "code": "BCMA255",
+      "name": "Community Engagement & Service",
+      "type": "Hardcore",
+      "hours": 6,
+      "faculty": "FACULTY ADVISOR"
+    },
+    {
+      "code": "BCMI254",
+      "name": "Embedded Application Development",
+      "type": "Softcore",
+      "hours": 3,
+      "faculty": "Dr AMRITHA SARAVANAN"
+    },
+    {
+      "code": "BCMI254L",
+      "name": "Embedded Application Development Lab",
+      "type": "Softcore",
+      "hours": 2,
+      "faculty": "Dr AMRITHA SARAVANAN"
+    }
+  ]
+}
+

@@ -39,3 +39,27 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Firebase config (contains sensitive keys)
+# Uncomment the line below if you want to exclude firebaseConfig.js
+# services/firebaseConfig.js
+
+# Large assets (optional - you may want to track these)
+# Uncomment if you don't want to track large image files
+# assets/Gallery/
+# assets/Calender/
+# assets/Staff Photos/
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db

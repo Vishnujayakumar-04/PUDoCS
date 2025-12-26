@@ -20,6 +20,8 @@ import StudentDocuments from '../screens/student/StudentDocuments';
 import StudentCalendar from '../screens/student/StudentCalendar';
 import StudentComplaint from '../screens/student/StudentComplaint';
 import StudentDetailView from '../screens/student/StudentDetailView';
+import StudentAttendance from '../screens/student/StudentAttendance';
+import StudentGallery from '../screens/student/StudentGallery';
 
 const Tab = createBottomTabNavigator();
 
@@ -134,6 +136,16 @@ const StudentNavigator = () => {
             <Tab.Screen
                 name="StudentDetail"
                 component={StudentDetailView}
+                options={{ tabBarButton: () => null }}
+            />
+            <Tab.Screen
+                name="Attendance"
+                component={StudentAttendance}
+                options={{ tabBarButton: () => null }}
+            />
+            <Tab.Screen
+                name="Gallery"
+                component={StudentGallery}
                 options={{ tabBarButton: () => null }}
             />
         </Tab.Navigator>

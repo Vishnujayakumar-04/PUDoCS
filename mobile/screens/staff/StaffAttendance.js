@@ -5,188 +5,442 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    Picker,
     Alert,
+    Modal,
+    TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { staffService } from '../../services/staffService';
-import Header from '../../components/Header';
-import Card from '../../components/Card';
-import Button from '../../components/Button';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useAuth } from '../../context/AuthContext';
+import { attendanceService } from '../../services/attendanceService';
+import { officeService } from '../../services/officeService';
+import { studentService } from '../../services/studentService';
+import PremiumHeader from '../../components/PremiumHeader';
+import PremiumCard from '../../components/PremiumCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import CustomPicker from '../../components/CustomPicker';
 import colors from '../../styles/colors';
+import { moderateScale, getFontSize, getPadding, getMargin } from '../../utils/responsive';
 
-const StaffAttendanceScreen = () => {
+const StaffAttendance = ({ navigation }) => {
+    const { user } = useAuth();
+    const [view, setView] = useState('landing'); // 'landing' | 'ug' | 'pg' | 'class' | 'mark'
+    const [selectedClass, setSelectedClass] = useState(null);
+    const [selectedSubject, setSelectedSubject] = useState(null);
     const [students, setStudents] = useState([]);
+    const [subjects, setSubjects] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [attendance, setAttendance] = useState({});
-
-    // Filters
-    const [course, setCourse] = useState('UG');
-    const [program, setProgram] = useState('B.Tech');
-    const [year, setYear] = useState('3');
-    const [section, setSection] = useState('A');
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+    const [markingAttendance, setMarkingAttendance] = useState(false);
+    const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().split('T')[0]);
+    const [attendanceMap, setAttendanceMap] = useState({});
 
     useEffect(() => {
-        loadStudents();
-    }, [course, program, year, section]);
+        if (view === 'class' && selectedClass) {
+            loadClassData();
+        }
+    }, [view, selectedClass]);
 
-    const loadStudents = async () => {
+    const loadClassData = async () => {
         setLoading(true);
         try {
-            const params = { course, program, year, section };
-            const data = await staffService.getStudents(params);
-            setStudents(data);
-
-            // Initialize attendance state
-            const initialAttendance = {};
-            data.forEach(student => {
-                const studentId = student.id || student._id || student.registerNumber;
-                initialAttendance[studentId] = 'Present';
+            // Get students
+            const allStudents = await officeService.getStudents();
+            const filtered = allStudents.filter(s => {
+                const sProgram = (s.program || '').toLowerCase();
+                const sYear = s.year || '';
+                const normalizedYear = typeof sYear === 'string' ? 
+                    (sYear === 'I' ? 1 : sYear === 'II' ? 2 : sYear === 'III' ? 3 : sYear === 'IV' ? 4 : parseInt(sYear, 10)) : 
+                    sYear;
+                
+                const targetYear = typeof selectedClass.year === 'string' ? 
+                    (selectedClass.year === 'I' ? 1 : selectedClass.year === 'II' ? 2 : selectedClass.year === 'III' ? 3 : selectedClass.year === 'IV' ? 4 : parseInt(selectedClass.year, 10)) : 
+                    selectedClass.year;
+                
+                const programMatch = sProgram.includes(selectedClass.name.toLowerCase()) || 
+                                   (selectedClass.name === 'B.Tech' && (sProgram.includes('btech') || sProgram.includes('b.tech'))) ||
+                                   (selectedClass.name === 'B.Sc CS' && (sProgram.includes('bsc') || sProgram.includes('b.sc'))) ||
+                                   (selectedClass.name === 'M.Sc CS' && (sProgram.includes('msc') || sProgram.includes('m.sc'))) ||
+                                   (selectedClass.name === 'M.Tech DS' && (sProgram.includes('mtech') || sProgram.includes('m.tech') || sProgram.includes('data science') || sProgram.includes('data analytics'))) ||
+                                   (selectedClass.name === 'M.Tech CSE' && (sProgram.includes('mtech') || sProgram.includes('m.tech')) && sProgram.includes('cse')) ||
+                                   (selectedClass.name === 'M.Tech NIS' && (sProgram.includes('mtech') || sProgram.includes('m.tech')) && sProgram.includes('nis')) ||
+                                   (selectedClass.name === 'M.Sc Data Analytics' && (sProgram.includes('msc') || sProgram.includes('m.sc')) && (sProgram.includes('data') || sProgram.includes('analytics'))) ||
+                                   (selectedClass.name === 'M.Sc CS Integrated' && (sProgram.includes('msc') || sProgram.includes('m.sc')) && sProgram.includes('integrated')) ||
+                                   (selectedClass.name === 'MCA' && sProgram.includes('mca'));
+                
+                return programMatch && normalizedYear === targetYear;
             });
-            setAttendance(initialAttendance);
+            setStudents(filtered);
+
+            // Get subjects from timetable
+            const timetableSubjects = await attendanceService.getStudentSubjects(
+                selectedClass.name,
+                selectedClass.year
+            );
+            setSubjects(timetableSubjects);
+
+            // Initialize attendance map (all Present by default)
+            const initialMap = {};
+            filtered.forEach(student => {
+                const studentId = student.id || student._id || student.registerNumber;
+                initialMap[studentId] = 'Present';
+            });
+            setAttendanceMap(initialMap);
         } catch (error) {
-            console.error('Error loading students:', error);
+            console.error('Error loading class data:', error);
+            Alert.alert('Error', 'Failed to load class data');
         } finally {
             setLoading(false);
         }
     };
 
-    const toggleAttendance = (studentId) => {
-        setAttendance(prev => ({
+    const handleBack = () => {
+        if (view === 'mark') {
+            setView('class');
+            setSelectedSubject(null);
+        } else if (view === 'class') {
+            setView(selectedClass?.category === 'UG' ? 'ug' : 'pg');
+            setSelectedClass(null);
+        } else if (view === 'ug' || view === 'pg') {
+            setView('landing');
+        }
+    };
+
+    const handleClassSelect = (classItem) => {
+        setSelectedClass(classItem);
+        setView('class');
+    };
+
+    const handleSubjectSelect = (subject) => {
+        setSelectedSubject(subject);
+        setView('mark');
+    };
+
+    const toggleStudentAttendance = (studentId) => {
+        setAttendanceMap(prev => ({
             ...prev,
             [studentId]: prev[studentId] === 'Present' ? 'Absent' : 'Present'
         }));
     };
 
-    const handleSubmitAttendance = async () => {
-        try {
-            const attendanceData = {
-                course,
-                program,
-                year,
-                section,
-                date,
-                records: Object.entries(attendance).map(([studentId, status]) => ({
-                    student: studentId,
-                    status
-                }))
-            };
+    const handleSaveAttendance = async () => {
+        if (!selectedSubject) {
+            Alert.alert('Error', 'Please select a subject');
+            return;
+        }
 
-            await staffService.markAttendance(attendanceData);
-            Alert.alert('Success', 'Attendance marked successfully');
+        setMarkingAttendance(true);
+        try {
+            const markedBy = user?.email || user?.uid || 'Staff';
+            let successCount = 0;
+            let errorCount = 0;
+
+            // Mark attendance for each student one by one
+            for (const student of students) {
+                const studentId = student.id || student._id || student.registerNumber;
+                const status = attendanceMap[studentId] || 'Absent';
+                
+                try {
+                    await attendanceService.addAttendanceRecord(
+                        studentId,
+                        selectedSubject.code,
+                        selectedSubject.name,
+                        attendanceDate,
+                        status,
+                        markedBy
+                    );
+                    successCount++;
+                } catch (error) {
+                    console.error(`Error marking attendance for ${studentId}:`, error);
+                    errorCount++;
+                }
+            }
+
+            if (successCount > 0) {
+                Alert.alert(
+                    'Success',
+                    `Attendance marked for ${successCount} student(s)${errorCount > 0 ? `\n${errorCount} failed` : ''}`
+                );
+                // Reset and go back
+                setView('class');
+                setSelectedSubject(null);
+                setAttendanceMap({});
+            } else {
+                Alert.alert('Error', 'Failed to mark attendance for all students');
+            }
         } catch (error) {
-            Alert.alert('Error', error.message || 'Failed to mark attendance');
+            console.error('Error saving attendance:', error);
+            Alert.alert('Error', 'Failed to save attendance');
+        } finally {
+            setMarkingAttendance(false);
         }
     };
 
-    const getPresentCount = () => {
-        return Object.values(attendance).filter(status => status === 'Present').length;
+    const ProgramSection = ({ title, items }) => (
+        <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>{title}</Text>
+            {items.map((item, index) => (
+                <TouchableOpacity
+                    key={index}
+                    style={styles.listItem}
+                    onPress={() => handleClassSelect(item)}
+                >
+                    <View style={styles.listItemContent}>
+                        <Text style={styles.listItemText}>{item.label}</Text>
+                        <MaterialCommunityIcons name="chevron-right" size={20} color={colors.gray400} />
+                    </View>
+                </TouchableOpacity>
+            ))}
+        </View>
+    );
+
+    const renderLanding = () => (
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            <View style={styles.landingContainer}>
+                <TouchableOpacity
+                    style={styles.categoryCard}
+                    onPress={() => setView('ug')}
+                    activeOpacity={0.7}
+                >
+                    <LinearGradient
+                        colors={[colors.primary, colors.secondary]}
+                        style={styles.categoryGradient}
+                    >
+                        <MaterialCommunityIcons name="school" size={48} color={colors.white} />
+                        <Text style={styles.categoryTitle}>Undergraduate (UG)</Text>
+                        <Text style={styles.categorySubtitle}>B.Tech & B.Sc Programs</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.categoryCard}
+                    onPress={() => setView('pg')}
+                    activeOpacity={0.7}
+                >
+                    <LinearGradient
+                        colors={[colors.accent, colors.info]}
+                        style={styles.categoryGradient}
+                    >
+                        <MaterialCommunityIcons name="school-outline" size={48} color={colors.white} />
+                        <Text style={styles.categoryTitle}>Postgraduate (PG)</Text>
+                        <Text style={styles.categorySubtitle}>M.Sc, M.Tech & MCA Programs</Text>
+                    </LinearGradient>
+                </TouchableOpacity>
+            </View>
+        </ScrollView>
+    );
+
+    const renderUGSelection = () => (
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            <ProgramSection
+                title="B.Tech Programs"
+                items={[
+                    { label: 'B.Tech – 1st Year', name: 'B.Tech', year: 1, category: 'UG' },
+                    { label: 'B.Tech – 2nd Year', name: 'B.Tech', year: 2, category: 'UG' },
+                    { label: 'B.Tech – 3rd Year', name: 'B.Tech', year: 3, category: 'UG' },
+                    { label: 'B.Tech – 4th Year', name: 'B.Tech', year: 4, category: 'UG' },
+                ]}
+            />
+            <ProgramSection
+                title="B.Sc Computer Science"
+                items={[
+                    { label: 'B.Sc CS – 1st Year', name: 'B.Sc CS', year: 1, category: 'UG' },
+                    { label: 'B.Sc CS – 2nd Year', name: 'B.Sc CS', year: 2, category: 'UG' },
+                    { label: 'B.Sc CS – 3rd Year', name: 'B.Sc CS', year: 3, category: 'UG' },
+                ]}
+            />
+        </ScrollView>
+    );
+
+    const renderPGSelection = () => (
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+            <ProgramSection
+                title="M.Tech Programs"
+                items={[
+                    { label: 'M.Tech Data Science & AI – 1st Year', name: 'M.Tech DS', year: 1, category: 'PG' },
+                    { label: 'M.Tech CSE – 1st Year', name: 'M.Tech CSE', year: 1, category: 'PG' },
+                    { label: 'M.Tech CSE – 2nd Year', name: 'M.Tech CSE', year: 2, category: 'PG' },
+                    { label: 'M.Tech NIS – 2nd Year', name: 'M.Tech NIS', year: 2, category: 'PG' },
+                ]}
+            />
+            <ProgramSection
+                title="M.Sc Programs"
+                items={[
+                    { label: 'M.Sc CS – 1st Year', name: 'M.Sc CS', year: 1, category: 'PG' },
+                    { label: 'M.Sc CS – 2nd Year', name: 'M.Sc CS', year: 2, category: 'PG' },
+                    { label: 'M.Sc Data Analytics – 1st Year', name: 'M.Sc Data Analytics', year: 1, category: 'PG' },
+                    { label: 'M.Sc CS Integrated – 5th Year', name: 'M.Sc CS Integrated', year: 5, category: 'PG' },
+                    { label: 'M.Sc CS Integrated – 6th Year', name: 'M.Sc CS Integrated', year: 6, category: 'PG' },
+                ]}
+            />
+            <ProgramSection
+                title="MCA Programs"
+                items={[
+                    { label: 'MCA – 1st Year', name: 'MCA', year: 1, category: 'PG' },
+                    { label: 'MCA – 2nd Year', name: 'MCA', year: 2, category: 'PG' },
+                ]}
+            />
+        </ScrollView>
+    );
+
+    const renderClassView = () => {
+        if (loading) {
+            return <LoadingSpinner />;
+        }
+
+        return (
+            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+                <PremiumCard style={styles.classHeaderCard}>
+                    <Text style={styles.classTitle}>{selectedClass?.label}</Text>
+                    <Text style={styles.classSubtitle}>Select Subject to Mark Attendance</Text>
+                </PremiumCard>
+
+                {subjects.length === 0 ? (
+                    <PremiumCard style={styles.emptyCard}>
+                        <Text style={styles.emptyText}>No subjects found for this class</Text>
+                    </PremiumCard>
+                ) : (
+                    subjects.map((subject, index) => (
+                        <TouchableOpacity
+                            key={index}
+                            style={styles.subjectCard}
+                            onPress={() => handleSubjectSelect(subject)}
+                            activeOpacity={0.7}
+                        >
+                            <PremiumCard style={styles.subjectCardContent}>
+                                <View style={styles.subjectInfo}>
+                                    <Text style={styles.subjectCode}>{subject.code}</Text>
+                                    <Text style={styles.subjectName}>{subject.name}</Text>
+                                    <Text style={styles.subjectDetails}>
+                                        {subject.credits} Credits • {subject.type}
+                                    </Text>
+                                </View>
+                                <MaterialCommunityIcons name="chevron-right" size={24} color={colors.primary} />
+                            </PremiumCard>
+                        </TouchableOpacity>
+                    ))
+                )}
+            </ScrollView>
+        );
     };
 
-    const getAbsentCount = () => {
-        return Object.values(attendance).filter(status => status === 'Absent').length;
-    };
+    const renderMarkAttendance = () => {
+        const presentCount = Object.values(attendanceMap).filter(s => s === 'Present').length;
+        const absentCount = students.length - presentCount;
 
-    if (loading) {
-        return <LoadingSpinner />;
-    }
+        return (
+            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+                <PremiumCard style={styles.markHeaderCard}>
+                    <Text style={styles.markTitle}>Mark Attendance</Text>
+                    <Text style={styles.markSubtitle}>{selectedSubject?.code} - {selectedSubject?.name}</Text>
+                    <Text style={styles.markSubtitle}>{selectedClass?.label}</Text>
+                </PremiumCard>
+
+                <PremiumCard style={styles.dateCard}>
+                    <Text style={styles.dateLabel}>Date</Text>
+                    <TextInput
+                        style={styles.dateInput}
+                        value={attendanceDate}
+                        onChangeText={setAttendanceDate}
+                        placeholder="YYYY-MM-DD"
+                    />
+                </PremiumCard>
+
+                <PremiumCard style={styles.summaryCard}>
+                    <View style={styles.summaryRow}>
+                        <View style={styles.summaryItem}>
+                            <Text style={styles.summaryLabel}>Total</Text>
+                            <Text style={styles.summaryValue}>{students.length}</Text>
+                        </View>
+                        <View style={styles.summaryItem}>
+                            <Text style={styles.summaryLabel}>Present</Text>
+                            <Text style={[styles.summaryValue, { color: colors.success }]}>{presentCount}</Text>
+                        </View>
+                        <View style={styles.summaryItem}>
+                            <Text style={styles.summaryLabel}>Absent</Text>
+                            <Text style={[styles.summaryValue, { color: colors.error }]}>{absentCount}</Text>
+                        </View>
+                    </View>
+                </PremiumCard>
+
+                <PremiumCard style={styles.studentsCard}>
+                    <Text style={styles.studentsTitle}>Students</Text>
+                    {students.map((student, index) => {
+                        const studentId = student.id || student._id || student.registerNumber;
+                        const status = attendanceMap[studentId] || 'Present';
+                        return (
+                            <TouchableOpacity
+                                key={index}
+                                style={[
+                                    styles.studentRow,
+                                    status === 'Absent' && styles.studentRowAbsent
+                                ]}
+                                onPress={() => toggleStudentAttendance(studentId)}
+                                activeOpacity={0.7}
+                            >
+                                <View style={styles.studentInfo}>
+                                    <Text style={styles.studentName}>{student.name}</Text>
+                                    <Text style={styles.studentRegNo}>{student.registerNumber}</Text>
+                                </View>
+                                <View style={[
+                                    styles.statusBadge,
+                                    { backgroundColor: status === 'Present' ? colors.success : colors.error }
+                                ]}>
+                                    <Text style={styles.statusText}>
+                                        {status === 'Present' ? '✓' : '✗'}
+                                    </Text>
+                                </View>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </PremiumCard>
+
+                <TouchableOpacity
+                    style={[styles.saveButton, markingAttendance && styles.saveButtonDisabled]}
+                    onPress={handleSaveAttendance}
+                    disabled={markingAttendance}
+                >
+                    <MaterialCommunityIcons name="check-circle" size={20} color={colors.white} />
+                    <Text style={styles.saveButtonText}>
+                        {markingAttendance ? 'Saving...' : 'Save Attendance'}
+                    </Text>
+                </TouchableOpacity>
+            </ScrollView>
+        );
+    };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <Header title="Attendance" subtitle="Mark Student Attendance" />
-
-            <View style={styles.filterContainer}>
-                <Text style={styles.filterLabel}>Select Class:</Text>
-                <View style={styles.filterRow}>
-                    <View style={styles.filterItem}>
-                        <Picker
-                            selectedValue={course}
-                            onValueChange={setCourse}
-                            style={styles.picker}
-                        >
-                            <Picker.Item label="UG" value="UG" />
-                            <Picker.Item label="PG" value="PG" />
-                        </Picker>
+        <View style={styles.container}>
+            <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.header}>
+                <SafeAreaView edges={['top']}>
+                    <View style={styles.headerContent}>
+                        {view !== 'landing' && (
+                            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+                                <MaterialCommunityIcons name="arrow-left" size={24} color={colors.white} />
+                            </TouchableOpacity>
+                        )}
+                        <View style={styles.titleContainer}>
+                            <Text style={styles.headerTitle}>
+                                {view === 'landing' ? 'Mark Attendance' :
+                                    view === 'ug' ? 'UG Programs' :
+                                        view === 'pg' ? 'PG Programs' :
+                                            view === 'class' ? selectedClass?.label :
+                                                'Mark Attendance'}
+                            </Text>
+                        </View>
+                        <View style={styles.headerRight} />
                     </View>
-                    <View style={styles.filterItem}>
-                        <Picker
-                            selectedValue={year}
-                            onValueChange={setYear}
-                            style={styles.picker}
-                        >
-                            <Picker.Item label="Year 1" value="1" />
-                            <Picker.Item label="Year 2" value="2" />
-                            <Picker.Item label="Year 3" value="3" />
-                            <Picker.Item label="Year 4" value="4" />
-                        </Picker>
-                    </View>
-                </View>
-            </View>
+                </SafeAreaView>
+            </LinearGradient>
 
-            <View style={styles.summaryContainer}>
-                <View style={styles.summaryCard}>
-                    <Text style={styles.summaryValue}>{students.length}</Text>
-                    <Text style={styles.summaryLabel}>Total</Text>
-                </View>
-                <View style={[styles.summaryCard, { backgroundColor: colors.success + '20' }]}>
-                    <Text style={[styles.summaryValue, { color: colors.success }]}>
-                        {getPresentCount()}
-                    </Text>
-                    <Text style={styles.summaryLabel}>Present</Text>
-                </View>
-                <View style={[styles.summaryCard, { backgroundColor: colors.error + '20' }]}>
-                    <Text style={[styles.summaryValue, { color: colors.error }]}>
-                        {getAbsentCount()}
-                    </Text>
-                    <Text style={styles.summaryLabel}>Absent</Text>
-                </View>
+            <View style={styles.content}>
+                {view === 'landing' && renderLanding()}
+                {view === 'ug' && renderUGSelection()}
+                {view === 'pg' && renderPGSelection()}
+                {view === 'class' && renderClassView()}
+                {view === 'mark' && renderMarkAttendance()}
             </View>
-
-            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-                {students.map((student) => {
-                    const studentId = student.id || student._id || student.registerNumber;
-                    return (
-                        <TouchableOpacity
-                            key={studentId}
-                            style={[
-                                styles.studentCard,
-                                attendance[studentId] === 'Absent' && styles.studentCardAbsent
-                            ]}
-                            onPress={() => toggleAttendance(studentId)}
-                        >
-                            <View style={styles.studentInfo}>
-                                <Text style={styles.studentName}>{student.name}</Text>
-                                <Text style={styles.registerNumber}>{student.registerNumber}</Text>
-                            </View>
-                            <View
-                                style={[
-                                    styles.statusBadge,
-                                    {
-                                        backgroundColor:
-                                            attendance[studentId] === 'Present'
-                                                ? colors.success
-                                                : colors.error
-                                    }
-                                ]}
-                            >
-                                <Text style={styles.statusText}>
-                                    {attendance[studentId] === 'Present' ? '✓' : '✗'}
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                    );
-                })}
-            </ScrollView>
-
-            <View style={styles.footer}>
-                <Button
-                    title={`Submit Attendance (${getPresentCount()}/${students.length})`}
-                    onPress={handleSubmitAttendance}
-                />
-            </View>
-        </SafeAreaView>
+        </View>
     );
 };
 
@@ -195,108 +449,271 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.background,
     },
-    filterContainer: {
-        backgroundColor: colors.white,
-        padding: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border,
+    header: {
+        paddingBottom: getPadding(16),
     },
-    filterLabel: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: colors.textPrimary,
-        marginBottom: 8,
-    },
-    filterRow: {
+    headerContent: {
         flexDirection: 'row',
-        gap: 12,
+        alignItems: 'center',
+        paddingHorizontal: getPadding(16),
+        paddingTop: getPadding(8),
     },
-    filterItem: {
-        flex: 1,
-    },
-    picker: {
-        backgroundColor: colors.gray100,
-        borderRadius: 8,
-    },
-    summaryContainer: {
-        flexDirection: 'row',
-        padding: 16,
-        gap: 12,
-    },
-    summaryCard: {
-        flex: 1,
-        backgroundColor: colors.primary + '20',
-        borderRadius: 12,
-        padding: 16,
+    backButton: {
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
         alignItems: 'center',
     },
-    summaryValue: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: colors.primary,
-        marginBottom: 4,
+    titleContainer: {
+        flex: 1,
+        alignItems: 'center',
     },
-    summaryLabel: {
-        fontSize: 12,
-        color: colors.textSecondary,
+    headerTitle: {
+        fontSize: getFontSize(20),
+        fontWeight: '700',
+        color: colors.white,
+    },
+    headerRight: {
+        width: 40,
+    },
+    content: {
+        flex: 1,
     },
     scrollView: {
         flex: 1,
     },
-    scrollContent: {
-        padding: 16,
+    landingContainer: {
+        padding: getPadding(16),
+        gap: 16,
     },
-    studentCard: {
+    categoryCard: {
+        borderRadius: 16,
+        overflow: 'hidden',
+        marginBottom: getMargin(16),
+    },
+    categoryGradient: {
+        padding: getPadding(32),
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    categoryTitle: {
+        fontSize: getFontSize(24),
+        fontWeight: '700',
+        color: colors.white,
+        marginTop: getMargin(12),
+    },
+    categorySubtitle: {
+        fontSize: getFontSize(14),
+        color: colors.white + 'CC',
+        marginTop: getMargin(4),
+    },
+    sectionContainer: {
+        marginBottom: getMargin(24),
+    },
+    sectionTitle: {
+        fontSize: getFontSize(18),
+        fontWeight: '600',
+        color: colors.textPrimary,
+        marginBottom: getMargin(12),
+        paddingHorizontal: getPadding(16),
+    },
+    listItem: {
+        backgroundColor: colors.white,
+        marginHorizontal: getMargin(16),
+        marginBottom: getMargin(8),
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    listItemContent: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        backgroundColor: colors.white,
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 12,
+        padding: getPadding(16),
+    },
+    listItemText: {
+        fontSize: getFontSize(16),
+        fontWeight: '500',
+        color: colors.textPrimary,
+    },
+    classHeaderCard: {
+        margin: getMargin(16),
+        padding: getPadding(16),
+        alignItems: 'center',
+    },
+    classTitle: {
+        fontSize: getFontSize(20),
+        fontWeight: '700',
+        color: colors.textPrimary,
+        marginBottom: getMargin(4),
+    },
+    classSubtitle: {
+        fontSize: getFontSize(14),
+        color: colors.textSecondary,
+    },
+    subjectCard: {
+        marginHorizontal: getMargin(16),
+        marginBottom: getMargin(12),
+    },
+    subjectCardContent: {
+        padding: getPadding(16),
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    subjectInfo: {
+        flex: 1,
+    },
+    subjectCode: {
+        fontSize: getFontSize(16),
+        fontWeight: '700',
+        color: colors.textPrimary,
+    },
+    subjectName: {
+        fontSize: getFontSize(14),
+        color: colors.textSecondary,
+        marginTop: getMargin(4),
+    },
+    subjectDetails: {
+        fontSize: getFontSize(12),
+        color: colors.textLight,
+        marginTop: getMargin(2),
+    },
+    emptyCard: {
+        margin: getMargin(16),
+        padding: getPadding(32),
+        alignItems: 'center',
+    },
+    emptyText: {
+        fontSize: getFontSize(14),
+        color: colors.textSecondary,
+    },
+    markHeaderCard: {
+        margin: getMargin(16),
+        padding: getPadding(16),
+        alignItems: 'center',
+    },
+    markTitle: {
+        fontSize: getFontSize(20),
+        fontWeight: '700',
+        color: colors.textPrimary,
+        marginBottom: getMargin(8),
+    },
+    markSubtitle: {
+        fontSize: getFontSize(14),
+        color: colors.textSecondary,
+        marginBottom: getMargin(4),
+    },
+    dateCard: {
+        marginHorizontal: getMargin(16),
+        marginBottom: getMargin(16),
+        padding: getPadding(16),
+    },
+    dateLabel: {
+        fontSize: getFontSize(14),
+        fontWeight: '600',
+        color: colors.textPrimary,
+        marginBottom: getMargin(8),
+    },
+    dateInput: {
+        backgroundColor: colors.gray100,
+        borderRadius: 8,
+        padding: getPadding(12),
+        fontSize: getFontSize(16),
+        color: colors.textPrimary,
+    },
+    summaryCard: {
+        marginHorizontal: getMargin(16),
+        marginBottom: getMargin(16),
+        padding: getPadding(16),
+    },
+    summaryRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+    },
+    summaryItem: {
+        alignItems: 'center',
+    },
+    summaryLabel: {
+        fontSize: getFontSize(12),
+        color: colors.textSecondary,
+        marginBottom: getMargin(4),
+    },
+    summaryValue: {
+        fontSize: getFontSize(24),
+        fontWeight: '700',
+        color: colors.textPrimary,
+    },
+    studentsCard: {
+        marginHorizontal: getMargin(16),
+        marginBottom: getMargin(16),
+        padding: getPadding(16),
+    },
+    studentsTitle: {
+        fontSize: getFontSize(18),
+        fontWeight: '700',
+        color: colors.textPrimary,
+        marginBottom: getMargin(12),
+    },
+    studentRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: getPadding(12),
+        paddingHorizontal: getPadding(8),
+        marginBottom: getMargin(8),
+        borderRadius: 8,
+        backgroundColor: colors.gray50,
         borderWidth: 2,
         borderColor: colors.success,
-        shadowColor: colors.black,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 3,
     },
-    studentCardAbsent: {
+    studentRowAbsent: {
         borderColor: colors.error,
-        backgroundColor: colors.gray50,
+        backgroundColor: colors.error + '10',
     },
     studentInfo: {
         flex: 1,
     },
     studentName: {
-        fontSize: 16,
+        fontSize: getFontSize(16),
         fontWeight: '600',
         color: colors.textPrimary,
     },
-    registerNumber: {
-        fontSize: 14,
+    studentRegNo: {
+        fontSize: getFontSize(14),
         color: colors.textSecondary,
-        marginTop: 2,
+        marginTop: getMargin(2),
     },
     statusBadge: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        alignItems: 'center',
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         justifyContent: 'center',
+        alignItems: 'center',
     },
     statusText: {
-        fontSize: 20,
+        fontSize: getFontSize(18),
         color: colors.white,
         fontWeight: 'bold',
     },
-    footer: {
-        padding: 16,
-        backgroundColor: colors.white,
-        borderTopWidth: 1,
-        borderTopColor: colors.border,
+    saveButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.primary,
+        marginHorizontal: getMargin(16),
+        marginBottom: getMargin(100),
+        paddingVertical: getPadding(16),
+        borderRadius: 12,
+        gap: getMargin(8),
+    },
+    saveButtonDisabled: {
+        opacity: 0.6,
+    },
+    saveButtonText: {
+        fontSize: getFontSize(16),
+        fontWeight: '600',
+        color: colors.white,
     },
 });
 
-export default StaffAttendanceScreen;
+export default StaffAttendance;

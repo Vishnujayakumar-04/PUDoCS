@@ -1,0 +1,61 @@
+{
+  "program": "M.Sc CS",
+  "year": 2,
+  "class": "II M.Sc CS",
+  "room": "Project-Based (Even Semester)",
+  "academicYear": "2025–2026",
+  "semester": "Even Semester",
+  "type": "Project-Based",
+  "schedule": [],
+  "milestones": [
+    {
+      "milestone": "Zeroth Review",
+      "date": "January 22, 2026",
+      "documents": [
+        "Project Title",
+        "Project Introduction Presentation",
+        "Internship Offer Letter"
+      ],
+      "evaluation": null
+    },
+    {
+      "milestone": "First Review",
+      "date": "February 21, 2026",
+      "documents": [
+        "Presentation on Analysis & Design",
+        "Project Progress Report – I"
+      ],
+      "evaluation": null
+    },
+    {
+      "milestone": "Second Review",
+      "date": "April 07, 2026",
+      "documents": [
+        "Project Demo & Presentation",
+        "Project Progress Report – II"
+      ],
+      "evaluation": null
+    },
+    {
+      "milestone": "Report Submission",
+      "date": "April 28, 2026",
+      "documents": [
+        "Complete Project Report (as per format)"
+      ],
+      "evaluation": null
+    },
+    {
+      "milestone": "Viva-Voce",
+      "date": "May 04, 2026",
+      "documents": [
+        "Final Project Presentation & Demonstration"
+      ],
+      "evaluation": null
+    }
+  ],
+  "notes": [
+    "This is a project-based semester. Students work on their final year projects.",
+    "No regular weekly class schedule. Follow the milestone review dates above."
+  ]
+}
+

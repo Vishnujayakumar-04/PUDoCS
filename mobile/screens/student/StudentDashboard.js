@@ -9,6 +9,7 @@ import Marquee from '../../components/Marquee';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import colors from '../../styles/colors';
 import { moderateScale, getFontSize, getPadding, getMargin } from '../../utils/responsive';
+import { safeNavigate } from '../../utils/safeNavigation';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -95,6 +96,8 @@ const StudentDashboard = ({ navigation }) => {
     // Quick Access Features with icons
     const features = [
         { title: 'Timetable', screen: 'Timetable', icon: 'calendar-clock', color: colors.secondary },
+        { title: 'Attendance', screen: 'Attendance', icon: 'account-check-outline', color: colors.accent },
+        { title: 'Gallery', screen: 'Gallery', icon: 'image-multiple', color: '#9B59B6' },
         { title: 'Notices', screen: 'Notices', icon: 'bell-outline', color: colors.accent },
         { title: 'Exams', screen: 'Exams', icon: 'file-document-outline', color: colors.warning },
         { title: 'Events', screen: 'Events', icon: 'calendar-star', color: colors.info },
@@ -121,7 +124,7 @@ const StudentDashboard = ({ navigation }) => {
                 title="PUDoCS" 
                 subtitle="Department of Computer Science"
                 showAvatar={true}
-                onAvatarPress={() => navigation.navigate('Profile')}
+                onAvatarPress={() => safeNavigate(navigation, 'Profile')}
                 user={user}
                 profile={profile}
             />
@@ -151,7 +154,7 @@ const StudentDashboard = ({ navigation }) => {
                             <PremiumCard
                                 key={index}
                                 style={styles.featureCard}
-                                onPress={() => navigation.navigate(feature.screen)}
+                                onPress={() => safeNavigate(navigation, feature.screen)}
                                 delay={200}
                                 index={index}
                             >
@@ -174,7 +177,7 @@ const StudentDashboard = ({ navigation }) => {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Recent Notices</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('Notices')}>
+                        <TouchableOpacity onPress={() => safeNavigate(navigation, 'Notices')}>
                             <Text style={styles.seeAllText}>See All</Text>
                         </TouchableOpacity>
                     </View>

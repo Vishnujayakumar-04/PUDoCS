@@ -40,16 +40,101 @@ export const staffService = {
     // Get all staff from 'staff' collection
     getAllStaff: async () => {
         try {
-            const staffCollection = collection(db, "staff");
-            const staffSnapshot = await getDocs(staffCollection);
+            const staffCollectionRef = collection(db, "staff");
+            const staffSnapshot = await getDocs(staffCollectionRef);
             
-            return staffSnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
+            const allStaff = staffSnapshot.docs.map(docSnap => ({
+                id: docSnap.id,
+                ...docSnap.data(),
             }));
+
+            // Return only active staff by default
+            return allStaff.filter(staff => staff.isActive !== false);
         } catch (error) {
             console.error("Error fetching all staff:", error);
             return [];
+        }
+    },
+
+    // Add a new staff member
+    addStaff: async (staff) => {
+        try {
+            const email = staff.email?.toLowerCase().trim();
+            if (!email) {
+                throw new Error('Email is required for staff');
+            }
+
+            const now = new Date().toISOString();
+
+            const staffPayload = {
+                name: staff.name?.trim() || '',
+                email,
+                designation: staff.designation || '',
+                department: staff.department || 'Computer Science',
+                subjectsHandled: Array.isArray(staff.subjectsHandled) ? staff.subjectsHandled : [],
+                courseCoordinator: staff.courseCoordinator || '',
+                imageKey: staff.imageKey || null,
+                photoPath: staff.photoPath || null,
+                role: 'Staff',
+                isActive: staff.isActive !== false,
+                passwordChanged: staff.passwordChanged || false,
+                createdAt: staff.createdAt || now,
+                updatedAt: now,
+            };
+
+            const staffDocRef = doc(db, "staff", email);
+            await setDoc(staffDocRef, staffPayload, { merge: true });
+
+            return { id: email, ...staffPayload };
+        } catch (error) {
+            console.error("Error adding staff:", error);
+            throw error;
+        }
+    },
+
+    // Update existing staff member
+    updateStaff: async (email, updates) => {
+        try {
+            const staffId = email?.toLowerCase().trim();
+            if (!staffId) {
+                throw new Error('Email is required to update staff');
+            }
+
+            const now = new Date().toISOString();
+
+            const staffDocRef = doc(db, "staff", staffId);
+            const payload = {
+                ...updates,
+                email: staffId,
+                updatedAt: now,
+            };
+
+            await setDoc(staffDocRef, payload, { merge: true });
+            return { id: staffId, ...payload };
+        } catch (error) {
+            console.error("Error updating staff:", error);
+            throw error;
+        }
+    },
+
+    // Soft delete staff member (mark as inactive)
+    deleteStaff: async (email) => {
+        try {
+            const staffId = email?.toLowerCase().trim();
+            if (!staffId) {
+                throw new Error('Email is required to delete staff');
+            }
+
+            const staffDocRef = doc(db, "staff", staffId);
+            await setDoc(staffDocRef, {
+                isActive: false,
+                updatedAt: new Date().toISOString(),
+            }, { merge: true });
+
+            return true;
+        } catch (error) {
+            console.error("Error deleting staff:", error);
+            throw error;
         }
     },
 

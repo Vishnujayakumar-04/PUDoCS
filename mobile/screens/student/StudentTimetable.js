@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Dimensi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Asset } from 'expo-asset';
 import { studentService } from '../../services/studentService';
@@ -58,11 +58,11 @@ const StudentTimetable = () => {
         }
     };
 
-    const loadTimetable = async (program, year) => {
+    const loadTimetable = async (program, year, forceRefresh = false) => {
         setLoading(true);
         try {
-            // Try to fetch timetable from Firestore
-            const timetableData = await studentService.getTimetable(program, year);
+            // Force refresh from database to get latest updates
+            const timetableData = await studentService.getTimetable(program, year, forceRefresh || true);
             
             if (timetableData && timetableData.schedule && timetableData.schedule.length > 0) {
                 // Has schedule data - show schedule viewer
@@ -119,7 +119,7 @@ const StudentTimetable = () => {
                     style={styles.listItem}
                     onPress={() => {
                         setSelectedProgram(item);
-                        loadTimetable(item.name, item.year);
+                        loadTimetable(item.name, item.year, true); // Force refresh from database
                     }}
                     activeOpacity={0.7}
                 >
@@ -211,12 +211,6 @@ const StudentTimetable = () => {
                         { label: 'M.Sc Computer Science – 2nd Year', name: 'M.Sc CS', year: 2, category: 'PG' },
                         { label: 'M.Sc CS Integrated – 5th Year', name: 'M.Sc CS Integrated', year: 5, category: 'PG' },
                         { label: 'M.Sc CS Integrated – 6th Year', name: 'M.Sc CS Integrated', year: 6, category: 'PG' },
-                    ]}
-                />
-                <ProgramSection
-                    title="M.Sc Data Science"
-                    items={[
-                        { label: 'M.Sc Data Science – 1st Year', name: 'M.Sc DS', year: 1, category: 'PG' },
                     ]}
                 />
                 <ProgramSection
@@ -441,7 +435,15 @@ const StudentTimetable = () => {
                                             selectedProgram?.label}
                             </Text>
                         </View>
-                        <View style={styles.headerRight} />
+                        {view === 'viewer' && selectedProgram && (
+                            <TouchableOpacity 
+                                onPress={() => loadTimetable(selectedProgram.name, selectedProgram.year, true)}
+                                style={styles.refreshButton}
+                            >
+                                <MaterialCommunityIcons name="refresh" size={24} color={colors.white} />
+                            </TouchableOpacity>
+                        )}
+                        {!(view === 'viewer' && selectedProgram) && <View style={styles.headerRight} />}
                     </View>
                 </SafeAreaView>
             </LinearGradient>
@@ -491,6 +493,14 @@ const styles = StyleSheet.create({
     },
     headerRight: {
         width: 40,
+    },
+    refreshButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     content: {
         flex: 1,

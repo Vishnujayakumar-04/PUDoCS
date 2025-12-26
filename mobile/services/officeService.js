@@ -1,5 +1,6 @@
-import { db } from './firebaseConfig';
-import { collection, doc, getDocs, updateDoc, addDoc, query, where, orderBy } from 'firebase/firestore';
+import { db, storage } from './firebaseConfig';
+import { collection, doc, getDocs, updateDoc, addDoc, query, where, orderBy, getDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { studentStorageService } from './studentStorageService';
 import { getAllStudentCollections } from '../utils/collectionMapper';
 
@@ -19,12 +20,6 @@ export const officeService = {
                 examFeeNotPaid: students.filter(s => !s.fees?.exam).length,
             };
             
-            // Get exam eligibility
-            const examEligibility = {
-                eligible: students.filter(s => s.fees?.semester && s.fees?.exam).length,
-                notEligible: students.filter(s => !(s.fees?.semester && s.fees?.exam)).length,
-            };
-            
             // Get upcoming exams
             const examsQuery = query(
                 collection(db, "exams"),
@@ -42,7 +37,6 @@ export const officeService = {
             return {
                 totalStudents,
                 feeStatus,
-                examEligibility,
                 upcomingExams
             };
         } catch (error) {
@@ -50,7 +44,6 @@ export const officeService = {
             return { 
                 totalStudents: 0, 
                 feeStatus: { semesterFeePaid: 0, semesterFeeNotPaid: 0, examFeePaid: 0, examFeeNotPaid: 0 },
-                examEligibility: { eligible: 0, notEligible: 0 },
                 upcomingExams: []
             };
         }
@@ -69,7 +62,11 @@ export const officeService = {
                 getAllStudentCollections().forEach(async (collName) => {
                     try {
                         const snapshot = await getDocs(collection(db, collName));
-                        const firestoreStudents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        const firestoreStudents = snapshot.docs.map(doc => ({ 
+                            id: doc.id, 
+                            ...doc.data(),
+                            _collectionName: collName // Add collection name for filtering
+                        }));
                         if (firestoreStudents.length > 0) {
                             await studentStorageService.addStudentsBulk(firestoreStudents);
                         }
@@ -89,7 +86,11 @@ export const officeService = {
             for (const collName of collections) {
                 try {
                     const snapshot = await getDocs(collection(db, collName));
-                    const collStudents = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    const collStudents = snapshot.docs.map(doc => ({ 
+                        id: doc.id, 
+                        ...doc.data(),
+                        _collectionName: collName // Add collection name for filtering
+                    }));
                     allStudents.push(...collStudents);
                 } catch (error) {
                     console.error(`Error fetching from ${collName}:`, error);
@@ -146,23 +147,35 @@ export const officeService = {
         return { id: studentId, fees: updatedFees };
     },
 
-    // Exam eligibility report
-    getExamEligibility: async () => {
-        // Fetch students where fees are paid
-        // Note: Firestore query limitations might require client-side filtering 
-        // if asking for "fees.semester == true" AND "fees.exam == true"
-        const snapshot = await getDocs(collection(db, "students"));
-        const students = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        return students.filter(s => s.fees && s.fees.semester && s.fees.exam);
-    },
+    // Exam eligibility report - REMOVED (feature no longer needed)
 
     // Notices
     postNotice: async (noticeData) => {
         await addDoc(collection(db, "notices"), {
             ...noticeData,
             createdAt: new Date().toISOString(),
-            isApproved: true // Office notices are auto-approved
+            isApproved: true, // Office notices are auto-approved
+            postedBy: 'Office' // Office role posts
         });
+    },
+
+    // Upload image to Firebase Storage and get URL
+    uploadNoticeImage: async (imageUri, noticeId) => {
+        try {
+            const response = await fetch(imageUri);
+            const blob = await response.blob();
+            
+            const imageName = `notice_${noticeId || Date.now()}.jpg`;
+            const storageRef = ref(storage, `notices/${imageName}`);
+            
+            await uploadBytes(storageRef, blob);
+            const downloadUrl = await getDownloadURL(storageRef);
+            
+            return downloadUrl;
+        } catch (error) {
+            console.error('Error uploading notice image:', error);
+            throw new Error('Failed to upload image');
+        }
     },
 
     approveNotice: async (noticeId) => {

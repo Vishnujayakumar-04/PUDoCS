@@ -1,14 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Animated, Alert, Modal, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Animated, Alert, Modal, TextInput, Dimensions } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { officeService } from '../../services/officeService';
-import { createStaffAccounts } from '../../utils/createStaffAccounts';
 import { createOrResetStaffAccount } from '../../utils/createSingleStaffAccount';
-import { updateExistingStaffAccounts } from '../../utils/updateExistingStaffAccounts';
-import { addMtechDSStudents } from '../../utils/addMtechDSStudents';
-import { cleanupStudents } from '../../utils/cleanupStudents';
 import { importStaff } from '../../utils/importStaff';
+import { safeNavigate } from '../../utils/safeNavigation';
+import { saveTimetable, getTimetableFromStorage } from '../../utils/seedTimetable';
+import { studentService } from '../../services/studentService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { postAlumniMeetNotice, postHackathonNotice } from '../../utils/postNoticeWithImage';
+import timetableData from '../../data/timetables/I_MTECH_DS_Timetable.json';
+import btechCSTimetableData from '../../data/timetables/I_BTECH_CS_Timetable.json';
+import mscCSTimetableData from '../../data/timetables/I_MSc_CS_Timetable.json';
+import btechCSE2ndYearTimetableData from '../../data/timetables/II_BTECH_CSE_Timetable.json';
+import bscCS2ndYearTimetableData from '../../data/timetables/II_BSc_CS_Timetable.json';
+import bscCS3rdYearTimetableData from '../../data/timetables/III_BSc_CS_Timetable.json';
+import mscDATimetableData from '../../data/timetables/I_MSc_DA_Timetable.json';
+import mtechCSE1stYearTimetableData from '../../data/timetables/I_MTECH_CSE_Timetable.json';
+import bscCS1stYearTimetableData from '../../data/timetables/I_BSc_CS_Timetable.json';
+import mscCS2ndYearTimetableData from '../../data/timetables/II_MSc_CS_Timetable.json';
+import mca2ndYearTimetableData from '../../data/timetables/II_MCA_Timetable.json';
+import mscCSIntegrated5thYearTimetableData from '../../data/timetables/V_MSc_CS_Integrated_Timetable.json';
+import mscCSIntegrated6thYearTimetableData from '../../data/timetables/VI_MSc_CS_Integrated_Timetable.json';
+import mtechNIS2ndYearTimetableData from '../../data/timetables/II_MTECH_NIS_Timetable.json';
+import mtechCSE2ndYearTimetableData from '../../data/timetables/II_MTECH_CSE_Timetable.json';
 import {
     importMscCS2ndYear,
     importMscDA1stYear,
@@ -39,7 +55,11 @@ import PremiumCard from '../../components/PremiumCard';
 import Marquee from '../../components/Marquee';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import FloatingActionButton from '../../components/FloatingActionButton';
+import { SimplePieChart } from '../../components/PieChart';
 import colors from '../../styles/colors';
+import { moderateScale, getFontSize, getPadding, getMargin } from '../../utils/responsive';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const OfficeDashboard = ({ navigation }) => {
     const { user } = useAuth();
@@ -52,6 +72,28 @@ const OfficeDashboard = ({ navigation }) => {
     const [fixAccountModalVisible, setFixAccountModalVisible] = useState(false);
     const [staffEmailToFix, setStaffEmailToFix] = useState('');
     const [cleaningStudents, setCleaningStudents] = useState(false);
+    const [savingTimetable, setSavingTimetable] = useState(false);
+    const [savingBTechCSTimetable, setSavingBTechCSTimetable] = useState(false);
+    const [savingMscCSTimetable, setSavingMscCSTimetable] = useState(false);
+    const [savingBTechCSE2ndYearTimetable, setSavingBTechCSE2ndYearTimetable] = useState(false);
+    const [savingBScCS2ndYearTimetable, setSavingBScCS2ndYearTimetable] = useState(false);
+    const [savingBScCS3rdYearTimetable, setSavingBScCS3rdYearTimetable] = useState(false);
+    const [savingMscDATimetable, setSavingMscDATimetable] = useState(false);
+    const [savingMtechCSE1stYearTimetable, setSavingMtechCSE1stYearTimetable] = useState(false);
+    const [savingBScCS1stYearTimetable, setSavingBScCS1stYearTimetable] = useState(false);
+    const [savingMscCS2ndYearTimetable, setSavingMscCS2ndYearTimetable] = useState(false);
+    const [savingMCA2ndYearTimetable, setSavingMCA2ndYearTimetable] = useState(false);
+    const [savingMscCSIntegrated5thYearTimetable, setSavingMscCSIntegrated5thYearTimetable] = useState(false);
+    const [savingMscCSIntegrated6thYearTimetable, setSavingMscCSIntegrated6thYearTimetable] = useState(false);
+    const [savingMtechNIS2ndYearTimetable, setSavingMtechNIS2ndYearTimetable] = useState(false);
+    const [savingMtechCSE2ndYearTimetable, setSavingMtechCSE2ndYearTimetable] = useState(false);
+    const [studentStatsModalVisible, setStudentStatsModalVisible] = useState(false);
+    const [studentStats, setStudentStats] = useState(null);
+
+    // Timetable notifications state - tracks which timetables need to be saved
+    const [timetableNotifications, setTimetableNotifications] = useState([]);
+    const [checkingTimetables, setCheckingTimetables] = useState(true);
+    const [savingTimetableId, setSavingTimetableId] = useState(null);
 
     // Animation Values
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -59,6 +101,7 @@ const OfficeDashboard = ({ navigation }) => {
 
     useEffect(() => {
         loadData();
+        checkTimetableStatus();
         Animated.parallel([
             Animated.timing(fadeAnim, {
                 toValue: 1,
@@ -72,6 +115,86 @@ const OfficeDashboard = ({ navigation }) => {
             }),
         ]).start();
     }, []);
+
+    // Check which timetables are already saved
+    const checkTimetableStatus = async () => {
+        setCheckingTimetables(true);
+        try {
+            const timetableList = [
+                { id: 'mtech-ds-1', label: 'I M.Tech DS Timetable', data: timetableData, program: 'M.Tech DS', year: 1 },
+                { id: 'btech-cs-1', label: 'I B.Tech CS Timetable', data: btechCSTimetableData, program: 'B.Tech', year: 1 },
+                { id: 'msc-cs-1', label: 'I M.Sc CS Timetable', data: mscCSTimetableData, program: 'M.Sc CS', year: 1 },
+                { id: 'btech-cse-2', label: 'II B.Tech CSE Timetable', data: btechCSE2ndYearTimetableData, program: 'B.Tech', year: 2 },
+                { id: 'bsc-cs-2', label: 'II B.Sc CS Timetable', data: bscCS2ndYearTimetableData, program: 'B.Sc CS', year: 2 },
+                { id: 'bsc-cs-3', label: 'III B.Sc CS Timetable', data: bscCS3rdYearTimetableData, program: 'B.Sc CS', year: 3 },
+                { id: 'msc-da-1', label: 'I M.Sc Data Analytics Timetable', data: mscDATimetableData, program: 'M.Sc Data Analytics', year: 1 },
+                { id: 'mtech-cse-1', label: 'I M.Tech CSE Timetable', data: mtechCSE1stYearTimetableData, program: 'M.Tech CSE', year: 1 },
+                { id: 'bsc-cs-1', label: 'I B.Sc CS Timetable', data: bscCS1stYearTimetableData, program: 'B.Sc CS', year: 1 },
+                { id: 'msc-cs-2', label: 'II M.Sc CS Timetable', data: mscCS2ndYearTimetableData, program: 'M.Sc CS', year: 2 },
+                { id: 'mca-2', label: 'II MCA Timetable', data: mca2ndYearTimetableData, program: 'MCA', year: 2 },
+                { id: 'msc-cs-int-5', label: 'V M.Sc CS Integrated Timetable', data: mscCSIntegrated5thYearTimetableData, program: 'M.Sc CS Integrated', year: 5 },
+                { id: 'msc-cs-int-6', label: 'VI M.Sc CS Integrated Timetable', data: mscCSIntegrated6thYearTimetableData, program: 'M.Sc CS Integrated', year: 6 },
+                { id: 'mtech-nis-2', label: 'II M.Tech NIS Timetable', data: mtechNIS2ndYearTimetableData, program: 'M.Tech NIS', year: 2 },
+                { id: 'mtech-cse-2', label: 'II M.Tech CSE Timetable', data: mtechCSE2ndYearTimetableData, program: 'M.Tech CSE', year: 2 },
+            ];
+
+            const unsavedTimetables = [];
+            
+            for (const timetable of timetableList) {
+                try {
+                    // Check local storage first
+                    const normalizedYear = typeof timetable.year === 'string' ? 
+                        (timetable.year === 'I' ? 1 : timetable.year === 'II' ? 2 : parseInt(timetable.year, 10)) : 
+                        timetable.year;
+                    
+                    const storageKey = `timetable_${timetable.program}_${normalizedYear}`;
+                    const stored = await AsyncStorage.getItem(storageKey);
+                    
+                    if (!stored) {
+                        // Also check database (quick check)
+                        const dbTimetable = await studentService.getTimetable(timetable.program, timetable.year);
+                        if (!dbTimetable) {
+                            unsavedTimetables.push(timetable);
+                        }
+                    }
+                } catch (error) {
+                    console.error(`Error checking ${timetable.label}:`, error);
+                    // If check fails, assume it needs to be saved
+                    unsavedTimetables.push(timetable);
+                }
+            }
+
+            setTimetableNotifications(unsavedTimetables);
+        } catch (error) {
+            console.error('Error checking timetable status:', error);
+        } finally {
+            setCheckingTimetables(false);
+        }
+    };
+
+    // Handle timetable save from notification
+    const handleSaveTimetable = async (timetable) => {
+        setSavingTimetableId(timetable.id);
+        try {
+            const result = await saveTimetable(timetable.data);
+            
+            // Remove from notifications list
+            setTimetableNotifications(prev => prev.filter(t => t.id !== timetable.id));
+            
+            Alert.alert(
+                'Success',
+                `✅ ${timetable.label} saved successfully!\n\n- Database: ✅ Saved\n- Local Storage: ✅ Saved`
+            );
+        } catch (error) {
+            console.error('Error saving timetable:', error);
+            Alert.alert(
+                'Error',
+                error.message || 'Failed to save timetable. Please check console for details.'
+            );
+        } finally {
+            setSavingTimetableId(null);
+        }
+    };
 
     const loadData = async () => {
         try {
@@ -89,6 +212,94 @@ const OfficeDashboard = ({ navigation }) => {
         } finally {
             setLoading(false);
             setRefreshing(false);
+        }
+    };
+
+    const loadStudentStatistics = async () => {
+        try {
+            const students = await officeService.getStudents();
+            
+            // Get all PG collection names for accurate filtering
+            const { getAllCollectionsForCourse } = require('../utils/collectionMapper');
+            const pgCollectionNames = getAllCollectionsForCourse('PG');
+            
+            // Determine UG vs PG from collection name, course field, or program
+            const ugStudents = students.filter(s => {
+                const collectionName = (s._collectionName || '').toLowerCase();
+                const course = (s.course || '').toLowerCase();
+                const program = (s.program || '').toLowerCase();
+                
+                // Check if it's a UG collection
+                const isUGCollection = collectionName.includes('ug_') || 
+                                      collectionName.includes('students_ug_') ||
+                                      collectionName.includes('btech') || 
+                                      collectionName.includes('bsc');
+                
+                // Check course and program fields
+                const isUGCourse = course === 'ug' || 
+                                  program.includes('b.tech') || 
+                                  program.includes('btech') || 
+                                  program.includes('b.sc') || 
+                                  program.includes('bsc') ||
+                                  program.includes('bachelor');
+                
+                return isUGCollection || isUGCourse;
+            });
+            
+            const pgStudents = students.filter(s => {
+                const collectionName = (s._collectionName || '').toLowerCase();
+                const course = (s.course || '').toLowerCase();
+                const program = (s.program || '').toLowerCase();
+                
+                // Check if student is from a known PG collection
+                const isFromPGCollection = pgCollectionNames.some(pgColl => 
+                    collectionName.includes(pgColl.toLowerCase()) || 
+                    collectionName.includes('students_pg_') ||
+                    collectionName.includes('pg_')
+                );
+                
+                // Check if it's a PG program by name
+                const isPGProgram = collectionName.includes('msc') || 
+                                   collectionName.includes('mtech') || 
+                                   collectionName.includes('mca') ||
+                                   course === 'pg' || 
+                                   program.includes('m.sc') || 
+                                   program.includes('msc') ||
+                                   program.includes('m.tech') || 
+                                   program.includes('mtech') || 
+                                   program.includes('mca') ||
+                                   program.includes('master');
+                
+                return isFromPGCollection || isPGProgram;
+            });
+            
+            // Count by gender
+            const countByGender = (studentList) => {
+                let boys = 0;
+                let girls = 0;
+                studentList.forEach(s => {
+                    const gender = (s.gender || '').toLowerCase();
+                    if (gender === 'male' || gender === 'm' || gender === 'boy') {
+                        boys++;
+                    } else if (gender === 'female' || gender === 'f' || gender === 'girl') {
+                        girls++;
+                    }
+                });
+                return { boys, girls, total: studentList.length };
+            };
+            
+            const ugStats = countByGender(ugStudents);
+            const pgStats = countByGender(pgStudents);
+            const totalStats = countByGender(students);
+            
+            setStudentStats({
+                ug: ugStats,
+                pg: pgStats,
+                total: totalStats,
+            });
+        } catch (error) {
+            console.error('Error loading student statistics:', error);
+            Alert.alert('Error', 'Failed to load student statistics');
         }
     };
 
@@ -112,7 +323,7 @@ const OfficeDashboard = ({ navigation }) => {
     };
 
     const marqueeItems = [
-        "Welcome to Office Portal! Manage fees, exam eligibility, and administrative tasks.",
+        "Welcome to Office Portal! Manage fees and administrative tasks.",
         ...notices.map(n => n.title).filter(Boolean),
         ...events.map(e => e.name).filter(Boolean),
     ];
@@ -120,12 +331,20 @@ const OfficeDashboard = ({ navigation }) => {
     // Quick Access Features with icons
     const features = [
         { title: 'Fee Management', screen: 'Fees', icon: 'cash-multiple', color: colors.success },
-        { title: 'Exam Eligibility', screen: 'Eligibility', color: colors.warning, icon: 'file-check-outline' },
+        { title: 'Attendance', screen: 'Attendance', icon: 'account-check-outline', color: colors.accent },
+        { title: 'Gallery', screen: 'Gallery', icon: 'image-multiple', color: '#9B59B6' },
         { title: 'Results', screen: 'Results', icon: 'trophy-outline', color: colors.info },
         { title: 'Notices', screen: 'Notices', icon: 'bell-outline', color: colors.error },
         { title: 'Events', screen: 'Events', icon: 'calendar-star', color: '#6366F1' },
+        { title: 'Timetable', screen: 'Timetable', icon: 'calendar-clock', color: colors.accent },
         { title: 'Faculty', screen: 'StaffDirectory', icon: 'account-group', color: colors.primary },
+        { title: 'Admin Access', screen: 'AdminAccess', icon: 'shield-account', color: colors.warning },
     ];
+
+    // Safe navigation helper
+    const handleNavigate = (routeName) => {
+        safeNavigate(navigation, routeName);
+    };
 
     // FAB Actions
     const fabActions = [
@@ -133,31 +352,25 @@ const OfficeDashboard = ({ navigation }) => {
             icon: 'cash-multiple',
             label: 'Fee Management',
             color: colors.success,
-            onPress: () => navigation.navigate('Fees'),
-        },
-        {
-            icon: 'file-check-outline',
-            label: 'Exam Eligibility',
-            color: colors.warning,
-            onPress: () => navigation.navigate('Eligibility'),
+            onPress: () => handleNavigate('Fees'),
         },
         {
             icon: 'trophy-outline',
             label: 'Results',
             color: colors.info,
-            onPress: () => navigation.navigate('Results'),
+            onPress: () => handleNavigate('Results'),
         },
         {
             icon: 'bell-outline',
             label: 'Notices',
             color: colors.error,
-            onPress: () => navigation.navigate('Notices'),
+            onPress: () => handleNavigate('Notices'),
         },
         {
             icon: 'calendar-star',
             label: 'Events',
             color: '#6366F1',
-            onPress: () => navigation.navigate('Events'),
+            onPress: () => handleNavigate('Events'),
         },
     ];
 
@@ -177,7 +390,7 @@ const OfficeDashboard = ({ navigation }) => {
                 title="Office Portal" 
                 subtitle="Administrative Control"
                 showAvatar={true}
-                onAvatarPress={() => navigation.navigate('Profile')}
+                onAvatarPress={() => handleNavigate('Profile')}
                 user={user}
                 profile={user?.profile}
             />
@@ -204,948 +417,51 @@ const OfficeDashboard = ({ navigation }) => {
                     <View style={styles.section}>
                         <Text style={styles.sectionTitle}>Statistics</Text>
                         <View style={styles.statsGrid}>
+                            <TouchableOpacity 
+                                onPress={async () => {
+                                    await loadStudentStatistics();
+                                    setStudentStatsModalVisible(true);
+                                }}
+                                activeOpacity={0.7}
+                            >
                             <PremiumCard style={styles.statCard}>
-                                <Text style={styles.statValue}>{dashboardData.totalStudents || 0}</Text>
-                                <Text style={styles.statLabel}>Total Students</Text>
+                                <View style={styles.statCardContent}>
+                                    <Text style={styles.statValue} adjustsFontSizeToFit minimumFontScale={0.6} numberOfLines={1}>
+                                        {String(dashboardData.totalStudents || 0)}
+                                    </Text>
+                                    <Text style={styles.statLabel} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
+                                        Total Students
+                                    </Text>
+                                </View>
                             </PremiumCard>
+                            </TouchableOpacity>
                             <PremiumCard style={styles.statCard}>
-                                <Text style={[styles.statValue, { color: colors.success }]}>
-                                    {dashboardData.examEligibility?.eligible || 0}
-                                </Text>
-                                <Text style={styles.statLabel}>Exam Eligible</Text>
-                            </PremiumCard>
-                            <PremiumCard style={styles.statCard}>
-                                <Text style={[styles.statValue, { color: colors.error }]}>
-                                    {dashboardData.examEligibility?.notEligible || 0}
-                                </Text>
-                                <Text style={styles.statLabel}>Not Eligible</Text>
-                            </PremiumCard>
-                            <PremiumCard style={styles.statCard}>
-                                <Text style={[styles.statValue, { color: colors.warning }]}>
-                                    {dashboardData.upcomingExams?.length || 0}
-                                </Text>
-                                <Text style={styles.statLabel}>Upcoming Exams</Text>
+                                <View style={styles.statCardContent}>
+                                    <Text style={[styles.statValue, { color: colors.warning }]} adjustsFontSizeToFit minimumFontScale={0.6} numberOfLines={1}>
+                                        {String(dashboardData.upcomingExams?.length || 0)}
+                                    </Text>
+                                    <Text style={styles.statLabel} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
+                                        Upcoming Exams
+                                    </Text>
+                                </View>
                             </PremiumCard>
                         </View>
                     </View>
                 )}
 
-                {/* Admin Actions Section */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Admin Actions</Text>
-                    <PremiumCard style={styles.adminCard}>
-                        {/* Import Staff - Remove Old and Add New */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { backgroundColor: colors.primary + '15', borderWidth: 1, borderColor: colors.primary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import Staff Data',
-                                    'This will:\n\n1. Remove all old staff data from the database\n2. Add all 19 staff members to the "staff" collection\n3. Create/update Firebase Auth accounts\n4. Update "users" collection\n\n⚠️ This will replace all existing staff data.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import Staff',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    console.log('🚀 Starting staff import...');
-                                                    const result = await importStaff();
-                                                    
-                                                    let message = `✅ Successfully imported ${result.success} staff members.\n\n`;
-                                                    
-                                                    if (result.failed > 0) {
-                                                        message += `❌ Failed: ${result.failed} staff members\n\n`;
-                                                        if (result.errors && result.errors.length > 0) {
-                                                            message += `Errors:\n`;
-                                                            result.errors.slice(0, 3).forEach(err => {
-                                                                message += `• ${err.name}: ${err.error}\n`;
-                                                            });
-                                                            if (result.errors.length > 3) {
-                                                                message += `... and ${result.errors.length - 3} more`;
-                                                            }
-                                                        }
-                                                    } else {
-                                                        message += `All 19 staff members have been added to the database!\n\n`;
-                                                        message += `Staff can login with:\n`;
-                                                        message += `Email: their email\n`;
-                                                        message += `Password: Pass@123`;
-                                                    }
-                                                    
-                                                    Alert.alert('Staff Import Complete', message);
-                                                } catch (error) {
-                                                    console.error('Error importing staff:', error);
-                                                    Alert.alert(
-                                                        'Error', 
-                                                        error.message || 'Failed to import staff. Please check console for details.'
-                                                    );
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons 
-                                name="account-plus" 
-                                size={24} 
-                                color={colors.primary} 
-                            />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.primary }]}>
-                                    {creatingStaff ? 'Importing Staff...' : 'Import Staff (Remove Old & Add New)'}
-                                </Text>
-                                <Text style={styles.adminButtonSubtitle}>
-                                    Remove old staff data and add all 19 staff members to database
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                    </PremiumCard>
-                </View>
-
-                {/* Import Students by Class Section */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Import Students by Class</Text>
-                    <PremiumCard style={styles.adminCard}>
-                        <Text style={styles.subsectionTitle}>PG - Postgraduate (10 Classes)</Text>
-                        
-                        {/* 1. M.Sc CS 2nd Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.primary + '15', borderWidth: 1, borderColor: colors.primary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import M.Sc CS 2nd Year',
-                                    'This will add M.Sc Computer Science 2nd Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importMscCS2ndYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.primary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.primary, fontSize: 14 }]}>
-                                    1. M.Sc CS - 2nd Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 2. M.Sc Data Analytics 1st Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.primary + '15', borderWidth: 1, borderColor: colors.primary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import M.Sc Data Analytics 1st Year',
-                                    'This will add M.Sc Data Analytics 1st Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importMscDA1stYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.primary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.primary, fontSize: 14 }]}>
-                                    2. M.Sc Data Analytics - 1st Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 3. M.Sc CS Integrated 5th Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.primary + '15', borderWidth: 1, borderColor: colors.primary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import M.Sc CS Integrated 5th Year',
-                                    'This will add M.Sc CS Integrated 5th Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importMscCSIntegrated5thYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.primary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.primary, fontSize: 14 }]}>
-                                    3. M.Sc CS Integrated - 5th Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 4. M.Sc CS Integrated 6th Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.primary + '15', borderWidth: 1, borderColor: colors.primary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import M.Sc CS Integrated 6th Year',
-                                    'This will add M.Sc CS Integrated 6th Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importMscCSIntegrated6thYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.primary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.primary, fontSize: 14 }]}>
-                                    4. M.Sc CS Integrated - 6th Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 5. MCA 2nd Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.primary + '15', borderWidth: 1, borderColor: colors.primary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import MCA 2nd Year',
-                                    'This will add MCA 2nd Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importMCA2ndYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.primary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.primary, fontSize: 14 }]}>
-                                    5. MCA - 2nd Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 6. MCA 1st Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.primary + '15', borderWidth: 1, borderColor: colors.primary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import MCA 1st Year',
-                                    'This will add MCA 1st Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importMCA1stYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.primary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.primary, fontSize: 14 }]}>
-                                    6. MCA - 1st Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 7. M.Tech Data Analytics 1st Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.primary + '15', borderWidth: 1, borderColor: colors.primary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import M.Tech Data Analytics 1st Year',
-                                    'This will add M.Tech Data Analytics 1st Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importMtechDS1stYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.primary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.primary, fontSize: 14 }]}>
-                                    7. M.Tech Data Analytics - 1st Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 8. M.Tech NIS 2nd Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.primary + '15', borderWidth: 1, borderColor: colors.primary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import M.Tech NIS 2nd Year',
-                                    'This will add M.Tech NIS 2nd Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importMtechNIS2ndYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.primary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.primary, fontSize: 14 }]}>
-                                    8. M.Tech NIS - 2nd Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 9. M.Tech CSE 1st Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.primary + '15', borderWidth: 1, borderColor: colors.primary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import M.Tech CSE 1st Year',
-                                    'This will add M.Tech CSE 1st Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importMtechCSE1stYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.primary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.primary, fontSize: 14 }]}>
-                                    9. M.Tech CSE - 1st Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 10. M.Tech CSE 2nd Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.primary + '15', borderWidth: 1, borderColor: colors.primary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import M.Tech CSE 2nd Year',
-                                    'This will add M.Tech CSE 2nd Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importMtechCSE2ndYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.primary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.primary, fontSize: 14 }]}>
-                                    10. M.Tech CSE - 2nd Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                    </PremiumCard>
-
-                    {/* UG Programs */}
-                    <PremiumCard style={[styles.adminCard, { marginTop: 16 }]}>
-                        <Text style={styles.subsectionTitle}>UG - Undergraduate (11 Classes)</Text>
-                        
-                        {/* 1. BTech IT 1st Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.secondary + '15', borderWidth: 1, borderColor: colors.secondary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import BTech IT 1st Year',
-                                    'This will add BTech IT 1st Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importBTechIT1stYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.secondary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.secondary, fontSize: 14 }]}>
-                                    1. BTech IT - 1st Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 2. BTech IT 2nd Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.secondary + '15', borderWidth: 1, borderColor: colors.secondary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import BTech IT 2nd Year',
-                                    'This will add BTech IT 2nd Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importBTechIT2ndYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.secondary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.secondary, fontSize: 14 }]}>
-                                    2. BTech IT - 2nd Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 3. BTech IT 3rd Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.secondary + '15', borderWidth: 1, borderColor: colors.secondary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import BTech IT 3rd Year',
-                                    'This will add BTech IT 3rd Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importBTechIT3rdYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.secondary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.secondary, fontSize: 14 }]}>
-                                    3. BTech IT - 3rd Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 4. BTech IT 4th Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.secondary + '15', borderWidth: 1, borderColor: colors.secondary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import BTech IT 4th Year',
-                                    'This will add BTech IT 4th Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importBTechIT4thYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.secondary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.secondary, fontSize: 14 }]}>
-                                    4. BTech IT - 4th Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 5. BTech CSE 1st Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.secondary + '15', borderWidth: 1, borderColor: colors.secondary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import BTech CSE 1st Year',
-                                    'This will add BTech CSE 1st Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importBTechCSE1stYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.secondary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.secondary, fontSize: 14 }]}>
-                                    5. BTech CSE - 1st Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 6. BTech CSE 2nd Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.secondary + '15', borderWidth: 1, borderColor: colors.secondary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import BTech CSE 2nd Year',
-                                    'This will add BTech CSE 2nd Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importBTechCSE2ndYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.secondary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.secondary, fontSize: 14 }]}>
-                                    6. BTech CSE - 2nd Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 7. BTech CSE 3rd Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.secondary + '15', borderWidth: 1, borderColor: colors.secondary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import BTech CSE 3rd Year',
-                                    'This will add BTech CSE 3rd Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importBTechCSE3rdYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.secondary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.secondary, fontSize: 14 }]}>
-                                    7. BTech CSE - 3rd Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 8. BTech CSE 4th Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.secondary + '15', borderWidth: 1, borderColor: colors.secondary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import BTech CSE 4th Year',
-                                    'This will add BTech CSE 4th Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importBTechCSE4thYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.secondary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.secondary, fontSize: 14 }]}>
-                                    8. BTech CSE - 4th Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 9. BSc CS 1st Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.secondary + '15', borderWidth: 1, borderColor: colors.secondary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import BSc CS 1st Year',
-                                    'This will add BSc Computer Science 1st Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importBScCS1stYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.secondary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.secondary, fontSize: 14 }]}>
-                                    9. BSc CS - 1st Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 10. BSc CS 2nd Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.secondary + '15', borderWidth: 1, borderColor: colors.secondary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import BSc CS 2nd Year',
-                                    'This will add BSc Computer Science 2nd Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importBScCS2ndYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.secondary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.secondary, fontSize: 14 }]}>
-                                    10. BSc CS - 2nd Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-
-                        {/* 11. BSc CS 3rd Year */}
-                        <TouchableOpacity 
-                            style={[styles.adminButton, { marginTop: 8, backgroundColor: colors.secondary + '15', borderWidth: 1, borderColor: colors.secondary + '30' }]}
-                            onPress={async () => {
-                                Alert.alert(
-                                    'Import BSc CS 3rd Year',
-                                    'This will add BSc Computer Science 3rd Year students to the database.\n\nContinue?',
-                                    [
-                                        { text: 'Cancel', style: 'cancel' },
-                                        {
-                                            text: 'Import',
-                                            onPress: async () => {
-                                                setCreatingStaff(true);
-                                                try {
-                                                    const result = await importBScCS3rdYear();
-                                                    Alert.alert(
-                                                        'Import Complete',
-                                                        `✅ Successfully imported ${result.success} students.\n\n${result.failed > 0 ? `❌ Failed: ${result.failed}` : ''}`
-                                                    );
-                                                } catch (error) {
-                                                    Alert.alert('Error', error.message || 'Failed to import students.');
-                                                } finally {
-                                                    setCreatingStaff(false);
-                                                }
-                                            }
-                                        }
-                                    ]
-                                );
-                            }}
-                            disabled={creatingStaff}
-                        >
-                            <MaterialCommunityIcons name="account-plus" size={18} color={colors.secondary} />
-                            <View style={styles.adminButtonText}>
-                                <Text style={[styles.adminButtonTitle, { color: colors.secondary, fontSize: 14 }]}>
-                                    11. BSc CS - 3rd Year
-                                </Text>
-                            </View>
-                        </TouchableOpacity>
-                    </PremiumCard>
-                </View>
+                {/* Admin Actions and Import Students sections moved to Admin Access Module */}
 
                 {/* Quick Access Section */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Quick Access</Text>
+                    
+                    {/* Regular Quick Access Features */}
                     <View style={styles.featuresGrid}>
                         {features.map((feature, index) => (
                             <TouchableOpacity
                                 key={index}
                                 style={styles.featureCard}
-                                onPress={() => navigation.navigate(feature.screen)}
+                                onPress={() => handleNavigate(feature.screen)}
                                 activeOpacity={0.7}
                             >
                                 <View style={[styles.iconBackground, { backgroundColor: feature.color + '15' }]}>
@@ -1155,10 +471,13 @@ const OfficeDashboard = ({ navigation }) => {
                                         color={feature.color} 
                                     />
                                 </View>
-                                <Text style={styles.featureTitle}>{feature.title}</Text>
+                                <Text style={styles.featureTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
+                                    {feature.title}
+                                </Text>
                             </TouchableOpacity>
                         ))}
                     </View>
+
                 </View>
 
                 {/* Fee Status Summary */}
@@ -1198,10 +517,7 @@ const OfficeDashboard = ({ navigation }) => {
                 {dashboardData?.upcomingExams && dashboardData.upcomingExams.length > 0 && (
                     <View style={styles.section}>
                         <View style={styles.sectionHeader}>
-                            <Text style={styles.sectionTitle}>Upcoming Exams</Text>
-                            <TouchableOpacity onPress={() => navigation.navigate('Eligibility')}>
-                                <Text style={styles.seeAllText}>See All</Text>
-                            </TouchableOpacity>
+                        <Text style={styles.sectionTitle}>Upcoming Exams</Text>
                         </View>
                         {dashboardData.upcomingExams.slice(0, 3).map((exam) => (
                             <PremiumCard key={exam.id || exam._id} style={styles.examCard}>
@@ -1215,9 +531,9 @@ const OfficeDashboard = ({ navigation }) => {
                                         </View>
                                     </View>
                                     <Text style={styles.examSubject}>{exam.subject || exam.program || ''}</Text>
-                                    <Text style={styles.examDate}>
+                                <Text style={styles.examDate}>
                                         📅 {formatDate(exam.date)} {exam.startTime ? `at ${exam.startTime}` : ''}
-                                    </Text>
+                                </Text>
                                 </View>
                             </PremiumCard>
                         ))}
@@ -1228,9 +544,9 @@ const OfficeDashboard = ({ navigation }) => {
                 <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Recent Notices</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('Notices')}>
+                        <TouchableOpacity onPress={() => handleNavigate('Notices')}>
                             <Text style={styles.seeAllText}>See All</Text>
-                        </TouchableOpacity>
+                </TouchableOpacity>
                     </View>
 
                     {notices.length === 0 ? (
@@ -1366,10 +682,150 @@ const OfficeDashboard = ({ navigation }) => {
             {/* Floating Action Button */}
             <FloatingActionButton
                 actions={fabActions}
-                onPress={(action) => {
-                    console.log('FAB action pressed:', action.label);
-                }}
             />
+
+            {/* Student Statistics Modal */}
+            <Modal
+                visible={studentStatsModalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setStudentStatsModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.statsModalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Student Statistics</Text>
+                            <TouchableOpacity onPress={() => setStudentStatsModalVisible(false)}>
+                                <MaterialCommunityIcons name="close" size={24} color={colors.textPrimary} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView style={styles.statsScrollView} showsVerticalScrollIndicator={false}>
+                            {studentStats ? (
+                                <>
+                                    {/* Total UG Section */}
+                                    <View style={styles.statsSection}>
+                                        <Text style={styles.statsSectionTitle}>Total UG (Undergraduate)</Text>
+                                        <PremiumCard style={styles.statsCard}>
+                                            <View style={styles.statsRow}>
+                                                <Text style={styles.statsLabel}>Total:</Text>
+                                                <Text style={styles.statsValue}>{studentStats.ug.total}</Text>
+                                            </View>
+                                            <View style={styles.statsRow}>
+                                                <Text style={styles.statsLabel}>Boys:</Text>
+                                                <Text style={[styles.statsValue, { color: colors.primary }]}>{studentStats.ug.boys}</Text>
+                                            </View>
+                                            <View style={styles.statsRow}>
+                                                <Text style={styles.statsLabel}>Girls:</Text>
+                                                <Text style={[styles.statsValue, { color: colors.accent }]}>{studentStats.ug.girls}</Text>
+                                            </View>
+                                            <View style={styles.pieChartContainer}>
+                                                <SimplePieChart
+                                                    data={[
+                                                        { label: 'Boys', value: studentStats.ug.boys, color: colors.primary },
+                                                        { label: 'Girls', value: studentStats.ug.girls, color: colors.accent },
+                                                    ]}
+                                                    size={150}
+                                                />
+                                                <View style={styles.legend}>
+                                                    <View style={styles.legendItem}>
+                                                        <View style={[styles.legendColor, { backgroundColor: colors.primary }]} />
+                                                        <Text style={styles.legendText}>Boys: {studentStats.ug.boys}</Text>
+                                                    </View>
+                                                    <View style={styles.legendItem}>
+                                                        <View style={[styles.legendColor, { backgroundColor: colors.accent }]} />
+                                                        <Text style={styles.legendText}>Girls: {studentStats.ug.girls}</Text>
+                                                    </View>
+                                                </View>
+                                            </View>
+                                        </PremiumCard>
+                                    </View>
+
+                                    {/* Total PG Section */}
+                                    <View style={styles.statsSection}>
+                                        <Text style={styles.statsSectionTitle}>Total PG (Postgraduate)</Text>
+                                        <PremiumCard style={styles.statsCard}>
+                                            <View style={styles.statsRow}>
+                                                <Text style={styles.statsLabel}>Total:</Text>
+                                                <Text style={styles.statsValue}>{studentStats.pg.total}</Text>
+                                            </View>
+                                            <View style={styles.statsRow}>
+                                                <Text style={styles.statsLabel}>Boys:</Text>
+                                                <Text style={[styles.statsValue, { color: colors.primary }]}>{studentStats.pg.boys}</Text>
+                                            </View>
+                                            <View style={styles.statsRow}>
+                                                <Text style={styles.statsLabel}>Girls:</Text>
+                                                <Text style={[styles.statsValue, { color: colors.accent }]}>{studentStats.pg.girls}</Text>
+                                            </View>
+                                            <View style={styles.pieChartContainer}>
+                                                <SimplePieChart
+                                                    data={[
+                                                        { label: 'Boys', value: studentStats.pg.boys, color: colors.primary },
+                                                        { label: 'Girls', value: studentStats.pg.girls, color: colors.accent },
+                                                    ]}
+                                                    size={150}
+                                                />
+                                                <View style={styles.legend}>
+                                                    <View style={styles.legendItem}>
+                                                        <View style={[styles.legendColor, { backgroundColor: colors.primary }]} />
+                                                        <Text style={styles.legendText}>Boys: {studentStats.pg.boys}</Text>
+                                                    </View>
+                                                    <View style={styles.legendItem}>
+                                                        <View style={[styles.legendColor, { backgroundColor: colors.accent }]} />
+                                                        <Text style={styles.legendText}>Girls: {studentStats.pg.girls}</Text>
+                                                    </View>
+                                                </View>
+                                            </View>
+                                        </PremiumCard>
+                                    </View>
+
+                                    {/* Total Students Section */}
+                                    <View style={styles.statsSection}>
+                                        <Text style={styles.statsSectionTitle}>Total Students</Text>
+                                        <PremiumCard style={styles.statsCard}>
+                                            <View style={styles.statsRow}>
+                                                <Text style={styles.statsLabel}>Total:</Text>
+                                                <Text style={styles.statsValue}>{studentStats.total.total}</Text>
+                                            </View>
+                                            <View style={styles.statsRow}>
+                                                <Text style={styles.statsLabel}>Boys:</Text>
+                                                <Text style={[styles.statsValue, { color: colors.primary }]}>{studentStats.total.boys}</Text>
+                                            </View>
+                                            <View style={styles.statsRow}>
+                                                <Text style={styles.statsLabel}>Girls:</Text>
+                                                <Text style={[styles.statsValue, { color: colors.accent }]}>{studentStats.total.girls}</Text>
+                                            </View>
+                                            <View style={styles.pieChartContainer}>
+                                                <SimplePieChart
+                                                    data={[
+                                                        { label: 'Boys', value: studentStats.total.boys, color: colors.primary },
+                                                        { label: 'Girls', value: studentStats.total.girls, color: colors.accent },
+                                                    ]}
+                                                    size={150}
+                                                />
+                                                <View style={styles.legend}>
+                                                    <View style={styles.legendItem}>
+                                                        <View style={[styles.legendColor, { backgroundColor: colors.primary }]} />
+                                                        <Text style={styles.legendText}>Boys: {studentStats.total.boys}</Text>
+                                                    </View>
+                                                    <View style={styles.legendItem}>
+                                                        <View style={[styles.legendColor, { backgroundColor: colors.accent }]} />
+                                                        <Text style={styles.legendText}>Girls: {studentStats.total.girls}</Text>
+                                                    </View>
+                                                </View>
+                                            </View>
+                                        </PremiumCard>
+                                    </View>
+                                </>
+                            ) : (
+                                <View style={styles.loadingContainer}>
+                                    <Text>Loading statistics...</Text>
+                                </View>
+                            )}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -1426,41 +882,108 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        marginTop: 8,
+        marginTop: getMargin(12),
+        width: '100%',
+        paddingHorizontal: getPadding(2),
     },
     statCard: {
-        width: '48%',
-        padding: 16,
+        width: (SCREEN_WIDTH - getPadding(60)) / 2,
+        maxWidth: moderateScale(180),
+        minWidth: moderateScale(150),
+        padding: getPadding(16),
+        paddingVertical: getPadding(20),
         alignItems: 'center',
-        marginBottom: 12,
+        justifyContent: 'center',
+        marginBottom: getMargin(12),
+        minHeight: moderateScale(110),
+        height: moderateScale(110),
+    },
+    statCardContent: {
+        width: '100%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flex: 1,
     },
     statValue: {
-        fontSize: 32,
+        fontSize: getFontSize(28),
         fontWeight: '700',
         color: colors.primary,
-        marginBottom: 4,
+        marginBottom: getMargin(8),
+        textAlign: 'center',
+        width: '100%',
+        lineHeight: getFontSize(34),
     },
     statLabel: {
-        fontSize: 12,
+        fontSize: getFontSize(12),
         color: colors.textSecondary,
         fontWeight: '600',
         textAlign: 'center',
+        width: '100%',
+        lineHeight: getFontSize(16),
+        paddingHorizontal: getPadding(4),
     },
     featuresGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        marginTop: 8,
+        marginTop: getMargin(8),
+        paddingHorizontal: getPadding(2),
+        marginBottom: getMargin(20),
     },
-    featureCard: {
-        width: '48%',
+    adminActionsCategory: {
+        marginTop: getMargin(20),
+        paddingTop: getMargin(20),
+        borderTopWidth: 1,
+        borderTopColor: colors.gray200,
+    },
+    categoryTitle: {
+        fontSize: getFontSize(16),
+        fontWeight: '600',
+        color: colors.textPrimary,
+        marginBottom: getMargin(12),
+    },
+    adminActionsGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+        gap: 12,
+        paddingHorizontal: getPadding(2),
+    },
+    adminActionCard: {
+        width: (SCREEN_WIDTH - getPadding(60)) / 2,
+        maxWidth: moderateScale(180),
+        minWidth: moderateScale(150),
         backgroundColor: colors.white,
-        borderRadius: 16,
-        padding: 16,
+        borderRadius: moderateScale(12),
+        padding: getPadding(16),
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 16,
-        minHeight: 100,
+        marginBottom: getMargin(12),
+        minHeight: moderateScale(80),
+        borderWidth: 1,
+        shadowColor: colors.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    adminActionTitle: {
+        fontSize: getFontSize(12),
+        fontWeight: '600',
+        marginTop: getMargin(8),
+        textAlign: 'center',
+    },
+    featureCard: {
+        width: (SCREEN_WIDTH - getPadding(60)) / 2,
+        maxWidth: moderateScale(180),
+        minWidth: moderateScale(150),
+        backgroundColor: colors.white,
+        borderRadius: moderateScale(16),
+        padding: getPadding(16),
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: getMargin(16),
+        minHeight: moderateScale(100),
         shadowColor: colors.black,
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.06,
@@ -1470,18 +993,23 @@ const styles = StyleSheet.create({
         borderColor: colors.gray100,
     },
     iconBackground: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+        width: moderateScale(48),
+        height: moderateScale(48),
+        borderRadius: moderateScale(24),
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 8,
+        marginBottom: getMargin(8),
     },
     featureTitle: {
-        fontSize: 12,
+        fontSize: getFontSize(12),
         fontWeight: '600',
         color: colors.textPrimary,
         textAlign: 'center',
+        numberOfLines: 2,
+        adjustsFontSizeToFit: true,
+        minimumFontScale: 0.8,
+        width: '100%',
+        paddingHorizontal: getPadding(4),
     },
     feeCard: {
         padding: 16,
@@ -1517,10 +1045,11 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     examName: {
-        fontSize: 16,
+        fontSize: getFontSize(16),
         fontWeight: '700',
         color: colors.textPrimary,
         flex: 1,
+        numberOfLines: 2,
     },
     examBadge: {
         paddingHorizontal: 10,
@@ -1576,17 +1105,19 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
     noticeTitle: {
-        fontSize: 16,
+        fontSize: getFontSize(16),
         fontWeight: '700',
         color: colors.textPrimary,
-        marginBottom: 6,
-        lineHeight: 22,
+        marginBottom: getMargin(6),
+        lineHeight: getFontSize(22),
+        numberOfLines: 2,
     },
     noticeDescription: {
-        fontSize: 14,
+        fontSize: getFontSize(14),
         color: colors.textSecondary,
-        marginBottom: 8,
-        lineHeight: 20,
+        marginBottom: getMargin(8),
+        lineHeight: getFontSize(20),
+        numberOfLines: 2,
     },
     noticeDate: {
         fontSize: 12,
@@ -1620,21 +1151,28 @@ const styles = StyleSheet.create({
     adminButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 12,
+        padding: getPadding(12),
+        minHeight: moderateScale(60),
     },
     adminButtonText: {
-        marginLeft: 16,
+        marginLeft: getMargin(16),
         flex: 1,
+        minWidth: 0,
     },
     adminButtonTitle: {
-        fontSize: 16,
+        fontSize: getFontSize(14),
         fontWeight: '700',
         color: colors.textPrimary,
-        marginBottom: 4,
+        marginBottom: getMargin(4),
+        numberOfLines: 2,
+        adjustsFontSizeToFit: true,
+        minimumFontScale: 0.85,
     },
     adminButtonSubtitle: {
-        fontSize: 12,
+        fontSize: getFontSize(11),
         color: colors.textSecondary,
+        numberOfLines: 2,
+        lineHeight: getFontSize(14),
     },
     modalOverlay: {
         flex: 1,
@@ -1710,6 +1248,75 @@ const styles = StyleSheet.create({
         color: colors.white,
         fontSize: 16,
         fontWeight: '600',
+    },
+    statsModalContent: {
+        backgroundColor: colors.white,
+        borderRadius: 20,
+        padding: 24,
+        width: '95%',
+        maxHeight: '90%',
+    },
+    statsScrollView: {
+        maxHeight: '80%',
+    },
+    statsSection: {
+        marginBottom: 24,
+    },
+    statsSectionTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: colors.textPrimary,
+        marginBottom: 12,
+    },
+    statsCard: {
+        padding: 16,
+    },
+    statsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.gray100,
+    },
+    statsLabel: {
+        fontSize: 16,
+        color: colors.textSecondary,
+        fontWeight: '500',
+    },
+    statsValue: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: colors.textPrimary,
+    },
+    pieChartContainer: {
+        marginTop: 20,
+        alignItems: 'center',
+    },
+    legend: {
+        marginTop: 16,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: 20,
+    },
+    legendItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    legendColor: {
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+    },
+    legendText: {
+        fontSize: 14,
+        color: colors.textPrimary,
+        fontWeight: '500',
+    },
+    loadingContainer: {
+        padding: 40,
+        alignItems: 'center',
     },
 });
 

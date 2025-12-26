@@ -16,7 +16,9 @@ import StaffInternals from '../screens/staff/StaffInternals';
 import StaffNotices from '../screens/staff/StaffNotices';
 import StudentStaffDirectory from '../screens/student/StudentStaffDirectory';
 import StudentEvents from '../screens/student/StudentEvents';
+import StudentTimetable from '../screens/student/StudentTimetable';
 import StaffProfile from '../screens/staff/StaffProfile';
+import StudentGallery from '../screens/student/StudentGallery';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -100,6 +102,13 @@ const StaffNavigator = () => {
             />
             <Tab.Screen
                 name="Timetable"
+                component={StudentTimetable}
+                options={{
+                    tabBarButton: () => null,
+                }}
+            />
+            <Tab.Screen
+                name="TimetableManagement"
                 component={StaffTimetable}
                 options={{
                     tabBarButton: () => null,
@@ -131,6 +140,13 @@ const StaffNavigator = () => {
                 component={StaffProfile}
                 options={{
                     tabBarButton: () => null, // Accessible via Dashboard avatar
+                }}
+            />
+            <Tab.Screen
+                name="Gallery"
+                component={StudentGallery}
+                options={{
+                    tabBarButton: () => null, // Accessible via Dashboard
                 }}
             />
         </Tab.Navigator>

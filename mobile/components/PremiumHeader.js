@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import PropTypes from 'prop-types';
 import colors from '../styles/colors';
 import staffImages from '../assets/staffImages';
-import { moderateScale, getFontSize, getPadding } from '../utils/responsive';
+import { moderateScale, getFontSize, getPadding, getMargin } from '../utils/responsive';
 
 const PremiumHeader = ({ title, subtitle, showAvatar = false, onAvatarPress, user, profile }) => {
     // Get photo source from user or profile

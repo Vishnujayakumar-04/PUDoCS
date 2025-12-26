@@ -7,9 +7,9 @@ import {
     TextInput,
     Modal,
     Alert,
-    Picker,
     TouchableOpacity,
 } from 'react-native';
+import CustomPicker from '../../components/CustomPicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { officeService } from '../../services/officeService';
 import Header from '../../components/Header';
@@ -147,14 +147,16 @@ const OfficeResultsScreen = () => {
                             <View style={styles.row}>
                                 <View style={styles.halfWidth}>
                                     <Text style={styles.label}>Semester</Text>
-                                    <Picker
+                                    <CustomPicker
                                         selectedValue={resultData.semester}
                                         onValueChange={(value) => setResultData({ ...resultData, semester: value })}
-                                    >
-                                        {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
-                                            <Picker.Item key={sem} label={sem.toString()} value={sem} />
-                                        ))}
-                                    </Picker>
+                                        items={[1, 2, 3, 4, 5, 6, 7, 8].map(sem => ({
+                                            label: sem.toString(),
+                                            value: sem
+                                        }))}
+                                        placeholder="Select Semester"
+                                        style={styles.input}
+                                    />
                                 </View>
                                 <View style={styles.halfWidth}>
                                     <TextInput
@@ -196,19 +198,23 @@ const OfficeResultsScreen = () => {
                                             />
                                         </View>
                                         <View style={styles.halfWidth}>
-                                            <Picker
+                                            <Text style={styles.label}>Grade</Text>
+                                            <CustomPicker
                                                 selectedValue={subject.grade}
                                                 onValueChange={(value) => updateSubject(index, 'grade', value)}
-                                            >
-                                                <Picker.Item label="O (10)" value="O" />
-                                                <Picker.Item label="A+ (9)" value="A+" />
-                                                <Picker.Item label="A (8)" value="A" />
-                                                <Picker.Item label="B+ (7)" value="B+" />
-                                                <Picker.Item label="B (6)" value="B" />
-                                                <Picker.Item label="C (5)" value="C" />
-                                                <Picker.Item label="P (4)" value="P" />
-                                                <Picker.Item label="F (0)" value="F" />
-                                            </Picker>
+                                                items={[
+                                                    { label: 'O (10)', value: 'O' },
+                                                    { label: 'A+ (9)', value: 'A+' },
+                                                    { label: 'A (8)', value: 'A' },
+                                                    { label: 'B+ (7)', value: 'B+' },
+                                                    { label: 'B (6)', value: 'B' },
+                                                    { label: 'C (5)', value: 'C' },
+                                                    { label: 'P (4)', value: 'P' },
+                                                    { label: 'F (0)', value: 'F' },
+                                                ]}
+                                                placeholder="Select Grade"
+                                                style={styles.input}
+                                            />
                                         </View>
                                     </View>
                                 </View>

@@ -1,0 +1,335 @@
+{
+  "program": "B.Sc CS",
+  "year": 1,
+  "class": "I B.Sc CS",
+  "room": "203 – First Floor (Annexe Building)",
+  "schedule": [
+    {
+      "day": "Monday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Programming in C",
+          "subjectCode": "BCSC101",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. M. NANDHINI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Programming in C",
+          "subjectCode": "BCSC101",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. M. NANDHINI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Mathematics – I",
+          "subjectCode": "BCIM103",
+          "type": "Allied",
+          "faculty": {
+            "name": "Dr. RAJPRIYA DARSHINI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Mathematics – I",
+          "subjectCode": "BCIM103",
+          "type": "Allied",
+          "faculty": {
+            "name": "Dr. RAJPRIYA DARSHINI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "C Programming Lab",
+          "subjectCode": "BCSP104",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. M. NANDHINI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "C Programming Lab",
+          "subjectCode": "BCSP104",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. M. NANDHINI"
+          },
+          "room": "203"
+        }
+      ]
+    },
+    {
+      "day": "Tuesday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Computer Fundamentals Lab",
+          "subjectCode": "BCSP105",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. SL. JAYALAKSHMI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Computer Fundamentals Lab",
+          "subjectCode": "BCSP105",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. SL. JAYALAKSHMI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Computer Fundamentals",
+          "subjectCode": "BCSC102",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. SL. JAYALAKSHMI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Computer Fundamentals",
+          "subjectCode": "BCSC102",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. SL. JAYALAKSHMI"
+          },
+          "room": "203"
+        }
+      ]
+    },
+    {
+      "day": "Wednesday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Computer Fundamentals",
+          "subjectCode": "BCSC102",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. SL. JAYALAKSHMI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Computer Fundamentals",
+          "subjectCode": "BCSC102",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. SL. JAYALAKSHMI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Mathematics – I",
+          "subjectCode": "BCIM103",
+          "type": "Allied",
+          "faculty": {
+            "name": "Dr. RAJPRIYA DARSHINI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Mathematics – I",
+          "subjectCode": "BCIM103",
+          "type": "Allied",
+          "faculty": {
+            "name": "Dr. RAJPRIYA DARSHINI"
+          },
+          "room": "203"
+        }
+      ]
+    },
+    {
+      "day": "Thursday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Computer Fundamentals Lab",
+          "subjectCode": "BCSP105",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. SL. JAYALAKSHMI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Computer Fundamentals Lab",
+          "subjectCode": "BCSP105",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. SL. JAYALAKSHMI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "C Programming Lab",
+          "subjectCode": "BCSP104",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. M. NANDHINI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "C Programming Lab",
+          "subjectCode": "BCSP104",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. M. NANDHINI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Programming in C",
+          "subjectCode": "BCSC101",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. M. NANDHINI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Programming in C",
+          "subjectCode": "BCSC101",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. M. NANDHINI"
+          },
+          "room": "203"
+        }
+      ]
+    },
+    {
+      "day": "Friday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "C Programming Lab",
+          "subjectCode": "BCSP104",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. M. NANDHINI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "C Programming Lab",
+          "subjectCode": "BCSP104",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. M. NANDHINI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Programming in C",
+          "subjectCode": "BCSC101",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. M. NANDHINI"
+          },
+          "room": "203"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Computer Fundamentals",
+          "subjectCode": "BCSC102",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. SL. JAYALAKSHMI"
+          },
+          "room": "203"
+        }
+      ]
+    }
+  ],
+  "subjects": [
+    {
+      "code": "BCSC101",
+      "name": "Programming in C",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr. M. NANDHINI"
+    },
+    {
+      "code": "BCSC102",
+      "name": "Computer Fundamentals",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr. SL. JAYALAKSHMI"
+    },
+    {
+      "code": "BCIM103",
+      "name": "Mathematics – I",
+      "type": "Allied",
+      "hours": 3,
+      "faculty": "Dr. RAJPRIYA DARSHINI"
+    },
+    {
+      "code": "BCSP104",
+      "name": "C Programming Lab",
+      "type": "Hardcore",
+      "hours": 2,
+      "faculty": "Dr. M. NANDHINI"
+    },
+    {
+      "code": "BCSP105",
+      "name": "Computer Fundamentals Lab",
+      "type": "Hardcore",
+      "hours": 2,
+      "faculty": "Dr. SL. JAYALAKSHMI"
+    }
+  ]
+}
+

@@ -71,6 +71,7 @@ export const MCA_1ST_YEAR_STUDENTS = [
     { registerNumber: '25MCA00PY0077', name: 'RATHEESH R' },
     { registerNumber: '25MCA00PY0078', name: 'LAVANYA' },
     { registerNumber: '25MCA00PY0079', name: 'KURALAMUTHU S' },
+    { registerNumber: '25MCA00PY0080', name: 'NARESH' }, // Added - was listed as 0070 but that number is already used
     { registerNumber: '25MCA00PY0081', name: 'HARI GOPI' },
     { registerNumber: '25MCA00PY0082', name: 'DEEPIKA' },
     { registerNumber: '25MCA00PY0083', name: 'ARCHANA' },

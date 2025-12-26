@@ -161,10 +161,6 @@ const OfficeProfile = ({ navigation }) => {
                     </View>
                     <View style={styles.permissionItem}>
                         <MaterialCommunityIcons name="check-circle" size={20} color={colors.success} />
-                        <Text style={styles.permissionText}>Exam eligibility control</Text>
-                    </View>
-                    <View style={styles.permissionItem}>
-                        <MaterialCommunityIcons name="check-circle" size={20} color={colors.success} />
                         <Text style={styles.permissionText}>Results upload</Text>
                     </View>
                 </PremiumCard>

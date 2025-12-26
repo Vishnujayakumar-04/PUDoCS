@@ -9,6 +9,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PropTypes from 'prop-types';
 import colors from '../styles/colors';
+import { isSmallScreen, moderateScale } from '../utils/responsive';
 
 // Optional haptic feedback (gracefully handle if not available)
 let Haptics = null;
@@ -34,8 +35,12 @@ const FloatingTabBar = ({ state, descriptors, navigation }) => {
         });
 
         const visibleCount = visible.length || 1; // Prevent division by zero
-        const tabBarWidth = SCREEN_WIDTH - 32;
-        const width = tabBarWidth / visibleCount;
+        const horizontalPadding = isSmallScreen() ? 24 : 32; // Less padding on small screens
+        const tabBarWidth = SCREEN_WIDTH - horizontalPadding;
+        // Calculate width but ensure it's not too small - minimum 45px per tab on small screens
+        const calculatedWidth = tabBarWidth / visibleCount;
+        const minWidth = isSmallScreen() ? 45 : 56;
+        const width = Math.max(calculatedWidth, minWidth);
 
         // Map of route index to visible position
         const routeMap = new Map();
@@ -74,7 +79,7 @@ const FloatingTabBar = ({ state, descriptors, navigation }) => {
     });
 
     return (
-        <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+        <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 12) + 8 }]}>
             <View style={styles.tabBar}>
                 {/* Floating Active Indicator */}
                 <Animated.View style={[styles.activeIndicator, animatedIndicatorStyle]}>
@@ -120,11 +125,13 @@ const FloatingTabBar = ({ state, descriptors, navigation }) => {
                     };
 
                     // Render icon from options.tabBarIcon function
+                    // Use smaller icons on small screens to prevent hiding
+                    const iconSize = isSmallScreen() ? 20 : 24;
                     const iconElement = options.tabBarIcon
                         ? options.tabBarIcon({
                               focused: isFocused,
                               color: isFocused ? colors.white : colors.gray400,
-                              size: 24,
+                              size: iconSize,
                           })
                         : null;
 
@@ -137,7 +144,10 @@ const FloatingTabBar = ({ state, descriptors, navigation }) => {
                             testID={options.tabBarTestID}
                             onPress={onPress}
                             onLongPress={onLongPress}
-                            style={[styles.tabButton, { width: tabWidth }]}
+                            style={[styles.tabButton, { 
+                                width: tabWidth,
+                                maxWidth: tabWidth, // Prevent overflow
+                            }]}
                             activeOpacity={0.7}
                         >
                             <View
@@ -162,15 +172,15 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        paddingHorizontal: 16,
-        paddingTop: 12,
+        paddingHorizontal: isSmallScreen() ? 12 : 16, // Less padding on small screens
+        paddingTop: isSmallScreen() ? 8 : 12,
     },
     tabBar: {
         flexDirection: 'row',
         backgroundColor: colors.white,
         borderRadius: 32,
         paddingVertical: 8,
-        paddingHorizontal: 8,
+        paddingHorizontal: isSmallScreen() ? 4 : 8, // Less padding on small screens
         shadowColor: colors.black,
         shadowOffset: {
             width: 0,
@@ -180,18 +190,20 @@ const styles = StyleSheet.create({
         shadowRadius: 12,
         elevation: 8,
         position: 'relative',
-        minHeight: 72,
+        minHeight: isSmallScreen() ? 64 : 72, // Smaller height on small screens
         alignItems: 'center',
+        justifyContent: 'space-around',
+        overflow: 'hidden',
     },
     activeIndicator: {
         position: 'absolute',
-        width: 56,
-        height: 56,
-        borderRadius: 28,
+        width: isSmallScreen() ? 48 : 56, // Smaller on small screens
+        height: isSmallScreen() ? 48 : 56,
+        borderRadius: isSmallScreen() ? 24 : 28,
         backgroundColor: colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
-        left: 8,
+        left: isSmallScreen() ? 4 : 8, // Less left offset on small screens
         zIndex: 0,
         shadowColor: colors.primary,
         shadowOffset: {
@@ -211,15 +223,18 @@ const styles = StyleSheet.create({
         bottom: 6,
     },
     tabButton: {
-        height: 56,
+        height: isSmallScreen() ? 48 : 56, // Smaller on small screens
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 1,
+        flexShrink: 0,
+        minWidth: isSmallScreen() ? 48 : 56, // Smaller min width on small screens
+        flex: 1, // Allow flex to distribute space evenly
     },
     iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
+        width: isSmallScreen() ? 36 : 40, // Smaller on small screens
+        height: isSmallScreen() ? 36 : 40,
+        borderRadius: isSmallScreen() ? 18 : 20,
         justifyContent: 'center',
         alignItems: 'center',
         flexShrink: 0,

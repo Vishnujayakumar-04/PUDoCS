@@ -1,0 +1,370 @@
+{
+  "program": "B.Tech",
+  "year": 2,
+  "class": "II BTECH CSE",
+  "room": "SH 220 - I Floor",
+  "schedule": [
+    {
+      "day": "Monday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Programming with C++",
+          "subjectCode": "CSH01",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr JEYAKODI"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Programming with C++",
+          "subjectCode": "CSH01",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr JEYAKODI"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Organizational Behaviour",
+          "subjectCode": "CSHS405",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr R SUBRAMANIAN"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Organizational Behaviour",
+          "subjectCode": "CSHS405",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr R SUBRAMANIAN"
+          },
+          "room": "SH 220"
+        }
+      ]
+    },
+    {
+      "day": "Tuesday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Computer Organization & Architecture",
+          "subjectCode": "CSPC402",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr K SURESH JOSEPH"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Design & Analysis of Algorithms",
+          "subjectCode": "CSPC403",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr V UMA"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Design & Analysis of Algorithms",
+          "subjectCode": "CSPC403",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr V UMA"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "01:30 PM",
+          "endTime": "02:30 PM",
+          "subject": "Design & Analysis of Algorithms Lab",
+          "subjectCode": "CSPL402",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr V UMA"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Design & Analysis of Algorithms Lab",
+          "subjectCode": "CSPL402",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr V UMA"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Design & Analysis of Algorithms Lab",
+          "subjectCode": "CSPL402",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr V UMA"
+          },
+          "room": "SH 220"
+        }
+      ]
+    },
+    {
+      "day": "Wednesday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Programming with C++",
+          "subjectCode": "CSH01",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr JEYAKODI"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Programming with C++",
+          "subjectCode": "CSH01",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr JEYAKODI"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Computer Organization & Architecture",
+          "subjectCode": "CSPC402",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr K SURESH JOSEPH"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Computer Organization & Architecture",
+          "subjectCode": "CSPC402",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr K SURESH JOSEPH"
+          },
+          "room": "SH 220"
+        }
+      ]
+    },
+    {
+      "day": "Thursday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Computer Organization & Architecture Lab",
+          "subjectCode": "CSPL401",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr K SURESH JOSEPH"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Computer Organization & Architecture Lab",
+          "subjectCode": "CSPL401",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr K SURESH JOSEPH"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Computer Organization & Architecture Lab",
+          "subjectCode": "CSPL401",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr K SURESH JOSEPH"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "01:30 PM",
+          "endTime": "02:30 PM",
+          "subject": "Advanced Programming in JAVA",
+          "subjectCode": "CSPC404",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr T VENGATTARAMAN"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Advanced Programming in JAVA",
+          "subjectCode": "CSPC404",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr T VENGATTARAMAN"
+          },
+          "room": "SH 220"
+        }
+      ]
+    },
+    {
+      "day": "Friday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Organizational Behaviour",
+          "subjectCode": "CSHS405",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr R SUBRAMANIAN"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Design & Analysis of Algorithms",
+          "subjectCode": "CSPC403",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr V UMA"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "JAVA Programming Lab",
+          "subjectCode": "CSPL403",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr T VENGATTARAMAN"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "JAVA Programming Lab",
+          "subjectCode": "CSPL403",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr T VENGATTARAMAN"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "JAVA Programming Lab",
+          "subjectCode": "CSPL403",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr T VENGATTARAMAN"
+          },
+          "room": "SH 220"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "JAVA Programming Lab",
+          "subjectCode": "CSPL403",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr T VENGATTARAMAN"
+          },
+          "room": "SH 220"
+        }
+      ]
+    }
+  ],
+  "subjects": [
+    {
+      "code": "CSH01",
+      "name": "Programming with C++",
+      "type": "Softcore",
+      "hours": 4,
+      "faculty": "Dr JEYAKODI"
+    },
+    {
+      "code": "CSHS405",
+      "name": "Organizational Behaviour",
+      "type": "Softcore",
+      "hours": 3,
+      "faculty": "Dr R SUBRAMANIAN"
+    },
+    {
+      "code": "CSPC402",
+      "name": "Computer Organization & Architecture",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr K SURESH JOSEPH"
+    },
+    {
+      "code": "CSPC403",
+      "name": "Design & Analysis of Algorithms",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr V UMA"
+    },
+    {
+      "code": "CSPC404",
+      "name": "Advanced Programming in JAVA",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr T VENGATTARAMAN"
+    },
+    {
+      "code": "CSPL401",
+      "name": "Computer Organization & Architecture Lab",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr K SURESH JOSEPH"
+    },
+    {
+      "code": "CSPL402",
+      "name": "Design & Analysis of Algorithms Lab",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr V UMA"
+    },
+    {
+      "code": "CSPL403",
+      "name": "JAVA Programming Lab",
+      "type": "Hardcore",
+      "hours": 5,
+      "faculty": "Dr T VENGATTARAMAN"
+    }
+  ],
+  "notes": [
+    "DISCRETE MATHS, EVS – OTHER DEPARTMENT"
+  ]
+}
+
