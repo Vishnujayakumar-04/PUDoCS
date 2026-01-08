@@ -18,5 +18,5 @@ Commands I ran
 
 Notes & next steps
 - The installed `expo` package ended up at `~54.0.31` which is in the SDK 54 series and should be compatible with Expo Go client `54.0.6` and SDK 54.
-- If you want `expo` to be exactly `54.0.6`, set `"expo": "54.0.6"` in `package.json` and re-run `npm install` and `npx expo install --fix` (some packages may suggest slightly different patch versions).
+- I pinned `expo` to **54.0.6** and re-ran a clean reinstall and `npx expo install --fix`.
 - After any changes, run `npx expo-doctor` and `npx expo start` to confirm everything runs as expected.
