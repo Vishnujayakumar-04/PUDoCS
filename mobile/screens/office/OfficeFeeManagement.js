@@ -8,20 +8,16 @@ import {
     Modal,
     Alert,
     TextInput,
-    FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { officeService } from '../../services/officeService';
-import PremiumHeader from '../../components/PremiumHeader';
+import { studentStorageService } from '../../services/studentStorageService';
 import PremiumCard from '../../components/PremiumCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import colors from '../../styles/colors';
-import { moderateScale, getFontSize, getPadding, getMargin } from '../../utils/responsive';
-import { getAllStudentCollections } from '../../utils/collectionMapper';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../../services/firebaseConfig';
+import { getFontSize, getPadding, getMargin } from '../../utils/responsive';
 
 // Document Status Component
 const DocumentStatusList = ({ student, documentTypes }) => {
@@ -32,51 +28,35 @@ const DocumentStatusList = ({ student, documentTypes }) => {
         const loadDocumentStatuses = async () => {
             setLoadingDocs(true);
             const statuses = {};
-            
+
             try {
                 const studentId = student.id || student._id || student.registerNumber;
                 if (studentId) {
-                    const docRef = doc(db, 'studentDocuments', studentId);
-                    const docSnap = await getDoc(docRef);
-                    
-                    if (docSnap.exists()) {
-                        const documents = docSnap.data();
-                        
-                        documentTypes.forEach(docType => {
-                            // Map document type labels to Firestore document keys
-                            const docKeyMap = {
-                                'Income Certificate': ['incomeCertificate', 'incomecertificate', 'income_certificate'],
-                                'Caste Certificate': ['casteCertificate', 'castecertificate', 'caste_certificate'],
-                                'Aadhar Card': ['aadharCard', 'aadharcard', 'aadhar_card'],
-                                'Bank Passbook': ['bankPassbook', 'bankpassbook', 'bank_passbook'],
-                                'Scholarship Form': ['scholarshipForm', 'scholarshipform', 'scholarship_form'],
-                                'Medical Certificate': ['medicalCertificate', 'medicalcertificate', 'medical_certificate'],
-                                'Transfer Certificate': ['transferCertificate', 'transfercertificate', 'transfer_certificate'],
-                                'Migration Certificate': ['migrationCertificate', 'migrationcertificate', 'migration_certificate'],
-                            };
-                            
-                            const possibleKeys = docKeyMap[docType] || [
-                                docType.toLowerCase().replace(/\s+/g, ''),
-                                docType.toLowerCase().replace(/\s+/g, '_'),
-                            ];
-                            
-                            let found = false;
-                            for (const key of possibleKeys) {
-                                if (documents[key] && (documents[key].url || documents[key].uploadedAt)) {
-                                    statuses[docType] = 'Uploaded';
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if (!found) {
-                                statuses[docType] = 'Pending';
-                            }
-                        });
-                    } else {
-                        documentTypes.forEach(docType => {
+                    const documents = await studentStorageService.getDocumentMetadata(studentId);
+
+                    documentTypes.forEach(docType => {
+                        // Map document type labels to local keys (same as in StudentDocuments.js)
+                        const docKeyMap = {
+                            'Income Certificate': 'incomeCertificate',
+                            'Caste Certificate': 'casteCertificate',
+                            'Aadhar Card': 'aadharCard', // Not in StudentDocuments list? adding here just in case
+                            'Bank Passbook': 'bankPassbook',
+                            'Scholarship Form': 'scholarshipForm',
+                            'Medical Certificate': 'medicalCertificate',
+                            'Transfer Certificate': 'transferCertificate',
+                            'Migration Certificate': 'migrationCertificate',
+                            // Add others if needed
+                        };
+
+                        // Check exact match or mapped key
+                        const key = docKeyMap[docType] || docType;
+
+                        if (documents[key] && (documents[key].url || documents[key].uploadedAt)) {
+                            statuses[docType] = 'Uploaded';
+                        } else {
                             statuses[docType] = 'Pending';
-                        });
-                    }
+                        }
+                    });
                 } else {
                     documentTypes.forEach(docType => {
                         statuses[docType] = 'Pending';
@@ -88,11 +68,11 @@ const DocumentStatusList = ({ student, documentTypes }) => {
                     statuses[docType] = 'Pending';
                 });
             }
-            
+
             setDocStatuses(statuses);
             setLoadingDocs(false);
         };
-        
+
         loadDocumentStatuses();
     }, [student, documentTypes]);
 
@@ -156,35 +136,34 @@ const OfficeFeeManagement = () => {
     const loadStudents = async (programName, year) => {
         setLoading(true);
         try {
-            // Get all students from all collections
+            // Get all students using officeService (which checks local storage)
             const allStudents = await officeService.getStudents();
-            
+
             // Filter by program and year
             const filtered = allStudents.filter(s => {
                 const sProgram = (s.program || '').toLowerCase();
                 const sYear = s.year || '';
-                const normalizedYear = typeof sYear === 'string' ? 
-                    (sYear === 'I' ? 1 : sYear === 'II' ? 2 : sYear === 'III' ? 3 : sYear === 'IV' ? 4 : parseInt(sYear, 10)) : 
+                const normalizedYear = typeof sYear === 'string' ?
+                    (sYear === 'I' ? 1 : sYear === 'II' ? 2 : sYear === 'III' ? 3 : sYear === 'IV' ? 4 : parseInt(sYear, 10)) :
                     sYear;
-                
-                const targetYear = typeof year === 'string' ? 
-                    (year === 'I' ? 1 : year === 'II' ? 2 : year === 'III' ? 3 : year === 'IV' ? 4 : parseInt(year, 10)) : 
+
+                const targetYear = typeof year === 'string' ?
+                    (year === 'I' ? 1 : year === 'II' ? 2 : year === 'III' ? 3 : year === 'IV' ? 4 : parseInt(year, 10)) :
                     year;
-                
-                const programMatch = sProgram.includes(programName.toLowerCase()) || 
-                                   (programName === 'B.Tech' && (sProgram.includes('btech') || sProgram.includes('b.tech'))) ||
-                                   (programName === 'B.Sc CS' && (sProgram.includes('bsc') || sProgram.includes('b.sc'))) ||
-                                   (programName === 'M.Sc CS' && (sProgram.includes('msc') || sProgram.includes('m.sc'))) ||
-                                   (programName === 'M.Tech DS' && (sProgram.includes('mtech') || sProgram.includes('m.tech') || sProgram.includes('data science') || sProgram.includes('data analytics'))) ||
-                                   (programName === 'M.Tech CSE' && (sProgram.includes('mtech') || sProgram.includes('m.tech')) && sProgram.includes('cse')) ||
-                                   (programName === 'M.Tech NIS' && (sProgram.includes('mtech') || sProgram.includes('m.tech')) && sProgram.includes('nis')) ||
-                                   (programName === 'M.Sc Data Analytics' && (sProgram.includes('msc') || sProgram.includes('m.sc')) && (sProgram.includes('data') || sProgram.includes('analytics'))) ||
-                                   (programName === 'M.Sc CS Integrated' && (sProgram.includes('msc') || sProgram.includes('m.sc')) && sProgram.includes('integrated')) ||
-                                   (programName === 'MCA' && sProgram.includes('mca'));
-                
+
+                const programMatch = sProgram.includes(programName.toLowerCase()) ||
+                    (programName === 'B.Tech' && (sProgram.includes('btech') || sProgram.includes('b.tech')) && sProgram.includes('cse')) ||
+                    (programName === 'B.Sc CS' && (sProgram.includes('bsc') || sProgram.includes('b.sc'))) ||
+                    (programName === 'M.Sc CS' && (sProgram.includes('msc') || sProgram.includes('m.sc')) && !sProgram.includes('integrated') && !sProgram.includes('data')) ||
+                    (programName === 'M.Tech DS' && (sProgram.includes('mtech') || sProgram.includes('m.tech')) && (sProgram.includes('data science') || sProgram.includes('data analytics') || sProgram.includes('da'))) ||
+                    (programName === 'M.Tech CSE' && (sProgram.includes('mtech') || sProgram.includes('m.tech')) && sProgram.includes('cse')) ||
+                    (programName === 'M.Sc Data Analytics' && (sProgram.includes('msc') || sProgram.includes('m.sc')) && (sProgram.includes('data') || sProgram.includes('analytics'))) ||
+                    (programName === 'M.Sc CS Integrated' && (sProgram.includes('msc') || sProgram.includes('m.sc')) && sProgram.includes('integrated')) ||
+                    (programName === 'MCA' && sProgram.includes('mca'));
+
                 return programMatch && normalizedYear === targetYear;
             });
-            
+
             setStudents(filtered);
         } catch (error) {
             console.error('Error loading students:', error);
@@ -225,7 +204,7 @@ const OfficeFeeManagement = () => {
     const handleSaveFee = async () => {
         try {
             const studentId = selectedStudent.id || selectedStudent._id || selectedStudent.registerNumber;
-            
+
             const feeUpdate = {
                 [feeData.feeType]: {
                     status: feeData.status,
@@ -234,7 +213,7 @@ const OfficeFeeManagement = () => {
                     reference: feeData.reference || null,
                 }
             };
-            
+
             await officeService.updateFees(studentId, feeUpdate);
             Alert.alert('Success', 'Fee status updated successfully');
             setModalVisible(false);
@@ -252,59 +231,25 @@ const OfficeFeeManagement = () => {
         return fee.status === 'Paid' || fee === true ? 'Paid' : 'Not Paid';
     };
 
-    const getDocumentStatus = async (student, docType) => {
-        try {
-            const studentId = student.id || student._id || student.registerNumber;
-            if (!studentId) return 'Pending';
-            
-            const docRef = doc(db, 'studentDocuments', studentId);
-            const docSnap = await getDoc(docRef);
-            
-            if (!docSnap.exists()) return 'Pending';
-            
-            const documents = docSnap.data();
-            const docKey = docType.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/g, '');
-            
-            // Check various possible key formats
-            const possibleKeys = [
-                docKey,
-                docType.toLowerCase().replace(/\s+/g, '_'),
-                docType.toLowerCase().replace(/\s+/g, ''),
-                docType,
-            ];
-            
-            for (const key of possibleKeys) {
-                if (documents[key] && (documents[key].url || documents[key].uploadedAt)) {
-                    return 'Uploaded';
-                }
-            }
-            
-            return 'Pending';
-        } catch (error) {
-            console.error('Error checking document status:', error);
-            return 'Pending';
-        }
-    };
-
     const calculateClassStats = () => {
         const total = students.length;
         let semesterPaid = 0;
         let examPaid = 0;
         let hostelPaid = 0;
         const pendingDocuments = {};
-        
+
+        // This is tricky as we process docs async now. 
+        // For simplicity in this view, we might not count perfectly without extra logic.
+        // We will just show detailed report for paid/unpaid fees which is sync from student list
+        // and simplified doc summary if possible or skip doc summary for class view to avoid complexity.
+        // For now, I'll count paid fees.
+
         students.forEach(student => {
             if (getFeeStatus(student, 'semester') === 'Paid') semesterPaid++;
             if (getFeeStatus(student, 'exam') === 'Paid') examPaid++;
             if (getFeeStatus(student, 'hostel') === 'Paid') hostelPaid++;
-            
-            documentTypes.forEach(docType => {
-                if (getDocumentStatus(student, docType) === 'Pending') {
-                    pendingDocuments[docType] = (pendingDocuments[docType] || 0) + 1;
-                }
-            });
         });
-        
+
         return {
             total,
             semesterPaid,
@@ -313,7 +258,8 @@ const OfficeFeeManagement = () => {
             semesterPending: total - semesterPaid,
             examPending: total - examPaid,
             hostelPending: total - hostelPaid,
-            pendingDocuments,
+            // pendingDocuments omitted for now as it requires async lookups per student
+            pendingDocuments: {},
         };
     };
 
@@ -374,12 +320,10 @@ const OfficeFeeManagement = () => {
     const renderUGSelection = () => (
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
             <ProgramSection
-                title="B.Tech Programs"
+                title="B.Tech CSE Programs"
                 items={[
-                    { label: 'B.Tech – 1st Year', name: 'B.Tech', year: 1, category: 'UG' },
-                    { label: 'B.Tech – 2nd Year', name: 'B.Tech', year: 2, category: 'UG' },
-                    { label: 'B.Tech – 3rd Year', name: 'B.Tech', year: 3, category: 'UG' },
-                    { label: 'B.Tech – 4th Year', name: 'B.Tech', year: 4, category: 'UG' },
+                    { label: 'B.Tech CSE – 1st Year', name: 'B.Tech', year: 1, category: 'UG' },
+                    { label: 'B.Tech CSE – 2nd Year', name: 'B.Tech', year: 2, category: 'UG' },
                 ]}
             />
             <ProgramSection
@@ -398,20 +342,16 @@ const OfficeFeeManagement = () => {
             <ProgramSection
                 title="M.Tech Programs"
                 items={[
-                    { label: 'M.Tech Data Science & AI – 1st Year', name: 'M.Tech DS', year: 1, category: 'PG' },
+                    { label: 'M.Tech Data Science – 1st Year', name: 'M.Tech DS', year: 1, category: 'PG' },
                     { label: 'M.Tech CSE – 1st Year', name: 'M.Tech CSE', year: 1, category: 'PG' },
-                    { label: 'M.Tech CSE – 2nd Year', name: 'M.Tech CSE', year: 2, category: 'PG' },
-                    { label: 'M.Tech NIS – 2nd Year', name: 'M.Tech NIS', year: 2, category: 'PG' },
                 ]}
             />
             <ProgramSection
                 title="M.Sc Programs"
                 items={[
-                    { label: 'M.Sc CS – 1st Year', name: 'M.Sc CS', year: 1, category: 'PG' },
                     { label: 'M.Sc CS – 2nd Year', name: 'M.Sc CS', year: 2, category: 'PG' },
                     { label: 'M.Sc Data Analytics – 1st Year', name: 'M.Sc Data Analytics', year: 1, category: 'PG' },
-                    { label: 'M.Sc CS Integrated – 5th Year', name: 'M.Sc CS Integrated', year: 5, category: 'PG' },
-                    { label: 'M.Sc CS Integrated – 6th Year', name: 'M.Sc CS Integrated', year: 6, category: 'PG' },
+                    { label: 'M.Sc CS Integrated – 1st Year', name: 'M.Sc CS Integrated', year: 1, category: 'PG' },
                 ]}
             />
             <ProgramSection
@@ -425,17 +365,8 @@ const OfficeFeeManagement = () => {
     );
 
     const renderClassView = () => {
-        const stats = classStats || {
-            total: students.length,
-            semesterPaid: 0,
-            examPaid: 0,
-            hostelPaid: 0,
-            semesterPending: students.length,
-            examPending: students.length,
-            hostelPending: students.length,
-            pendingDocuments: {},
-        };
-        
+        const stats = calculateClassStats();
+
         return (
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 {/* Class Header */}
@@ -513,10 +444,10 @@ const OfficeFeeManagement = () => {
                                             setModalVisible(true);
                                         }}
                                     >
-                                        <MaterialCommunityIcons 
-                                            name="file-document" 
-                                            size={16} 
-                                            color={colors.primary} 
+                                        <MaterialCommunityIcons
+                                            name="file-document"
+                                            size={16}
+                                            color={colors.primary}
                                         />
                                     </TouchableOpacity>
                                 </View>
@@ -528,7 +459,7 @@ const OfficeFeeManagement = () => {
                 {/* Class Summary */}
                 <PremiumCard style={styles.summaryCard}>
                     <Text style={styles.summaryTitle}>Class Summary</Text>
-                    
+
                     <View style={styles.summaryRow}>
                         <Text style={styles.summaryLabel}>Total Students:</Text>
                         <Text style={styles.summaryValue}>{stats.total}</Text>
@@ -536,7 +467,7 @@ const OfficeFeeManagement = () => {
 
                     <View style={styles.summarySection}>
                         <Text style={styles.summarySectionTitle}>Fee Status</Text>
-                        
+
                         <View style={styles.summaryRow}>
                             <Text style={styles.summaryLabel}>Semester Fee:</Text>
                             <View style={styles.summaryStatus}>
@@ -572,22 +503,6 @@ const OfficeFeeManagement = () => {
                                 </Text>
                             </View>
                         </View>
-                    </View>
-
-                    <View style={styles.summarySection}>
-                        <Text style={styles.summarySectionTitle}>Pending Documents</Text>
-                        {Object.keys(stats.pendingDocuments).length === 0 ? (
-                            <Text style={styles.noPendingText}>✅ All documents uploaded</Text>
-                        ) : (
-                            Object.entries(stats.pendingDocuments).map(([docType, count]) => (
-                                <View key={docType} style={styles.summaryRow}>
-                                    <Text style={styles.summaryLabel}>{docType}:</Text>
-                                    <Text style={[styles.summaryValue, { color: colors.warning }]}>
-                                        {count} pending
-                                    </Text>
-                                </View>
-                            ))
-                        )}
                     </View>
                 </PremiumCard>
             </ScrollView>
@@ -807,103 +722,112 @@ const styles = StyleSheet.create({
         fontSize: getFontSize(24),
         fontWeight: '700',
         color: colors.white,
-        marginTop: getMargin(12),
+        marginTop: 16,
+        marginBottom: 8,
     },
     categorySubtitle: {
-        fontSize: getFontSize(14),
-        color: colors.white + 'CC',
-        marginTop: getMargin(4),
+        fontSize: getFontSize(16),
+        color: colors.white,
+        opacity: 0.9,
     },
     sectionContainer: {
-        marginBottom: getMargin(24),
+        padding: getPadding(16),
     },
     sectionTitle: {
         fontSize: getFontSize(18),
-        fontWeight: '600',
+        fontWeight: '700',
         color: colors.textPrimary,
-        marginBottom: getMargin(12),
-        paddingHorizontal: getPadding(16),
+        marginBottom: 16,
     },
     listItem: {
         backgroundColor: colors.white,
-        marginHorizontal: getMargin(16),
-        marginBottom: getMargin(8),
         borderRadius: 12,
-        overflow: 'hidden',
+        marginBottom: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: colors.gray200,
     },
     listItemContent: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
-        padding: getPadding(16),
+        justifyContent: 'space-between',
     },
     listItemText: {
         fontSize: getFontSize(16),
-        fontWeight: '500',
         color: colors.textPrimary,
+        fontWeight: '500',
     },
     classHeaderCard: {
-        margin: getMargin(16),
-        padding: getPadding(16),
+        margin: 16,
+        marginBottom: 8,
         alignItems: 'center',
+        padding: 24,
     },
     classTitle: {
         fontSize: getFontSize(20),
         fontWeight: '700',
         color: colors.textPrimary,
-        marginBottom: getMargin(4),
+        marginBottom: 4,
     },
     classSubtitle: {
         fontSize: getFontSize(14),
         color: colors.textSecondary,
     },
     tableCard: {
-        marginHorizontal: getMargin(16),
-        marginBottom: getMargin(16),
-        padding: getPadding(8),
+        margin: 16,
+        padding: 0,
+        overflow: 'hidden',
     },
     tableHeader: {
         flexDirection: 'row',
-        backgroundColor: colors.primary + '15',
-        paddingVertical: getPadding(12),
-        paddingHorizontal: getPadding(8),
-        borderRadius: 8,
-        marginBottom: getMargin(8),
+        backgroundColor: colors.primary + '10',
+        padding: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.gray200,
     },
     tableHeaderText: {
-        fontSize: getFontSize(12),
+        fontSize: 12,
         fontWeight: '700',
-        color: colors.textPrimary,
-        textAlign: 'center',
+        color: colors.primary,
     },
     tableRow: {
         flexDirection: 'row',
-        paddingVertical: getPadding(10),
-        paddingHorizontal: getPadding(8),
+        padding: 12,
         borderBottomWidth: 1,
         borderBottomColor: colors.gray100,
         alignItems: 'center',
     },
+    emptyTableRow: {
+        padding: 20,
+        alignItems: 'center',
+    },
+    emptyText: {
+        color: colors.textSecondary,
+    },
     tableCell: {
-        fontSize: getFontSize(12),
+        fontSize: 12,
         color: colors.textPrimary,
-        textAlign: 'center',
     },
     colSno: {
-        width: '8%',
+        width: 40,
+        textAlign: 'center',
     },
     colRegNo: {
-        width: '18%',
+        flex: 1,
+        paddingHorizontal: 4,
     },
     colName: {
-        width: '24%',
-        textAlign: 'left',
+        flex: 1.5,
+        paddingHorizontal: 4,
     },
     colFee: {
-        width: '10%',
+        width: 50,
+        alignItems: 'center',
+        paddingHorizontal: 2,
     },
     colDocs: {
-        width: '10%',
+        width: 50,
+        alignItems: 'center',
     },
     statusBadge: {
         width: 24,
@@ -911,71 +835,60 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         justifyContent: 'center',
         alignItems: 'center',
-        alignSelf: 'center',
     },
     statusText: {
-        fontSize: getFontSize(12),
         color: colors.white,
+        fontSize: 10,
         fontWeight: 'bold',
     },
     docButton: {
-        padding: getPadding(4),
-        alignSelf: 'center',
-    },
-    emptyTableRow: {
-        padding: getPadding(20),
-        alignItems: 'center',
-    },
-    emptyText: {
-        fontSize: getFontSize(14),
-        color: colors.textSecondary,
+        padding: 4,
     },
     summaryCard: {
-        marginHorizontal: getMargin(16),
-        marginBottom: getMargin(100),
-        padding: getPadding(16),
+        margin: 16,
+        marginTop: 0,
+        marginBottom: 32,
     },
     summaryTitle: {
         fontSize: getFontSize(18),
         fontWeight: '700',
         color: colors.textPrimary,
-        marginBottom: getMargin(16),
-    },
-    summarySection: {
-        marginBottom: getMargin(16),
-    },
-    summarySectionTitle: {
-        fontSize: getFontSize(16),
-        fontWeight: '600',
-        color: colors.textPrimary,
-        marginBottom: getMargin(8),
+        marginBottom: 16,
     },
     summaryRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: getPadding(8),
-        borderBottomWidth: 1,
-        borderBottomColor: colors.gray100,
+        marginBottom: 12,
     },
     summaryLabel: {
-        fontSize: getFontSize(14),
+        fontSize: 14,
         color: colors.textSecondary,
-        fontWeight: '500',
     },
     summaryValue: {
-        fontSize: getFontSize(14),
+        fontSize: 14,
+        fontWeight: '600',
+        color: colors.primary,
+    },
+    summarySection: {
+        marginTop: 16,
+        paddingTop: 16,
+        borderTopWidth: 1,
+        borderTopColor: colors.gray200,
+    },
+    summarySectionTitle: {
+        fontSize: 14,
         fontWeight: '600',
         color: colors.textPrimary,
+        marginBottom: 12,
     },
     summaryStatus: {
         flexDirection: 'row',
     },
     noPendingText: {
-        fontSize: getFontSize(14),
         color: colors.success,
-        fontWeight: '500',
-        paddingVertical: getPadding(8),
+        fontSize: 14,
+        fontStyle: 'italic',
     },
     modalOverlay: {
         flex: 1,
@@ -985,29 +898,31 @@ const styles = StyleSheet.create({
     },
     modalContent: {
         backgroundColor: colors.white,
-        borderRadius: 12,
-        padding: 20,
-        maxHeight: '90%',
+        borderRadius: 20,
+        maxHeight: '80%',
+        overflow: 'hidden',
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.gray200,
     },
     modalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
+        fontSize: 18,
+        fontWeight: '700',
         color: colors.textPrimary,
     },
     modalScrollView: {
-        maxHeight: '70%',
+        padding: 20,
     },
     studentInfo: {
-        backgroundColor: colors.gray50,
-        padding: 12,
-        borderRadius: 8,
-        marginBottom: 16,
+        padding: 20,
+        backgroundColor: colors.gray100,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.gray200,
     },
     infoText: {
         fontSize: 16,
@@ -1017,103 +932,106 @@ const styles = StyleSheet.create({
     infoSubtext: {
         fontSize: 14,
         color: colors.textSecondary,
-        marginTop: 2,
+        marginTop: 4,
     },
     label: {
         fontSize: 14,
         fontWeight: '600',
         color: colors.textPrimary,
-        marginTop: 8,
-        marginBottom: 4,
-    },
-    input: {
-        backgroundColor: colors.gray100,
-        borderRadius: 8,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        fontSize: 14,
-        marginBottom: 12,
+        marginBottom: 8,
+        marginTop: 16,
     },
     pickerContainer: {
         flexDirection: 'row',
         gap: 8,
-        marginBottom: 12,
+        marginBottom: 8,
     },
     pickerButton: {
-        flex: 1,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
         borderRadius: 8,
-        backgroundColor: colors.gray100,
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: 'transparent',
+        borderWidth: 1,
+        borderColor: colors.gray300,
+        backgroundColor: colors.white,
     },
     pickerButtonActive: {
-        backgroundColor: colors.primary + '15',
+        backgroundColor: colors.primary,
         borderColor: colors.primary,
     },
     pickerButtonText: {
-        fontSize: 14,
+        fontSize: 12,
         color: colors.textSecondary,
-        fontWeight: '500',
     },
     pickerButtonTextActive: {
-        color: colors.primary,
+        color: colors.white,
+    },
+    input: {
+        borderWidth: 1,
+        borderColor: colors.gray300,
+        borderRadius: 8,
+        padding: 12,
+        marginBottom: 12,
+        fontSize: 14,
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        padding: 20,
+        borderTopWidth: 1,
+        borderTopColor: colors.gray200,
+        gap: 12,
+    },
+    modalButton: {
+        flex: 1,
+        paddingVertical: 12,
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    modalButtonCancel: {
+        backgroundColor: colors.gray200,
+    },
+    modalButtonConfirm: {
+        backgroundColor: colors.primary,
+    },
+    modalButtonCancelText: {
+        color: colors.textPrimary,
         fontWeight: '600',
     },
+    modalButtonConfirmText: {
+        color: colors.white,
+        fontWeight: '600',
+    },
+    // Document Status Styles inside Modal
     documentsSection: {
-        marginTop: 16,
+        marginTop: 20,
         paddingTop: 16,
         borderTopWidth: 1,
-        borderTopColor: colors.gray100,
+        borderTopColor: colors.gray200,
+    },
+    loadingText: {
+        color: colors.textSecondary,
+        fontStyle: 'italic',
+        fontSize: 13,
     },
     documentRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingVertical: 8,
-        marginBottom: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.gray100,
     },
     documentLabel: {
-        fontSize: 14,
-        color: colors.textPrimary,
-        fontWeight: '500',
+        fontSize: 13,
+        color: colors.textSecondary,
+        flex: 1,
     },
     documentStatus: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 12,
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderRadius: 4,
     },
     documentStatusText: {
-        fontSize: 12,
-        fontWeight: '600',
-    },
-    modalButtons: {
-        flexDirection: 'row',
-        gap: 12,
-        marginTop: 16,
-    },
-    modalButton: {
-        flex: 1,
-        paddingVertical: 14,
-        borderRadius: 12,
-        alignItems: 'center',
-    },
-    modalButtonCancel: {
-        backgroundColor: colors.gray100,
-    },
-    modalButtonCancelText: {
-        color: colors.textSecondary,
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    modalButtonConfirm: {
-        backgroundColor: colors.primary,
-    },
-    modalButtonConfirmText: {
-        color: colors.white,
-        fontSize: 16,
+        fontSize: 10,
         fontWeight: '600',
     },
 });

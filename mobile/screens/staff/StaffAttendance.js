@@ -58,12 +58,11 @@ const StaffAttendance = ({ navigation }) => {
                     selectedClass.year;
                 
                 const programMatch = sProgram.includes(selectedClass.name.toLowerCase()) || 
-                                   (selectedClass.name === 'B.Tech' && (sProgram.includes('btech') || sProgram.includes('b.tech'))) ||
+                                   (selectedClass.name === 'B.Tech' && (sProgram.includes('btech') || sProgram.includes('b.tech')) && sProgram.includes('cse')) ||
                                    (selectedClass.name === 'B.Sc CS' && (sProgram.includes('bsc') || sProgram.includes('b.sc'))) ||
-                                   (selectedClass.name === 'M.Sc CS' && (sProgram.includes('msc') || sProgram.includes('m.sc'))) ||
-                                   (selectedClass.name === 'M.Tech DS' && (sProgram.includes('mtech') || sProgram.includes('m.tech') || sProgram.includes('data science') || sProgram.includes('data analytics'))) ||
+                                   (selectedClass.name === 'M.Sc CS' && (sProgram.includes('msc') || sProgram.includes('m.sc')) && !sProgram.includes('integrated') && !sProgram.includes('data')) ||
+                                   (selectedClass.name === 'M.Tech DS' && (sProgram.includes('mtech') || sProgram.includes('m.tech')) && (sProgram.includes('data science') || sProgram.includes('data analytics') || sProgram.includes('da'))) ||
                                    (selectedClass.name === 'M.Tech CSE' && (sProgram.includes('mtech') || sProgram.includes('m.tech')) && sProgram.includes('cse')) ||
-                                   (selectedClass.name === 'M.Tech NIS' && (sProgram.includes('mtech') || sProgram.includes('m.tech')) && sProgram.includes('nis')) ||
                                    (selectedClass.name === 'M.Sc Data Analytics' && (sProgram.includes('msc') || sProgram.includes('m.sc')) && (sProgram.includes('data') || sProgram.includes('analytics'))) ||
                                    (selectedClass.name === 'M.Sc CS Integrated' && (sProgram.includes('msc') || sProgram.includes('m.sc')) && sProgram.includes('integrated')) ||
                                    (selectedClass.name === 'MCA' && sProgram.includes('mca'));
@@ -233,12 +232,10 @@ const StaffAttendance = ({ navigation }) => {
     const renderUGSelection = () => (
         <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
             <ProgramSection
-                title="B.Tech Programs"
+                title="B.Tech CSE Programs"
                 items={[
-                    { label: 'B.Tech – 1st Year', name: 'B.Tech', year: 1, category: 'UG' },
-                    { label: 'B.Tech – 2nd Year', name: 'B.Tech', year: 2, category: 'UG' },
-                    { label: 'B.Tech – 3rd Year', name: 'B.Tech', year: 3, category: 'UG' },
-                    { label: 'B.Tech – 4th Year', name: 'B.Tech', year: 4, category: 'UG' },
+                    { label: 'B.Tech CSE – 1st Year', name: 'B.Tech', year: 1, category: 'UG' },
+                    { label: 'B.Tech CSE – 2nd Year', name: 'B.Tech', year: 2, category: 'UG' },
                 ]}
             />
             <ProgramSection
@@ -257,20 +254,16 @@ const StaffAttendance = ({ navigation }) => {
             <ProgramSection
                 title="M.Tech Programs"
                 items={[
-                    { label: 'M.Tech Data Science & AI – 1st Year', name: 'M.Tech DS', year: 1, category: 'PG' },
+                    { label: 'M.Tech Data Science – 1st Year', name: 'M.Tech DS', year: 1, category: 'PG' },
                     { label: 'M.Tech CSE – 1st Year', name: 'M.Tech CSE', year: 1, category: 'PG' },
-                    { label: 'M.Tech CSE – 2nd Year', name: 'M.Tech CSE', year: 2, category: 'PG' },
-                    { label: 'M.Tech NIS – 2nd Year', name: 'M.Tech NIS', year: 2, category: 'PG' },
                 ]}
             />
             <ProgramSection
                 title="M.Sc Programs"
                 items={[
-                    { label: 'M.Sc CS – 1st Year', name: 'M.Sc CS', year: 1, category: 'PG' },
                     { label: 'M.Sc CS – 2nd Year', name: 'M.Sc CS', year: 2, category: 'PG' },
                     { label: 'M.Sc Data Analytics – 1st Year', name: 'M.Sc Data Analytics', year: 1, category: 'PG' },
-                    { label: 'M.Sc CS Integrated – 5th Year', name: 'M.Sc CS Integrated', year: 5, category: 'PG' },
-                    { label: 'M.Sc CS Integrated – 6th Year', name: 'M.Sc CS Integrated', year: 6, category: 'PG' },
+                    { label: 'M.Sc CS Integrated – 1st Year', name: 'M.Sc CS Integrated', year: 1, category: 'PG' },
                 ]}
             />
             <ProgramSection

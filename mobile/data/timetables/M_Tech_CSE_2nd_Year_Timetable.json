@@ -1,0 +1,90 @@
+{
+  "program": "M.Tech CSE",
+  "year": "II",
+  "class": "II MTECH CSE",
+  "room": "Second Floor Lab – 2",
+  "location": "Second Floor",
+  "schedule": [
+    {
+      "day": "Monday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Project Work Phase – 2",
+          "subjectCode": "CSCE 721",
+          "type": "Project",
+          "faculty": {
+            "name": "Project Guide"
+          },
+          "room": "Second Floor Lab – 2"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Project Work Phase – 2",
+          "subjectCode": "CSCE 721",
+          "type": "Project",
+          "faculty": {
+            "name": "Project Guide"
+          },
+          "room": "Second Floor Lab – 2"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Project Work Phase – 2",
+          "subjectCode": "CSCE 721",
+          "type": "Project",
+          "faculty": {
+            "name": "Project Guide"
+          },
+          "room": "Second Floor Lab – 2"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Project Work Phase – 2",
+          "subjectCode": "CSCE 721",
+          "type": "Project",
+          "faculty": {
+            "name": "Project Guide"
+          },
+          "room": "Second Floor Lab – 2"
+        },
+        {
+          "startTime": "01:30 PM",
+          "endTime": "02:30 PM",
+          "subject": "Project Work Phase – 2",
+          "subjectCode": "CSCE 721",
+          "type": "Project",
+          "faculty": {
+            "name": "Project Guide"
+          },
+          "room": "Second Floor Lab – 2"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Project Work Phase – 2",
+          "subjectCode": "CSCE 721",
+          "type": "Project",
+          "faculty": {
+            "name": "Project Guide"
+          },
+          "room": "Second Floor Lab – 2"
+        }
+      ]
+    }
+  ],
+  "subjects": [
+    {
+      "code": "CSCE 721",
+      "name": "Project Work Phase – 2",
+      "type": "Project",
+      "hours": 6,
+      "faculty": "Project Guide"
+    }
+  ]
+}
+

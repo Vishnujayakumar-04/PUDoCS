@@ -1,12 +1,14 @@
-import { db, storage } from './firebaseConfig';
-import { collection, doc, getDoc, setDoc, addDoc, getDocs, query, orderBy, deleteDoc } from 'firebase/firestore';
+import { storage } from './firebaseConfig';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as FileSystem from 'expo-file-system/legacy';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
- * Gallery Service
+ * Gallery Service (Local First)
  * Handles gallery image uploads and retrieval
  */
+
+const STORAGE_KEY = 'gallery_albums';
 
 export const galleryService = {
     /**
@@ -14,12 +16,8 @@ export const galleryService = {
      */
     getAlbums: async () => {
         try {
-            const albumsQuery = query(
-                collection(db, 'gallery'),
-                orderBy('createdAt', 'desc')
-            );
-            const snapshot = await getDocs(albumsQuery);
-            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const data = await AsyncStorage.getItem(STORAGE_KEY);
+            return data ? JSON.parse(data) : [];
         } catch (error) {
             console.error('Error getting gallery albums:', error);
             return [];
@@ -31,12 +29,8 @@ export const galleryService = {
      */
     getAlbum: async (albumId) => {
         try {
-            const albumRef = doc(db, 'gallery', albumId);
-            const albumDoc = await getDoc(albumRef);
-            if (albumDoc.exists()) {
-                return { id: albumDoc.id, ...albumDoc.data() };
-            }
-            return null;
+            const albums = await galleryService.getAlbums();
+            return albums.find(a => a.id === albumId) || null;
         } catch (error) {
             console.error('Error getting gallery album:', error);
             return null;
@@ -45,86 +39,46 @@ export const galleryService = {
 
     /**
      * Create a new gallery album
-     * @param {Object} albumData - Album data with title, description, images array
-     * @param {Array} imagePaths - Array of local image paths
-     * @param {string} postedBy - User email or ID who posted
      */
     createAlbum: async (albumData, imagePaths, postedBy) => {
         try {
             const uploadedImages = [];
-            
-            // Upload each image to Firebase Storage
+
+            // Process images (Just keep local URIs for local-first approach)
+            // If cloud sync is needed, we would upload to Firebase Storage here
             for (let i = 0; i < imagePaths.length; i++) {
                 const imagePath = imagePaths[i];
-                try {
-                    // Handle different image path formats
-                    let imageUri = imagePath;
-                    
-                    // If it's an object with uri property (from document picker)
-                    if (typeof imagePath === 'object' && imagePath.uri) {
-                        imageUri = imagePath.uri;
-                    } else if (typeof imagePath === 'string') {
-                        // If it's already a URI (file:// or http://), use it directly
-                        if (imagePath.startsWith('file://') || imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-                            imageUri = imagePath;
-                        } else {
-                            // Try to convert Windows path to file:// URI
-                            if (imagePath.includes('\\') || imagePath.includes('/')) {
-                                if (!imagePath.startsWith('file://')) {
-                                    imageUri = imagePath.startsWith('/') ? `file://${imagePath}` : `file:///${imagePath.replace(/\\/g, '/')}`;
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Get file info
-                    const fileInfo = await FileSystem.getInfoAsync(imageUri);
-                    if (!fileInfo.exists) {
-                        console.warn(`Image not found: ${imageUri}`);
-                        continue;
-                    }
-                    
-                    // Read file as base64
-                    const base64 = await FileSystem.readAsStringAsync(imageUri, {
-                        encoding: FileSystem.EncodingType.Base64,
-                    });
-                    
-                    // Convert base64 to Uint8Array
-                    const byteCharacters = atob(base64);
-                    const byteNumbers = new Array(byteCharacters.length);
-                    for (let j = 0; j < byteCharacters.length; j++) {
-                        byteNumbers[j] = byteCharacters.charCodeAt(j);
-                    }
-                    const byteArray = new Uint8Array(byteNumbers);
-                    
-                    // Upload to Firebase Storage
-                    const imageName = `gallery_${Date.now()}_${i}.jpg`;
-                    const storageRef = ref(storage, `gallery/${imageName}`);
-                    await uploadBytes(storageRef, byteArray);
-                    const downloadURL = await getDownloadURL(storageRef);
-                    
-                    uploadedImages.push({
-                        url: downloadURL,
-                        name: imageName,
-                        order: i,
-                    });
-                } catch (error) {
-                    console.error(`Error uploading image ${i}:`, error);
-                    // Continue with other images
+                let imageUri = imagePath;
+
+                if (typeof imagePath === 'object' && imagePath.uri) {
+                    imageUri = imagePath.uri;
                 }
+
+                // For now, we save local URIs. 
+                // Note: Local URIs might not persist well if cache is cleared or on other devices.
+                uploadedImages.push({
+                    url: imageUri,
+                    name: `local_image_${i}.jpg`,
+                    order: i,
+                });
             }
-            
-            // Create album document in Firestore
-            const albumRef = await addDoc(collection(db, 'gallery'), {
+
+            const newAlbum = {
+                id: Date.now().toString(),
                 title: albumData.title,
                 description: albumData.description,
                 images: uploadedImages,
                 postedBy,
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
-            });
-            
-            return { id: albumRef.id, ...albumData, images: uploadedImages };
+            };
+
+            // Save to Local Storage
+            const albums = await galleryService.getAlbums();
+            albums.unshift(newAlbum);
+            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(albums));
+
+            return newAlbum;
         } catch (error) {
             console.error('Error creating gallery album:', error);
             throw error;
@@ -136,86 +90,43 @@ export const galleryService = {
      */
     updateAlbum: async (albumId, albumData, newImagePaths = [], postedBy) => {
         try {
-            const albumRef = doc(db, 'gallery', albumId);
-            const albumDoc = await getDoc(albumRef);
-            
-            if (!albumDoc.exists()) {
+            const albums = await galleryService.getAlbums();
+            const index = albums.findIndex(a => a.id === albumId);
+
+            if (index === -1) {
                 throw new Error('Album not found');
             }
-            
-            const existingAlbum = albumDoc.data();
+
+            const existingAlbum = albums[index];
             let images = existingAlbum.images || [];
-            
-            // Upload new images if provided
+
+            // Process new images
             if (newImagePaths.length > 0) {
-                const uploadedImages = [];
-                for (let i = 0; i < newImagePaths.length; i++) {
-                    const imagePath = newImagePaths[i];
-                    try {
-                        // Handle different image path formats
-                        let imageUri = imagePath;
-                        
-                        // If it's an object with uri property (from document picker)
-                        if (typeof imagePath === 'object' && imagePath.uri) {
-                            imageUri = imagePath.uri;
-                        } else if (typeof imagePath === 'string') {
-                            // If it's already a URI (file:// or http://), use it directly
-                            if (imagePath.startsWith('file://') || imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-                                imageUri = imagePath;
-                            } else {
-                                // Try to convert Windows path to file:// URI
-                                if (imagePath.includes('\\') || imagePath.includes('/')) {
-                                    if (!imagePath.startsWith('file://')) {
-                                        imageUri = imagePath.startsWith('/') ? `file://${imagePath}` : `file:///${imagePath.replace(/\\/g, '/')}`;
-                                    }
-                                }
-                            }
-                        }
-                        
-                        const fileInfo = await FileSystem.getInfoAsync(imageUri);
-                        if (!fileInfo.exists) {
-                            continue;
-                        }
-                        
-                        const base64 = await FileSystem.readAsStringAsync(imageUri, {
-                            encoding: FileSystem.EncodingType.Base64,
-                        });
-                        
-                        const byteCharacters = atob(base64);
-                        const byteNumbers = new Array(byteCharacters.length);
-                        for (let j = 0; j < byteCharacters.length; j++) {
-                            byteNumbers[j] = byteCharacters.charCodeAt(j);
-                        }
-                        const byteArray = new Uint8Array(byteNumbers);
-                        
-                        const imageName = `gallery_${Date.now()}_${i}.jpg`;
-                        const storageRef = ref(storage, `gallery/${imageName}`);
-                        await uploadBytes(storageRef, byteArray);
-                        const downloadURL = await getDownloadURL(storageRef);
-                        
-                        uploadedImages.push({
-                            url: downloadURL,
-                            name: imageName,
-                            order: images.length + i,
-                        });
-                    } catch (error) {
-                        console.error(`Error uploading new image ${i}:`, error);
-                    }
-                }
-                images = [...images, ...uploadedImages];
+                const newImages = newImagePaths.map((path, i) => {
+                    let uri = path;
+                    if (typeof path === 'object' && path.uri) uri = path.uri;
+                    return {
+                        url: uri,
+                        name: `local_image_new_${i}.jpg`,
+                        order: images.length + i
+                    };
+                });
+                images = [...images, ...newImages];
             }
-            
-            // Update album document
-            await setDoc(albumRef, {
+
+            const updatedAlbum = {
                 ...existingAlbum,
                 title: albumData.title,
                 description: albumData.description,
                 images,
                 updatedAt: new Date().toISOString(),
                 updatedBy: postedBy,
-            }, { merge: true });
-            
-            return { id: albumId, ...albumData, images };
+            };
+
+            albums[index] = updatedAlbum;
+            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(albums));
+
+            return updatedAlbum;
         } catch (error) {
             console.error('Error updating gallery album:', error);
             throw error;
@@ -227,8 +138,9 @@ export const galleryService = {
      */
     deleteAlbum: async (albumId) => {
         try {
-            const albumRef = doc(db, 'gallery', albumId);
-            await deleteDoc(albumRef);
+            const albums = await galleryService.getAlbums();
+            const filtered = albums.filter(a => a.id !== albumId);
+            await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
             return true;
         } catch (error) {
             console.error('Error deleting gallery album:', error);
@@ -236,4 +148,5 @@ export const galleryService = {
         }
     },
 };
+
 

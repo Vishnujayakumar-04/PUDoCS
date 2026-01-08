@@ -1,0 +1,124 @@
+import { db } from '../services/firebaseConfig';
+import { collection, query, where, getDocs, setDoc, doc } from 'firebase/firestore';
+
+// M.Tech CSE 1st Year Timetable Data
+const mtechCSETimetable = {
+  "program": "M.Tech CSE",
+  "year": "I",
+  "class": "I MTECH CSE",
+  "room": "104",
+  "location": "Ground Floor (Annexe Building)",
+  "schedule": [
+    {
+      "day": "Monday",
+      "slots": [
+        { "startTime": "09:30 AM", "endTime": "10:30 AM", "subject": "Data Mining Lab", "subjectCode": "CSCE 627", "type": "Hardcore", "faculty": { "name": "Dr POTHULA SUJATHA" }, "room": "104" },
+        { "startTime": "10:30 AM", "endTime": "11:30 AM", "subject": "Data Mining Lab", "subjectCode": "CSCE 627", "type": "Hardcore", "faculty": { "name": "Dr POTHULA SUJATHA" }, "room": "104" },
+        { "startTime": "11:30 AM", "endTime": "12:30 PM", "subject": "Data Mining Lab", "subjectCode": "CSCE 627", "type": "Hardcore", "faculty": { "name": "Dr POTHULA SUJATHA" }, "room": "104" },
+        { "startTime": "02:30 PM", "endTime": "03:30 PM", "subject": "Mobile & Pervasive Computing", "subjectCode": "CSCE 624", "type": "Hardcore", "faculty": { "name": "Dr M SATHYA" }, "room": "104" },
+        { "startTime": "03:30 PM", "endTime": "04:30 PM", "subject": "Mobile & Pervasive Computing", "subjectCode": "CSCE 624", "type": "Hardcore", "faculty": { "name": "Dr M SATHYA" }, "room": "104" }
+      ]
+    },
+    {
+      "day": "Tuesday",
+      "slots": [
+        { "startTime": "09:30 AM", "endTime": "10:30 AM", "subject": "Data Mining and Big Data", "subjectCode": "CSCE 623", "type": "Hardcore", "faculty": { "name": "Dr POTHULA SUJATHA" }, "room": "104" },
+        { "startTime": "10:30 AM", "endTime": "11:30 AM", "subject": "Data Mining and Big Data", "subjectCode": "CSCE 623", "type": "Hardcore", "faculty": { "name": "Dr POTHULA SUJATHA" }, "room": "104" },
+        { "startTime": "11:30 AM", "endTime": "12:30 PM", "subject": "Biometric Security", "subjectCode": "CSCE 875", "type": "Softcore", "faculty": { "name": "Dr S RAVI" }, "room": "104" },
+        { "startTime": "12:30 PM", "endTime": "01:30 PM", "subject": "Biometric Security", "subjectCode": "CSCE 875", "type": "Softcore", "faculty": { "name": "Dr S RAVI" }, "room": "104" }
+      ]
+    },
+    {
+      "day": "Wednesday",
+      "slots": [
+        { "startTime": "09:30 AM", "endTime": "10:30 AM", "subject": "Graph Theory with Applications to Engineering", "subjectCode": "CSCE 621", "type": "Hardcore", "faculty": { "name": "Dr S SIVA SATHYA" }, "room": "104" },
+        { "startTime": "10:30 AM", "endTime": "11:30 AM", "subject": "Graph Theory with Applications to Engineering", "subjectCode": "CSCE 621", "type": "Hardcore", "faculty": { "name": "Dr S SIVA SATHYA" }, "room": "104" },
+        { "startTime": "11:30 AM", "endTime": "12:30 PM", "subject": "Data Mining and Big Data", "subjectCode": "CSCE 623", "type": "Hardcore", "faculty": { "name": "Dr POTHULA SUJATHA" }, "room": "104" },
+        { "startTime": "02:30 PM", "endTime": "03:30 PM", "subject": "Linear Optimization", "subjectCode": "CSCE 863", "type": "Softcore", "faculty": { "name": "Dr M NANDHINI" }, "room": "104" },
+        { "startTime": "03:30 PM", "endTime": "04:30 PM", "subject": "Linear Optimization", "subjectCode": "CSCE 863", "type": "Softcore", "faculty": { "name": "Dr M NANDHINI" }, "room": "104" }
+      ]
+    },
+    {
+      "day": "Thursday",
+      "slots": [
+        { "startTime": "09:30 AM", "endTime": "10:30 AM", "subject": "Advanced Operating System", "subjectCode": "CSCE 625", "type": "Hardcore", "faculty": { "name": "Dr R LAKSHMI" }, "room": "104" },
+        { "startTime": "10:30 AM", "endTime": "11:30 AM", "subject": "Advanced Operating System", "subjectCode": "CSCE 625", "type": "Hardcore", "faculty": { "name": "Dr R LAKSHMI" }, "room": "104" },
+        { "startTime": "11:30 AM", "endTime": "12:30 PM", "subject": "Biometric Security", "subjectCode": "CSCE 875", "type": "Softcore", "faculty": { "name": "Dr S RAVI" }, "room": "104" },
+        { "startTime": "12:30 PM", "endTime": "01:30 PM", "subject": "Mobile & Pervasive Computing", "subjectCode": "CSCE 624", "type": "Hardcore", "faculty": { "name": "Dr M SATHYA" }, "room": "104" },
+        { "startTime": "02:30 PM", "endTime": "03:30 PM", "subject": "Graph Theory with Applications to Engineering", "subjectCode": "CSCE 621", "type": "Hardcore", "faculty": { "name": "Dr S SIVA SATHYA" }, "room": "104" }
+      ]
+    },
+    {
+      "day": "Friday",
+      "slots": [
+        { "startTime": "09:30 AM", "endTime": "10:30 AM", "subject": "Pervasive Computing Lab", "subjectCode": "CSCE 628", "type": "Hardcore", "faculty": { "name": "Dr M SATHYA" }, "room": "104" },
+        { "startTime": "10:30 AM", "endTime": "11:30 AM", "subject": "Pervasive Computing Lab", "subjectCode": "CSCE 628", "type": "Hardcore", "faculty": { "name": "Dr M SATHYA" }, "room": "104" },
+        { "startTime": "11:30 AM", "endTime": "12:30 PM", "subject": "Pervasive Computing Lab", "subjectCode": "CSCE 628", "type": "Hardcore", "faculty": { "name": "Dr M SATHYA" }, "room": "104" },
+        { "startTime": "12:30 PM", "endTime": "01:30 PM", "subject": "Linear Optimization", "subjectCode": "CSCE 863", "type": "Softcore", "faculty": { "name": "Dr M NANDHINI" }, "room": "104" },
+        { "startTime": "02:30 PM", "endTime": "03:30 PM", "subject": "Advanced Operating System", "subjectCode": "CSCE 625", "type": "Hardcore", "faculty": { "name": "Dr R LAKSHMI" }, "room": "104" }
+      ]
+    }
+  ],
+  "subjects": [
+    { "code": "CSCE 621", "name": "Graph Theory with Applications to Engineering", "type": "Hardcore", "hours": 3, "faculty": "Dr S SIVA SATHYA" },
+    { "code": "CSCE 623", "name": "Data Mining and Big Data", "type": "Hardcore", "hours": 3, "faculty": "Dr POTHULA SUJATHA" },
+    { "code": "CSCE 624", "name": "Mobile & Pervasive Computing", "type": "Hardcore", "hours": 3, "faculty": "Dr M SATHYA" },
+    { "code": "CSCE 625", "name": "Advanced Operating System", "type": "Hardcore", "hours": 3, "faculty": "Dr R LAKSHMI" },
+    { "code": "CSCE 627", "name": "Data Mining Lab", "type": "Hardcore", "hours": 3, "faculty": "Dr POTHULA SUJATHA" },
+    { "code": "CSCE 628", "name": "Pervasive Computing Lab", "type": "Hardcore", "hours": 3, "faculty": "Dr M SATHYA" },
+    { "code": "CSCE 863", "name": "Linear Optimization", "type": "Softcore", "hours": 3, "faculty": "Dr M NANDHINI" },
+    { "code": "CSCE 875", "name": "Biometric Security", "type": "Softcore", "hours": 3, "faculty": "Dr S RAVI" }
+  ]
+};
+
+export const seedMTechCSETimetable = async () => {
+    try {
+        console.log('🌱 Seeding M.Tech CSE 1st Year Timetable...');
+        
+        // Check if timetable already exists
+        const q = query(
+            collection(db, 'timetables'),
+            where('program', '==', 'M.Tech CSE'),
+            where('year', '==', 'I')
+        );
+        const snapshot = await getDocs(q);
+        
+        if (!snapshot.empty) {
+            console.log('⚠️ Timetable already exists. Updating...');
+            const existingDoc = snapshot.docs[0];
+            await setDoc(existingDoc.ref, {
+                ...mtechCSETimetable,
+                id: existingDoc.id,
+                updatedAt: new Date().toISOString(),
+            }, { merge: true });
+            console.log('✅ M.Tech CSE Timetable updated successfully!');
+            return { 
+                success: true, 
+                message: 'Timetable updated successfully',
+                id: existingDoc.id 
+            };
+        }
+        
+        // Create new document
+        const timetableRef = doc(collection(db, 'timetables'));
+        await setDoc(timetableRef, {
+            ...mtechCSETimetable,
+            id: timetableRef.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        });
+        
+        console.log('✅ M.Tech CSE Timetable seeded successfully!');
+        console.log('📋 Document ID:', timetableRef.id);
+        
+        return { 
+            success: true, 
+            message: 'Timetable seeded successfully',
+            id: timetableRef.id 
+        };
+    } catch (error) {
+        console.error('❌ Error seeding timetable:', error);
+        return { success: false, error: error.message };
+    }
+};
+

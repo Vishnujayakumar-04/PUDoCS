@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Alert, Animated, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -10,12 +10,17 @@ import Button from '../../components/Button';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import colors from '../../styles/colors';
 
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const DRAWER_WIDTH = SCREEN_WIDTH * 0.75;
+
 const OfficeProfile = ({ navigation }) => {
     const { user, logout } = useAuth();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [passwordModalVisible, setPasswordModalVisible] = useState(false);
     const [changingPassword, setChangingPassword] = useState(false);
+    const [menuVisible, setMenuVisible] = useState(false);
+    const [drawerAnimation] = useState(new Animated.Value(-DRAWER_WIDTH));
     
     const [passwordData, setPasswordData] = useState({
         currentPassword: '',
@@ -26,6 +31,14 @@ const OfficeProfile = ({ navigation }) => {
     useEffect(() => {
         loadProfile();
     }, []);
+
+    useEffect(() => {
+        Animated.timing(drawerAnimation, {
+            toValue: menuVisible ? 0 : -DRAWER_WIDTH,
+            duration: 300,
+            useNativeDriver: true,
+        }).start();
+    }, [menuVisible]);
 
     const loadProfile = async () => {
         try {
@@ -113,7 +126,12 @@ const OfficeProfile = ({ navigation }) => {
                             <MaterialCommunityIcons name="arrow-left" size={24} color={colors.white} />
                         </TouchableOpacity>
                         <Text style={styles.headerTitle}>Profile</Text>
-                        <View style={styles.headerRight} />
+                        <TouchableOpacity
+                            onPress={() => setMenuVisible(true)}
+                            style={styles.menuButton}
+                        >
+                            <MaterialCommunityIcons name="menu" size={24} color={colors.white} />
+                        </TouchableOpacity>
                     </View>
                 </SafeAreaView>
             </LinearGradient>
@@ -172,14 +190,6 @@ const OfficeProfile = ({ navigation }) => {
                         onPress={() => setPasswordModalVisible(true)}
                         style={styles.changePasswordButton}
                     />
-                    <TouchableOpacity
-                        style={styles.logoutButton}
-                        onPress={logout}
-                        activeOpacity={0.8}
-                    >
-                        <MaterialCommunityIcons name="logout" size={20} color={colors.error} />
-                        <Text style={styles.logoutText}>Logout</Text>
-                    </TouchableOpacity>
                 </View>
 
                 <View style={{ height: 40 }} />
@@ -252,6 +262,55 @@ const OfficeProfile = ({ navigation }) => {
                     </View>
                 </View>
             </Modal>
+
+            {/* Side Menu Drawer */}
+            {menuVisible && (
+                <TouchableOpacity
+                    style={styles.drawerOverlay}
+                    activeOpacity={1}
+                    onPress={() => {
+                        setMenuVisible(false);
+                        navigation.goBack();
+                    }}
+                >
+                    <Animated.View
+                        style={[
+                            styles.drawer,
+                            {
+                                transform: [{ translateX: drawerAnimation }],
+                                backgroundColor: colors.surface,
+                            }
+                        ]}
+                        onStartShouldSetResponder={() => true}
+                    >
+                        <View style={styles.drawerHeader}>
+                            <Text style={styles.drawerTitle}>Settings</Text>
+                            <TouchableOpacity onPress={() => setMenuVisible(false)}>
+                                <MaterialCommunityIcons name="close" size={24} color={colors.white} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={styles.drawerContent}>
+                            <Text style={[styles.drawerSectionTitle, { color: colors.textSecondary }]}>Actions</Text>
+                        </View>
+
+                        {/* Logout Button at Bottom */}
+                        <View style={styles.drawerFooter}>
+                            <TouchableOpacity
+                                style={styles.logoutMenuButton}
+                                onPress={() => {
+                                    setMenuVisible(false);
+                                    logout();
+                                }}
+                                activeOpacity={0.8}
+                            >
+                                <MaterialCommunityIcons name="logout" size={20} color={colors.error} />
+                                <Text style={styles.logoutMenuText}>Logout</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </Animated.View>
+                </TouchableOpacity>
+            )}
         </View>
     );
 };
@@ -471,6 +530,87 @@ const styles = StyleSheet.create({
     },
     modalButton: {
         flex: 1,
+    },
+    menuButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    drawerOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        zIndex: 1000,
+    },
+    drawer: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: DRAWER_WIDTH,
+        height: '100%',
+        backgroundColor: colors.white,
+        shadowColor: colors.black,
+        shadowOffset: { width: 2, height: 0 },
+        shadowOpacity: 0.25,
+        shadowRadius: 10,
+        elevation: 10,
+        zIndex: 1001,
+        flexDirection: 'column',
+    },
+    drawerHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.gray200,
+        backgroundColor: colors.primary,
+    },
+    drawerTitle: {
+        fontSize: 20,
+        fontWeight: '700',
+        color: colors.white,
+    },
+    drawerContent: {
+        flex: 1,
+        padding: 20,
+    },
+    drawerSectionTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        marginBottom: 16,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    drawerFooter: {
+        marginTop: 'auto',
+        paddingTop: 20,
+        paddingBottom: 100, // Extra padding to account for bottom navigation bar
+        borderTopWidth: 1,
+        borderTopColor: colors.gray200,
+    },
+    logoutMenuButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.white,
+        paddingVertical: 14,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: colors.error,
+        marginHorizontal: 16,
+    },
+    logoutMenuText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: colors.error,
+        marginLeft: 8,
     },
 });
 

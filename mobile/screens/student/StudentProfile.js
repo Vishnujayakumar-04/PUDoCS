@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Modal, TextInput, Alert, Animated, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { studentService } from '../../services/studentService';
+import { studentStorageService } from '../../services/studentStorageService';
+import colors from '../../styles/colors';
 import { changePassword } from '../../services/authService';
-import { doc, getDoc, updateDoc, setDoc, query, where, getDocs, collection } from 'firebase/firestore';
-import { db } from '../../services/firebaseConfig';
-import { getCollectionFromDisplayName } from '../../utils/collectionMapper';
 import PremiumCard from '../../components/PremiumCard';
 import Button from '../../components/Button';
 import LoadingSpinner from '../../components/LoadingSpinner';
-import colors from '../../styles/colors';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const DRAWER_WIDTH = SCREEN_WIDTH * 0.75;
 
 const StudentProfile = ({ navigation }) => {
     const { user, logout } = useAuth();
@@ -23,7 +24,9 @@ const StudentProfile = ({ navigation }) => {
     const [editModalVisible, setEditModalVisible] = useState(false);
     const [saving, setSaving] = useState(false);
     const [personalInfoExpanded, setPersonalInfoExpanded] = useState(false);
-    
+    const [menuVisible, setMenuVisible] = useState(false);
+    const [drawerAnimation] = useState(new Animated.Value(-DRAWER_WIDTH));
+
     const [passwordData, setPasswordData] = useState({
         currentPassword: '',
         newPassword: '',
@@ -48,72 +51,28 @@ const StudentProfile = ({ navigation }) => {
         loadProfile();
     }, []);
 
+    useEffect(() => {
+        Animated.timing(drawerAnimation, {
+            toValue: menuVisible ? 0 : -DRAWER_WIDTH,
+            duration: 300,
+            useNativeDriver: true,
+        }).start();
+    }, [menuVisible]);
+
     const loadProfile = async () => {
         try {
             setLoading(true);
-            
-            // Try multiple methods to find the student document
-            let studentData = null;
-            let registerNumber = null;
-            
-            // Method 1: Try to get registerNumber from email
-            if (user?.email) {
-                const emailParts = user.email.split('@');
-                if (emailParts[0]) {
-                    registerNumber = emailParts[0].toUpperCase();
-                    console.log('Trying registerNumber from email:', registerNumber);
-                    const studentRef = doc(db, 'students', registerNumber);
-                    const studentDoc = await getDoc(studentRef);
-                    if (studentDoc.exists()) {
-                        studentData = { id: studentDoc.id, ...studentDoc.data() };
-                        console.log('Found student by registerNumber:', registerNumber);
-                    }
-                }
-            }
-            
-            // Method 2: Try to find by email
-            if (!studentData && user?.email) {
-                console.log('Searching by email:', user.email);
-                const q = query(
-                    collection(db, 'students'),
-                    where('email', '==', user.email.toLowerCase())
-                );
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                    const doc = querySnapshot.docs[0];
-                    studentData = { id: doc.id, ...doc.data() };
-                    registerNumber = doc.id;
-                    console.log('Found student by email query, registerNumber:', registerNumber);
-                }
-            }
-            
-            // Method 3: Try by user.uid
-            if (!studentData && user?.uid) {
-                console.log('Trying user.uid:', user.uid);
-                const studentRef = doc(db, 'students', user.uid);
-                const studentDoc = await getDoc(studentRef);
-                if (studentDoc.exists()) {
-                    studentData = { id: studentDoc.id, ...studentDoc.data() };
-                    registerNumber = studentData.registerNumber || studentDoc.id;
-                    console.log('Found student by uid');
-                }
-            }
-            
-            // Method 4: Try studentService.getProfile
-            if (!studentData) {
-                console.log('Trying studentService.getProfile');
-                studentData = await studentService.getProfile(user?.uid);
-                if (studentData) {
-                    registerNumber = studentData.registerNumber || user?.uid;
-                }
-            }
-            
+
+            // Use studentService to get profile
+            console.log('Loading profile via studentService for:', user?.email);
+            const studentData = await studentService.getProfile(user?.uid, user?.email);
+
             // Set profile data
             if (studentData) {
                 setProfile(studentData);
                 // Initialize form data with loaded values
                 setFormData({
-                    registerNumber: studentData.registerNumber || registerNumber || '',
+                    registerNumber: studentData.registerNumber || studentData.id || '',
                     name: studentData.name || '',
                     phone: studentData.phone || '',
                     email: studentData.email || user?.email || '',
@@ -125,12 +84,12 @@ const StudentProfile = ({ navigation }) => {
                     caste: studentData.caste || '',
                     houseAddress: studentData.houseAddress || '',
                 });
-                console.log('Profile loaded successfully:', studentData);
+                console.log('Profile loaded successfully local:', studentData.name);
             } else {
                 // Initialize with user email if no student data found
-                console.log('No student data found, initializing with user email');
+                console.log('No student data found locally, initializing with user email');
                 setFormData({
-                    registerNumber: registerNumber || '',
+                    registerNumber: '',
                     name: '',
                     phone: '',
                     email: user?.email || '',
@@ -145,7 +104,7 @@ const StudentProfile = ({ navigation }) => {
             }
         } catch (error) {
             console.error('Error loading profile:', error);
-            console.error('Error details:', error.message, error.stack);
+            console.error('Error details:', error.message);
         } finally {
             setLoading(false);
         }
@@ -201,76 +160,23 @@ const StudentProfile = ({ navigation }) => {
 
         setSaving(true);
         try {
-            // Try to get registerNumber from multiple sources
+            // Determine register number
             let registerNumber = formData.registerNumber.trim() || profile?.registerNumber;
-            
-            // If not found, try to extract from email (e.g., 24mscscpy0054@pondiuni.ac.in -> 24mscscpy0054)
-            if (!registerNumber && user?.email) {
-                const emailParts = user.email.split('@');
-                if (emailParts[0]) {
-                    registerNumber = emailParts[0].toUpperCase();
-                }
-            }
-            
-            // If still not found, try to find student by email
-            if (!registerNumber && user?.email) {
-                console.log('RegisterNumber not found, searching by email:', user.email);
-                const q = query(
-                    collection(db, 'students'),
-                    where('email', '==', user.email.toLowerCase())
-                );
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                    const studentDoc = querySnapshot.docs[0];
-                    registerNumber = studentDoc.id; // Document ID is registerNumber
-                    console.log('Found student by email, registerNumber:', registerNumber);
-                }
-            }
-            
-            // If still not found, try to find by user.uid (in case student was stored with uid)
-            if (!registerNumber) {
-                const studentRefByUid = doc(db, 'students', user?.uid);
-                const studentDocByUid = await getDoc(studentRefByUid);
-                if (studentDocByUid.exists()) {
-                    const data = studentDocByUid.data();
-                    registerNumber = data.registerNumber || user.uid;
-                    console.log('Found student by uid, registerNumber:', registerNumber);
-                }
-            }
-            
-            // Last resort: use email prefix as registerNumber (will create new document)
+
+            // Use email logic if not found
             if (!registerNumber && user?.email) {
                 const emailParts = user.email.split('@');
                 registerNumber = emailParts[0]?.toUpperCase() || user.uid;
-                console.log('Using email prefix as registerNumber:', registerNumber);
             }
-            
+
             if (!registerNumber) {
-                Alert.alert(
-                    'Error', 
-                    'Unable to determine Register Number.\n\nPlease contact the office to set up your account properly.'
-                );
+                Alert.alert('Error', 'Unable to determine Register Number. Please contact office.');
                 setSaving(false);
                 return;
             }
 
             console.log('Saving profile for registerNumber:', registerNumber);
-            console.log('Form data:', formData);
 
-            // Get the correct collection name
-            const { getCollectionFromDisplayName } = require('../../utils/collectionMapper');
-            const collectionName = getCollectionFromDisplayName(
-                profile?.program || formData.program || 'M.Sc Computer Science',
-                profile?.year || formData.year || 1
-            );
-            
-            console.log('Using collection:', collectionName);
-            const studentRef = doc(db, collectionName, registerNumber);
-            
-            // Check if document exists
-            const studentDoc = await getDoc(studentRef);
-            console.log('Student document exists:', studentDoc.exists());
-            
             const updateData = {
                 registerNumber: registerNumber,
                 name: formData.name.trim(),
@@ -285,84 +191,48 @@ const StudentProfile = ({ navigation }) => {
                 houseAddress: formData.houseAddress.trim(),
                 profileCompleted: true,
                 profileUpdatedAt: new Date().toISOString(),
+                // Keep existing fields
+                course: profile?.course || 'PG',
+                program: profile?.program || '',
+                year: profile?.year || 1,
+                section: profile?.section || 'A',
+                isActive: true,
             };
 
-            // Use setDoc with merge to update or create document
-            if (studentDoc.exists()) {
-                // Merge with existing data to preserve course, program, year, etc.
-                const existingData = studentDoc.data();
-                await setDoc(studentRef, {
-                    ...existingData,
-                    ...updateData,
-                }, { merge: true });
-                console.log('Updated existing student document');
-            } else {
-                // Create new document if it doesn't exist
-                await setDoc(studentRef, {
-                    ...updateData,
-                    course: profile?.course || 'PG',
-                    program: profile?.program || '',
-                    year: profile?.year || 1,
-                    section: profile?.section || 'A',
-                    isActive: true,
-                    createdAt: new Date().toISOString(),
-                }, { merge: true });
-                console.log('Created new student document');
-            }
+            // Update using studentStorageService
+            await studentStorageService.updateStudent(registerNumber, updateData);
+            console.log('Updated local storage via service');
 
-            // Also update local storage
-            try {
-                const updatedStudent = {
-                    id: registerNumber,
-                    registerNumber: registerNumber,
-                    ...updateData,
-                    course: profile?.course || 'PG',
-                    program: profile?.program || '',
-                    year: profile?.year || 1,
-                };
-                await studentStorageService.updateStudent(updatedStudent);
-                console.log('Updated local storage');
-            } catch (storageError) {
-                console.warn('Local storage update failed:', storageError);
-            }
+            // Find and update the profile state
+            const updatedProfile = await studentService.getProfile(user?.uid, user?.email);
 
-            // Reload profile using the registerNumber we just saved
-            console.log('Reloading profile with registerNumber:', registerNumber);
-            const updatedStudentRef = doc(db, 'students', registerNumber);
-            const updatedStudentDoc = await getDoc(updatedStudentRef);
-            
-            if (updatedStudentDoc.exists()) {
-                const updatedData = { id: updatedStudentDoc.id, ...updatedStudentDoc.data() };
-                setProfile(updatedData);
+            if (updatedProfile) {
+                setProfile(updatedProfile);
                 setFormData({
-                    registerNumber: updatedData.registerNumber || registerNumber,
-                    name: updatedData.name || '',
-                    phone: updatedData.phone || '',
-                    email: updatedData.email || '',
-                    gender: updatedData.gender || '',
-                    fatherName: updatedData.fatherName || '',
-                    fatherMobile: updatedData.fatherMobile || '',
-                    motherName: updatedData.motherName || '',
-                    motherMobile: updatedData.motherMobile || '',
-                    caste: updatedData.caste || '',
-                    houseAddress: updatedData.houseAddress || '',
+                    registerNumber: updatedProfile.registerNumber || registerNumber,
+                    name: updatedProfile.name || '',
+                    phone: updatedProfile.phone || '',
+                    email: updatedProfile.email || '',
+                    gender: updatedProfile.gender || '',
+                    fatherName: updatedProfile.fatherName || '',
+                    fatherMobile: updatedProfile.fatherMobile || '',
+                    motherName: updatedProfile.motherName || '',
+                    motherMobile: updatedProfile.motherMobile || '',
+                    caste: updatedProfile.caste || '',
+                    houseAddress: updatedProfile.houseAddress || '',
                 });
-                console.log('Profile reloaded successfully:', updatedData);
             } else {
-                // Fallback to loadProfile
+                // Should hopefully find it now
                 await loadProfile();
             }
-            
+
             Alert.alert('Success', 'Profile updated successfully!');
             setEditModalVisible(false);
         } catch (error) {
             console.error('Error saving profile:', error);
-            console.error('Error code:', error.code);
-            console.error('Error message:', error.message);
-            console.error('Error stack:', error.stack);
             Alert.alert(
-                'Error', 
-                `Failed to save profile.\n\nError: ${error.message || error.code || 'Unknown error'}\n\nPlease check console for details.`
+                'Error',
+                `Failed to save profile.\n\nError: ${error.message || 'Unknown error'}\n\nPlease check console for details.`
             );
         } finally {
             setSaving(false);
@@ -385,7 +255,6 @@ const StudentProfile = ({ navigation }) => {
             return;
         }
 
-        // Check if password was already changed
         if (profile?.passwordChanged === true) {
             Alert.alert(
                 'Password Already Changed',
@@ -405,7 +274,6 @@ const StudentProfile = ({ navigation }) => {
                 newPassword: '',
                 confirmPassword: '',
             });
-            // Reload profile to update passwordChanged status
             await loadProfile();
         } catch (error) {
             console.error('Password change error:', error);
@@ -427,16 +295,54 @@ const StudentProfile = ({ navigation }) => {
                     <View style={styles.iconWrapper}>
                         <MaterialCommunityIcons name={icon} size={20} color={colors.primary} />
                     </View>
-                    <Text style={styles.rowLabel} numberOfLines={1}>{label}</Text>
+                    <Text style={dynamicStyles.rowLabel} numberOfLines={1}>{label}</Text>
                 </View>
-                <Text style={styles.rowValue} numberOfLines={1} ellipsizeMode="tail">{value || 'N/A'}</Text>
+                <Text style={dynamicStyles.rowValue} numberOfLines={1} ellipsizeMode="tail">{value || 'N/A'}</Text>
             </View>
-            {!isLast && <View style={styles.divider} />}
+            {!isLast && <View style={dynamicStyles.divider} />}
         </>
     );
 
+    const dynamicStyles = StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: colors.background,
+        },
+        headerTitle: {
+            fontSize: 24,
+            fontWeight: '700',
+            color: colors.white,
+            letterSpacing: 0.5,
+        },
+        studentName: {
+            fontSize: 22,
+            fontWeight: '700',
+            color: colors.textPrimary,
+            marginTop: 12,
+        },
+        cardTitle: {
+            fontSize: 18,
+            fontWeight: '700',
+            color: colors.textPrimary,
+        },
+        rowLabel: {
+            fontSize: 14,
+            color: colors.textSecondary,
+            fontWeight: '500',
+        },
+        rowValue: {
+            fontSize: 14,
+            color: colors.textPrimary,
+            fontWeight: '600',
+        },
+        divider: {
+            height: 1,
+            backgroundColor: colors.gray200,
+        },
+    });
+
     return (
-        <View style={styles.container}>
+        <View style={dynamicStyles.container}>
             {/* Premium Gradient Header */}
             <LinearGradient
                 colors={[colors.primary, colors.secondary]}
@@ -446,9 +352,16 @@ const StudentProfile = ({ navigation }) => {
             >
                 <SafeAreaView edges={['top']}>
                     <View style={styles.headerContent}>
+                        <TouchableOpacity
+                            onPress={() => setMenuVisible(true)}
+                            style={styles.menuButton}
+                        >
+                            <MaterialCommunityIcons name="menu" size={24} color={colors.white} />
+                        </TouchableOpacity>
                         <View style={styles.headerText}>
-                            <Text style={styles.headerTitle}>Profile</Text>
+                            <Text style={dynamicStyles.headerTitle}>Profile</Text>
                         </View>
+                        <View style={styles.headerRight} />
                     </View>
                 </SafeAreaView>
             </LinearGradient>
@@ -462,12 +375,20 @@ const StudentProfile = ({ navigation }) => {
                 <View style={styles.avatarSection}>
                     <View style={styles.avatarContainer}>
                         <Image
-                            source={require('../../assets/Vishnu/VISHNU PHOTO.jpeg')}
+                            source={
+                                profile?.photoUrl
+                                    ? { uri: profile.photoUrl }
+                                    : profile?.photo
+                                        ? (typeof profile.photo === 'string' ? { uri: profile.photo } : profile.photo)
+                                        : user?.photoURL
+                                            ? { uri: user.photoURL }
+                                            : require('../../assets/Vishnu/VISHNU PHOTO.jpeg')
+                            }
                             style={styles.avatar}
                         />
                         <View style={styles.avatarRing} />
                     </View>
-                    <Text style={styles.studentName}>{profile?.name || 'Student Name'}</Text>
+                    <Text style={dynamicStyles.studentName}>{profile?.name || 'Student Name'}</Text>
                     <View style={styles.roleBadge}>
                         <Text style={styles.roleText}>Student</Text>
                     </View>
@@ -476,16 +397,16 @@ const StudentProfile = ({ navigation }) => {
                 {/* Personal Information Card */}
                 <PremiumCard style={styles.infoCard}>
                     <View style={styles.cardHeader}>
-                        <Text style={styles.cardTitle}>Personal Information</Text>
+                        <Text style={dynamicStyles.cardTitle}>Personal Information</Text>
                         <View style={styles.cardHeaderButtons}>
                             <TouchableOpacity
                                 onPress={() => setPersonalInfoExpanded(!personalInfoExpanded)}
                                 style={styles.viewMoreButton}
                             >
-                                <MaterialCommunityIcons 
-                                    name={personalInfoExpanded ? "chevron-up" : "chevron-down"} 
-                                    size={18} 
-                                    color={colors.primary} 
+                                <MaterialCommunityIcons
+                                    name={personalInfoExpanded ? "chevron-up" : "chevron-down"}
+                                    size={18}
+                                    color={colors.primary}
                                 />
                                 <Text style={styles.viewMoreText}>
                                     {personalInfoExpanded ? 'View Less' : 'View More'}
@@ -493,10 +414,6 @@ const StudentProfile = ({ navigation }) => {
                             </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={() => {
-                                    console.log('Edit button pressed');
-                                    console.log('Current profile:', profile);
-                                    console.log('Current formData:', formData);
-                                    // Ensure formData is initialized before opening modal
                                     if (profile) {
                                         setFormData({
                                             registerNumber: profile.registerNumber || '',
@@ -521,60 +438,60 @@ const StudentProfile = ({ navigation }) => {
                             </TouchableOpacity>
                         </View>
                     </View>
-                    
-                    <ProfileRow 
+
+                    <ProfileRow
                         icon="card-account-details-outline"
                         label="Register Number"
                         value={profile?.registerNumber || 'Not provided'}
                     />
-                    <ProfileRow 
+                    <ProfileRow
                         icon="account"
                         label="Name"
                         value={profile?.name || 'Not provided'}
                     />
                     {personalInfoExpanded && (
                         <>
-                            <ProfileRow 
+                            <ProfileRow
                                 icon="phone"
                                 label="Phone Number"
                                 value={profile?.phone || 'Not provided'}
                             />
-                            <ProfileRow 
+                            <ProfileRow
                                 icon="email"
                                 label="Email"
                                 value={profile?.email || 'Not provided'}
                             />
-                            <ProfileRow 
+                            <ProfileRow
                                 icon="gender-male-female"
                                 label="Gender"
                                 value={profile?.gender || 'Not provided'}
                             />
-                            <ProfileRow 
+                            <ProfileRow
                                 icon="account-male"
                                 label="Father Name"
                                 value={profile?.fatherName || 'Not provided'}
                             />
-                            <ProfileRow 
+                            <ProfileRow
                                 icon="phone"
                                 label="Father Mobile"
                                 value={profile?.fatherMobile || 'Not provided'}
                             />
-                            <ProfileRow 
+                            <ProfileRow
                                 icon="account-female"
                                 label="Mother Name"
                                 value={profile?.motherName || 'Not provided'}
                             />
-                            <ProfileRow 
+                            <ProfileRow
                                 icon="phone"
                                 label="Mother Mobile"
                                 value={profile?.motherMobile || 'Not provided'}
                             />
-                            <ProfileRow 
+                            <ProfileRow
                                 icon="account-group"
                                 label="Caste"
                                 value={profile?.caste || 'Not provided'}
                             />
-                            <ProfileRow 
+                            <ProfileRow
                                 icon="home"
                                 label="House Address"
                                 value={profile?.houseAddress || 'Not provided'}
@@ -587,52 +504,28 @@ const StudentProfile = ({ navigation }) => {
                 {/* Academic Information Card */}
                 <PremiumCard style={styles.infoCard}>
                     <Text style={styles.cardTitle}>Academic Information</Text>
-                    
-                    <ProfileRow 
+
+                    <ProfileRow
                         icon="school-outline"
                         label="Course"
                         value={profile?.course || "Master of Science"}
                     />
-                    <ProfileRow 
+                    <ProfileRow
                         icon="book-education-outline"
                         label="Program"
                         value={profile?.program || "Computer Science"}
                     />
-                    <ProfileRow 
+                    <ProfileRow
                         icon="calendar-outline"
                         label="Year"
                         value={profile?.year ? `${profile.year} Year` : "2nd Year"}
                     />
-                    <ProfileRow 
+                    <ProfileRow
                         icon="account-group-outline"
                         label="Section"
                         value={profile?.section || "Batch II"}
                         isLast={true}
                     />
-                </PremiumCard>
-
-                {/* Documents Section */}
-                <PremiumCard
-                    style={styles.infoCard}
-                    onPress={() => navigation.navigate('Documents')}
-                >
-                    <Text style={styles.cardTitle}>Documents</Text>
-                    <View style={styles.documentsContainer}>
-                        <MaterialCommunityIcons
-                            name="file-document-outline"
-                            size={22}
-                            color={colors.primary}
-                            style={styles.documentsIcon}
-                        />
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.documentsText}>
-                                Tap here to view and upload your documents one by one.
-                            </Text>
-                            <Text style={styles.documentsSubtext}>
-                                Use the Upload button for each document in the next screen.
-                            </Text>
-                        </View>
-                    </View>
                 </PremiumCard>
 
                 {/* Action Buttons */}
@@ -652,17 +545,9 @@ const StudentProfile = ({ navigation }) => {
                         style={styles.changePasswordButton}
                         disabled={profile?.passwordChanged === true}
                     />
-                    <TouchableOpacity
-                        style={styles.logoutButton}
-                        onPress={logout}
-                        activeOpacity={0.8}
-                    >
-                        <MaterialCommunityIcons name="logout" size={20} color={colors.error} />
-                        <Text style={styles.logoutText}>Logout</Text>
-                    </TouchableOpacity>
                 </View>
 
-                <View style={{ height: 40 }} />
+                <View style={{ height: 120 }} />
             </ScrollView>
 
             {/* Change Password Modal */}
@@ -757,169 +642,118 @@ const StudentProfile = ({ navigation }) => {
                             All fields are mandatory. Please fill all information to save your profile.
                         </Text>
 
-                        <ScrollView 
+                        <ScrollView
                             style={styles.modalScrollView}
                             contentContainerStyle={styles.modalScrollContent}
                             showsVerticalScrollIndicator={true}
                             nestedScrollEnabled={true}
                         >
-                            <View style={styles.infoBox}>
-                                <MaterialCommunityIcons name="information-outline" size={18} color={colors.primary} />
-                                <Text style={styles.infoBoxText}>
-                                    Register Number: {formData.registerNumber || profile?.registerNumber || 'N/A'}
-                                </Text>
-                            </View>
-
-                            <Text style={styles.modalLabel}>Name *</Text>
+                            <Text style={styles.modalLabel}>Name</Text>
                             <TextInput
                                 style={styles.modalInput}
-                                placeholder="Enter your full name"
                                 value={formData.name}
                                 onChangeText={(text) => setFormData({ ...formData, name: text })}
+                                placeholder="Full Name"
                             />
 
-                            <Text style={styles.modalLabel}>Phone Number *</Text>
+                            <Text style={styles.modalLabel}>Phone Number</Text>
                             <TextInput
                                 style={styles.modalInput}
-                                placeholder="Enter 10-digit phone number"
                                 value={formData.phone}
-                                onChangeText={(text) => setFormData({ ...formData, phone: text.replace(/\D/g, '') })}
+                                onChangeText={(text) => setFormData({ ...formData, phone: text })}
+                                placeholder="10-digit number"
                                 keyboardType="phone-pad"
                                 maxLength={10}
                             />
 
-                            <Text style={styles.modalLabel}>Email *</Text>
+                            <Text style={styles.modalLabel}>Email</Text>
                             <TextInput
                                 style={styles.modalInput}
-                                placeholder="Enter email address"
                                 value={formData.email}
                                 onChangeText={(text) => setFormData({ ...formData, email: text })}
+                                placeholder="Email Address"
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                             />
 
-                            <Text style={styles.modalLabel}>Gender *</Text>
-                            <View style={styles.genderContainer}>
-                                {['Male', 'Female', 'Other'].map((genderOption) => (
-                                    <TouchableOpacity
-                                        key={genderOption}
-                                        style={[
-                                            styles.optionButton,
-                                            formData.gender === genderOption && styles.optionButtonActive
-                                        ]}
-                                        onPress={() => setFormData({ ...formData, gender: genderOption })}
-                                    >
-                                        <Text style={[
-                                            styles.optionButtonText,
-                                            formData.gender === genderOption && styles.optionButtonTextActive
-                                        ]}>
-                                            {genderOption}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-
-                            <Text style={styles.modalLabel}>Father Name *</Text>
+                            <Text style={styles.modalLabel}>Gender</Text>
                             <TextInput
                                 style={styles.modalInput}
-                                placeholder="Enter father's name"
+                                value={formData.gender}
+                                onChangeText={(text) => setFormData({ ...formData, gender: text })}
+                                placeholder="Male/Female/Other"
+                            />
+
+                            <Text style={styles.modalLabel}>Father Name</Text>
+                            <TextInput
+                                style={styles.modalInput}
                                 value={formData.fatherName}
                                 onChangeText={(text) => setFormData({ ...formData, fatherName: text })}
+                                placeholder="Father Name"
                             />
 
-                            <Text style={styles.modalLabel}>Father Mobile Number *</Text>
+                            <Text style={styles.modalLabel}>Father Mobile</Text>
                             <TextInput
                                 style={styles.modalInput}
-                                placeholder="Enter father's 10-digit mobile number"
                                 value={formData.fatherMobile}
-                                onChangeText={(text) => setFormData({ ...formData, fatherMobile: text.replace(/\D/g, '') })}
+                                onChangeText={(text) => setFormData({ ...formData, fatherMobile: text })}
+                                placeholder="10-digit number"
                                 keyboardType="phone-pad"
                                 maxLength={10}
                             />
 
-                            <Text style={styles.modalLabel}>Mother Name *</Text>
+                            <Text style={styles.modalLabel}>Mother Name</Text>
                             <TextInput
                                 style={styles.modalInput}
-                                placeholder="Enter mother's name"
                                 value={formData.motherName}
                                 onChangeText={(text) => setFormData({ ...formData, motherName: text })}
+                                placeholder="Mother Name"
                             />
 
-                            <Text style={styles.modalLabel}>Mother Mobile Number *</Text>
+                            <Text style={styles.modalLabel}>Mother Mobile</Text>
                             <TextInput
                                 style={styles.modalInput}
-                                placeholder="Enter mother's 10-digit mobile number"
                                 value={formData.motherMobile}
-                                onChangeText={(text) => setFormData({ ...formData, motherMobile: text.replace(/\D/g, '') })}
+                                onChangeText={(text) => setFormData({ ...formData, motherMobile: text })}
+                                placeholder="10-digit number"
                                 keyboardType="phone-pad"
                                 maxLength={10}
                             />
 
-                            <Text style={styles.modalLabel}>Caste *</Text>
-                            <View style={styles.casteContainer}>
-                                {['OBC', 'ST', 'General', 'SC'].map((casteOption) => (
-                                    <TouchableOpacity
-                                        key={casteOption}
-                                        style={[
-                                            styles.optionButton,
-                                            formData.caste === casteOption && styles.optionButtonActive
-                                        ]}
-                                        onPress={() => setFormData({ ...formData, caste: casteOption })}
-                                    >
-                                        <Text style={[
-                                            styles.optionButtonText,
-                                            formData.caste === casteOption && styles.optionButtonTextActive
-                                        ]}>
-                                            {casteOption}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
+                            <Text style={styles.modalLabel}>Caste</Text>
+                            <TextInput
+                                style={styles.modalInput}
+                                value={formData.caste}
+                                onChangeText={(text) => setFormData({ ...formData, caste: text })}
+                                placeholder="Caste"
+                            />
 
-                            <Text style={styles.modalLabel}>House Address *</Text>
+                            <Text style={styles.modalLabel}>House Address</Text>
                             <TextInput
                                 style={[styles.modalInput, styles.textArea]}
-                                placeholder="Enter permanent house address (not hostel or staying address)"
                                 value={formData.houseAddress}
                                 onChangeText={(text) => setFormData({ ...formData, houseAddress: text })}
+                                placeholder="Full Address"
                                 multiline
-                                numberOfLines={4}
-                                textAlignVertical="top"
+                                numberOfLines={3}
                             />
-                        </ScrollView>
 
-                        <View style={styles.modalButtonsContainer}>
-                            <Button
-                                title="Cancel"
-                                variant="outline"
-                                onPress={() => {
-                                    setEditModalVisible(false);
-                                    // Reset form data to current profile
-                                    if (profile) {
-                                        setFormData({
-                                            registerNumber: profile.registerNumber || '',
-                                            name: profile.name || '',
-                                            phone: profile.phone || '',
-                                            email: profile.email || '',
-                                            gender: profile.gender || '',
-                                            fatherName: profile.fatherName || '',
-                                            fatherMobile: profile.fatherMobile || '',
-                                            motherName: profile.motherName || '',
-                                            motherMobile: profile.motherMobile || '',
-                                            caste: profile.caste || '',
-                                            houseAddress: profile.houseAddress || '',
-                                        });
-                                    }
-                                }}
-                                style={styles.modalButton}
-                            />
-                            <Button
-                                title={saving ? "Saving..." : "Save Profile"}
-                                onPress={validateAndSave}
-                                style={styles.modalButton}
-                                loading={saving}
-                            />
-                        </View>
+                            <View style={styles.modalButtons}>
+                                <Button
+                                    title="Cancel"
+                                    variant="outline"
+                                    onPress={() => setEditModalVisible(false)}
+                                    style={styles.modalButton}
+                                />
+                                <Button
+                                    title={saving ? "Saving..." : "Save Changes"}
+                                    onPress={validateAndSave}
+                                    style={styles.modalButton}
+                                    loading={saving}
+                                />
+                            </View>
+                            <View style={{ height: 40 }} />
+                        </ScrollView>
                     </View>
                 </View>
             </Modal>
@@ -927,244 +761,188 @@ const StudentProfile = ({ navigation }) => {
     );
 };
 
+// ... styles remain mostly same, just add what's needed ...
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: colors.background,
-    },
+    // Header
     header: {
-        paddingBottom: 24,
-        borderBottomLeftRadius: 24,
-        borderBottomRightRadius: 24,
+        paddingBottom: 20,
+        borderBottomLeftRadius: 30,
+        borderBottomRightRadius: 30,
+        elevation: 8,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        zIndex: 10,
     },
     headerContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
         paddingHorizontal: 20,
-        paddingTop: 8,
+        paddingTop: 10,
+    },
+    menuButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     headerText: {
+        flex: 1,
         alignItems: 'center',
     },
-    headerTitle: {
-        fontSize: 24,
-        fontWeight: '700',
-        color: colors.white,
-        letterSpacing: 0.5,
+    headerRight: {
+        width: 40,
     },
+    // ScrollView
     scrollView: {
         flex: 1,
-        marginTop: -30,
     },
     scrollContent: {
-        paddingHorizontal: 20,
-        paddingBottom: 20,
+        padding: 20,
     },
+    // Avatar
     avatarSection: {
         alignItems: 'center',
-        marginBottom: 24,
-        marginTop: 8,
+        marginTop: -50,
+        marginBottom: 20,
     },
     avatarContainer: {
-        position: 'relative',
-        marginBottom: 16,
-    },
-    avatar: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+        width: 120,
+        height: 120,
+        borderRadius: 60,
         borderWidth: 4,
         borderColor: colors.white,
+        backgroundColor: colors.white,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    avatar: {
+        width: 110,
+        height: 110,
+        borderRadius: 55,
     },
     avatarRing: {
         position: 'absolute',
-        top: -4,
-        left: -4,
-        right: -4,
-        bottom: -4,
-        borderRadius: 54,
+        width: 128,
+        height: 128,
+        borderRadius: 64,
         borderWidth: 2,
-        borderColor: colors.primary + '20',
-    },
-    studentName: {
-        fontSize: 22,
-        fontWeight: '700',
-        color: colors.textPrimary,
-        marginBottom: 8,
+        borderColor: colors.primary + '40', // semi-transparent
+        zIndex: -1,
     },
     roleBadge: {
-        backgroundColor: colors.success + '15',
-        paddingHorizontal: 16,
-        paddingVertical: 6,
-        borderRadius: 12,
+        backgroundColor: colors.primary + '15',
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        borderRadius: 20,
+        marginTop: 8,
+        borderWidth: 1,
+        borderColor: colors.primary + '30',
     },
     roleText: {
-        color: colors.success,
         fontSize: 12,
+        color: colors.primary,
         fontWeight: '600',
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
     },
+    // Cards
     infoCard: {
-        marginTop: 8,
+        marginBottom: 20,
+        padding: 16,
     },
     cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 20,
-    },
-    cardTitle: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: colors.textPrimary,
-        flex: 1,
+        marginBottom: 16,
     },
     cardHeaderButtons: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
     },
     viewMoreButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 8,
-        backgroundColor: colors.gray50,
+        marginRight: 12,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        backgroundColor: colors.background,
+        borderRadius: 12,
     },
     viewMoreText: {
-        fontSize: 13,
+        fontSize: 12,
         color: colors.primary,
-        fontWeight: '600',
+        fontWeight: '500',
         marginLeft: 4,
     },
     editButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 8,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
         backgroundColor: colors.primary + '15',
+        borderRadius: 12,
     },
     editButtonText: {
-        fontSize: 14,
+        fontSize: 12,
         color: colors.primary,
         fontWeight: '600',
         marginLeft: 4,
     },
     profileRow: {
         flexDirection: 'row',
-        alignItems: 'center',
         justifyContent: 'space-between',
+        alignItems: 'center',
         paddingVertical: 12,
-        minHeight: 44,
     },
     rowLeft: {
         flexDirection: 'row',
         alignItems: 'center',
         flex: 1,
-        flexShrink: 1,
-        marginRight: 12,
+        marginRight: 16,
     },
     iconWrapper: {
-        width: 36,
-        height: 36,
-        borderRadius: 10,
-        backgroundColor: colors.gray50,
-        alignItems: 'center',
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: colors.primary + '10',
         justifyContent: 'center',
+        alignItems: 'center',
         marginRight: 12,
-        flexShrink: 0,
     },
-    rowLabel: {
-        fontSize: 15,
-        color: colors.textSecondary,
-        fontWeight: '500',
-        flexShrink: 1,
-    },
-    rowValue: {
-        fontSize: 15,
-        color: colors.textPrimary,
-        fontWeight: '600',
-        textAlign: 'right',
-        flexShrink: 0,
-        marginLeft: 12,
-        maxWidth: '50%',
-    },
-    divider: {
-        height: 1,
-        backgroundColor: colors.gray100,
-        marginLeft: 48,
-    },
-    documentsContainer: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-    },
-    documentsIcon: {
-        marginRight: 12,
-        marginTop: 2,
-    },
-    documentsText: {
-        fontSize: 14,
-        color: colors.textPrimary,
-        fontWeight: '500',
-        marginBottom: 4,
-    },
-    documentsSubtext: {
-        fontSize: 13,
-        color: colors.textSecondary,
-    },
+    // Actions
     actionContainer: {
-        marginTop: 32,
-        gap: 12,
+        marginTop: 10,
     },
     changePasswordButton: {
-        backgroundColor: colors.primary,
+        backgroundColor: colors.secondary,
     },
-    logoutButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 14,
-        borderRadius: 12,
-        borderWidth: 1.5,
-        borderColor: colors.error,
-        gap: 8,
-    },
-    logoutText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: colors.error,
-    },
+    // Modal
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
-        alignItems: 'center',
         padding: 20,
     },
     modalContent: {
         backgroundColor: colors.white,
         borderRadius: 20,
-        padding: 24,
-        width: '100%',
-        maxWidth: 400,
+        padding: 20,
+        elevation: 5,
     },
     editModalContent: {
         backgroundColor: colors.white,
         borderRadius: 20,
-        width: '100%',
-        maxWidth: 400,
-        maxHeight: '85%',
-        padding: 24,
-        flexDirection: 'column',
-    },
-    modalScrollView: {
-        maxHeight: 400,
-        flexGrow: 0,
-    },
-    modalScrollContent: {
-        paddingBottom: 10,
-        flexGrow: 0,
+        padding: 20,
+        height: '80%', // Taller for edit
+        elevation: 5,
     },
     modalHeader: {
         flexDirection: 'row',
@@ -1178,13 +956,12 @@ const styles = StyleSheet.create({
         color: colors.textPrimary,
     },
     modalNote: {
-        fontSize: 12,
-        color: colors.warning,
-        backgroundColor: colors.warning + '15',
-        padding: 12,
+        fontSize: 14,
+        color: colors.textSecondary,
+        marginBottom: 20,
+        backgroundColor: colors.primary + '10',
+        padding: 10,
         borderRadius: 8,
-        marginBottom: 16,
-        fontWeight: '500',
     },
     modalLabel: {
         fontSize: 14,
@@ -1194,86 +971,32 @@ const styles = StyleSheet.create({
         marginTop: 12,
     },
     modalInput: {
-        backgroundColor: colors.gray50,
-        borderRadius: 12,
-        padding: 14,
-        fontSize: 16,
-        color: colors.textPrimary,
         borderWidth: 1,
-        borderColor: colors.gray200,
-        marginBottom: 8,
+        borderColor: colors.gray300,
+        borderRadius: 10,
+        padding: 12,
+        fontSize: 14,
+        color: colors.textPrimary,
+        backgroundColor: colors.gray50,
+    },
+    textArea: {
+        height: 80,
+        textAlignVertical: 'top',
     },
     modalButtons: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginTop: 20,
+        marginTop: 30,
         gap: 12,
-    },
-    modalButtonsContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginTop: 16,
-        gap: 12,
-        paddingTop: 16,
-        borderTopWidth: 1,
-        borderTopColor: colors.gray100,
     },
     modalButton: {
         flex: 1,
     },
-    genderContainer: {
-        flexDirection: 'row',
-        gap: 8,
-        marginBottom: 16,
-    },
-    casteContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-        marginBottom: 16,
-    },
-    optionButton: {
+    modalScrollView: {
         flex: 1,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        backgroundColor: colors.gray50,
-        borderWidth: 2,
-        borderColor: 'transparent',
-        alignItems: 'center',
-        minHeight: 44,
-        justifyContent: 'center',
     },
-    optionButtonActive: {
-        backgroundColor: colors.primary + '15',
-        borderColor: colors.primary,
-    },
-    optionButtonText: {
-        fontSize: 14,
-        color: colors.textSecondary,
-        fontWeight: '500',
-    },
-    optionButtonTextActive: {
-        color: colors.primary,
-        fontWeight: '600',
-    },
-    textArea: {
-        height: 100,
-        paddingTop: 14,
-    },
-    infoBox: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.primary + '10',
-        padding: 12,
-        borderRadius: 8,
-        marginBottom: 16,
-    },
-    infoBoxText: {
-        fontSize: 14,
-        color: colors.textPrimary,
-        fontWeight: '500',
-        marginLeft: 8,
+    modalScrollContent: {
+        paddingBottom: 20,
     },
 });
 

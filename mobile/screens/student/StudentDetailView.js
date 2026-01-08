@@ -4,9 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
-import { doc, getDoc } from 'firebase/firestore';
-import { db, storage } from '../../services/firebaseConfig';
-import { ref, getDownloadURL } from 'firebase/storage';
+import { studentService } from '../../services/studentService';
+import { studentStorageService } from '../../services/studentStorageService';
 import PremiumCard from '../../components/PremiumCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import colors from '../../styles/colors';
@@ -26,40 +25,57 @@ const StudentDetailView = ({ route, navigation }) => {
     const loadStudentDetails = async () => {
         try {
             setLoading(true);
-            
+
+            // Determine viewing ID
+            const targetId = studentId || studentRegisterNumber || user?.uid;
+
             // Determine if viewing own profile
-            const currentStudent = await getDoc(doc(db, 'students', user?.uid));
-            if (currentStudent.exists()) {
-                const currentData = currentStudent.data();
-                setIsOwnProfile(
-                    currentData.registerNumber === studentRegisterNumber ||
-                    currentStudent.id === studentId
-                );
+            // (Simplified logic: if target is user.uid or user.email relates to it)
+            // But strict check:
+            const currentUserProfile = await studentService.getProfile(user?.uid, user?.email);
+            setIsOwnProfile(
+                currentUserProfile?.id === targetId ||
+                currentUserProfile?.registerNumber === targetId ||
+                user?.uid === targetId
+            );
+
+            // Load student data using service
+            let studentData = null;
+            if (studentId) {
+                // Try finding by ID or Register Number
+                const students = await studentStorageService.getStudents();
+                studentData = students.find(s => s.id === studentId || s.registerNumber === studentId);
             }
 
-            // Load student data
-            const studentRef = studentId 
-                ? doc(db, 'students', studentId)
-                : doc(db, 'students', studentRegisterNumber);
-            
-            const studentDoc = await getDoc(studentRef);
-            
-            if (!studentDoc.exists()) {
+            if (!studentData && studentRegisterNumber) {
+                const students = await studentStorageService.getStudents();
+                studentData = students.find(s => s.registerNumber === studentRegisterNumber);
+            }
+
+            // Fallback for current user if nothing passed
+            if (!studentData && !studentId && !studentRegisterNumber) {
+                studentData = currentUserProfile;
+            }
+
+            if (!studentData) {
                 Alert.alert('Error', 'Student not found');
                 navigation.goBack();
                 return;
             }
 
-            const studentData = { id: studentDoc.id, ...studentDoc.data() };
             setStudent(studentData);
 
-            // Load documents
-            const documentsRef = doc(db, 'studentDocuments', studentData.id || studentRegisterNumber);
-            const documentsDoc = await getDoc(documentsRef);
-            
-            if (documentsDoc.exists()) {
-                setDocuments(documentsDoc.data());
+            // Load documents from local storage
+            // Metadata is stored by user UID (usually) or student ID.
+            // StudentDocuments uses user.uid to save.
+            // So we should try finding documents by the student's ID (which might be the UID or we might have it in studentData)
+            // studentData usually has 'id' which IS the UID if created via Auth.
+            const docId = studentData.id || studentData.uid;
+            if (docId) {
+                const docs = await studentStorageService.getDocumentMetadata(docId);
+                setDocuments(docs || {});
             }
+
         } catch (error) {
             console.error('Error loading student details:', error);
             Alert.alert('Error', 'Failed to load student details');
@@ -71,14 +87,20 @@ const StudentDetailView = ({ route, navigation }) => {
     const handleDownloadDocument = async (docKey, docData) => {
         try {
             if (docData?.url) {
-                const url = await getDownloadURL(ref(storage, docData.url));
-                Linking.openURL(url);
+                // Determine if it is a local file or remote URL
+                // For local-first, it's likely a file:// URI
+                const canOpen = await Linking.canOpenURL(docData.url);
+                if (canOpen) {
+                    await Linking.openURL(docData.url);
+                } else {
+                    Alert.alert('Error', 'Cannot open this document type or file not found.');
+                }
             } else {
                 Alert.alert('Error', 'Document URL not found');
             }
         } catch (error) {
             console.error('Error downloading document:', error);
-            Alert.alert('Error', 'Failed to download document');
+            Alert.alert('Error', 'Failed to open document');
         }
     };
 
@@ -100,10 +122,10 @@ const StudentDetailView = ({ route, navigation }) => {
         return (
             <View style={styles.documentRow}>
                 <View style={styles.documentLeft}>
-                    <MaterialCommunityIcons 
-                        name={hasDocument ? "file-check" : "file-remove"} 
-                        size={20} 
-                        color={hasDocument ? colors.success : colors.gray400} 
+                    <MaterialCommunityIcons
+                        name={hasDocument ? "file-check" : "file-remove"}
+                        size={20}
+                        color={hasDocument ? colors.success : colors.gray400}
                     />
                     <Text style={[styles.documentLabel, !hasDocument && styles.documentLabelMissing]}>
                         {docLabel}
@@ -114,7 +136,7 @@ const StudentDetailView = ({ route, navigation }) => {
                         onPress={() => handleDownloadDocument(docKey, docData)}
                         style={styles.downloadBtn}
                     >
-                        <MaterialCommunityIcons name="download" size={18} color={colors.primary} />
+                        <MaterialCommunityIcons name="eye" size={18} color={colors.primary} />
                         <Text style={styles.downloadText}>View</Text>
                     </TouchableOpacity>
                 )}
@@ -178,7 +200,7 @@ const StudentDetailView = ({ route, navigation }) => {
                     <InfoRow icon="school" label="Course" value={student.course} />
                     <InfoRow icon="book-open-variant" label="Program" value={student.program} />
                     <InfoRow icon="calendar" label="Year" value={student.year?.toString()} />
-                    <InfoRow icon="calendar-range" label="Academic Year" value={student.academicYear} isLast />
+                    <InfoRow icon="calendar-range" label="Academic Year" value={student.academicYear || new Date().getFullYear().toString()} isLast />
                 </PremiumCard>
 
                 {/* Documents */}
@@ -326,4 +348,3 @@ const styles = StyleSheet.create({
 });
 
 export default StudentDetailView;
-

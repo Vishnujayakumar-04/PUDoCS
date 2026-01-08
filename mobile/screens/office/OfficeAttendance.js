@@ -149,11 +149,9 @@ const OfficeAttendance = ({ navigation }) => {
             <ProgramSection
                 title="M.Sc Programs"
                 items={[
-                    { label: 'M.Sc CS – 1st Year', name: 'M.Sc CS', year: 1, category: 'PG' },
                     { label: 'M.Sc CS – 2nd Year', name: 'M.Sc CS', year: 2, category: 'PG' },
                     { label: 'M.Sc Data Analytics – 1st Year', name: 'M.Sc Data Analytics', year: 1, category: 'PG' },
-                    { label: 'M.Sc CS Integrated – 5th Year', name: 'M.Sc CS Integrated', year: 5, category: 'PG' },
-                    { label: 'M.Sc CS Integrated – 6th Year', name: 'M.Sc CS Integrated', year: 6, category: 'PG' },
+                    { label: 'M.Sc CS Integrated – 1st Year', name: 'M.Sc CS Integrated', year: 1, category: 'PG' },
                 ]}
             />
             <ProgramSection

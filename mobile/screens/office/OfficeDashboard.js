@@ -12,7 +12,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { postAlumniMeetNotice, postHackathonNotice } from '../../utils/postNoticeWithImage';
 import timetableData from '../../data/timetables/I_MTECH_DS_Timetable.json';
 import btechCSTimetableData from '../../data/timetables/I_BTECH_CS_Timetable.json';
-import mscCSTimetableData from '../../data/timetables/I_MSc_CS_Timetable.json';
 import btechCSE2ndYearTimetableData from '../../data/timetables/II_BTECH_CSE_Timetable.json';
 import bscCS2ndYearTimetableData from '../../data/timetables/II_BSc_CS_Timetable.json';
 import bscCS3rdYearTimetableData from '../../data/timetables/III_BSc_CS_Timetable.json';
@@ -21,10 +20,7 @@ import mtechCSE1stYearTimetableData from '../../data/timetables/I_MTECH_CSE_Time
 import bscCS1stYearTimetableData from '../../data/timetables/I_BSc_CS_Timetable.json';
 import mscCS2ndYearTimetableData from '../../data/timetables/II_MSc_CS_Timetable.json';
 import mca2ndYearTimetableData from '../../data/timetables/II_MCA_Timetable.json';
-import mscCSIntegrated5thYearTimetableData from '../../data/timetables/V_MSc_CS_Integrated_Timetable.json';
-import mscCSIntegrated6thYearTimetableData from '../../data/timetables/VI_MSc_CS_Integrated_Timetable.json';
-import mtechNIS2ndYearTimetableData from '../../data/timetables/II_MTECH_NIS_Timetable.json';
-import mtechCSE2ndYearTimetableData from '../../data/timetables/II_MTECH_CSE_Timetable.json';
+import mscCSIntegrated1stYearTimetableData from '../../data/timetables/V_MSc_CS_Integrated_Timetable.json';
 import {
     importMscCS2ndYear,
     importMscDA1stYear,
@@ -123,7 +119,6 @@ const OfficeDashboard = ({ navigation }) => {
             const timetableList = [
                 { id: 'mtech-ds-1', label: 'I M.Tech DS Timetable', data: timetableData, program: 'M.Tech DS', year: 1 },
                 { id: 'btech-cs-1', label: 'I B.Tech CS Timetable', data: btechCSTimetableData, program: 'B.Tech', year: 1 },
-                { id: 'msc-cs-1', label: 'I M.Sc CS Timetable', data: mscCSTimetableData, program: 'M.Sc CS', year: 1 },
                 { id: 'btech-cse-2', label: 'II B.Tech CSE Timetable', data: btechCSE2ndYearTimetableData, program: 'B.Tech', year: 2 },
                 { id: 'bsc-cs-2', label: 'II B.Sc CS Timetable', data: bscCS2ndYearTimetableData, program: 'B.Sc CS', year: 2 },
                 { id: 'bsc-cs-3', label: 'III B.Sc CS Timetable', data: bscCS3rdYearTimetableData, program: 'B.Sc CS', year: 3 },
@@ -132,10 +127,7 @@ const OfficeDashboard = ({ navigation }) => {
                 { id: 'bsc-cs-1', label: 'I B.Sc CS Timetable', data: bscCS1stYearTimetableData, program: 'B.Sc CS', year: 1 },
                 { id: 'msc-cs-2', label: 'II M.Sc CS Timetable', data: mscCS2ndYearTimetableData, program: 'M.Sc CS', year: 2 },
                 { id: 'mca-2', label: 'II MCA Timetable', data: mca2ndYearTimetableData, program: 'MCA', year: 2 },
-                { id: 'msc-cs-int-5', label: 'V M.Sc CS Integrated Timetable', data: mscCSIntegrated5thYearTimetableData, program: 'M.Sc CS Integrated', year: 5 },
-                { id: 'msc-cs-int-6', label: 'VI M.Sc CS Integrated Timetable', data: mscCSIntegrated6thYearTimetableData, program: 'M.Sc CS Integrated', year: 6 },
-                { id: 'mtech-nis-2', label: 'II M.Tech NIS Timetable', data: mtechNIS2ndYearTimetableData, program: 'M.Tech NIS', year: 2 },
-                { id: 'mtech-cse-2', label: 'II M.Tech CSE Timetable', data: mtechCSE2ndYearTimetableData, program: 'M.Tech CSE', year: 2 },
+                { id: 'msc-cs-int-1', label: 'I M.Sc CS Integrated Timetable', data: mscCSIntegrated1stYearTimetableData, program: 'M.Sc CS Integrated', year: 1 },
             ];
 
             const unsavedTimetables = [];

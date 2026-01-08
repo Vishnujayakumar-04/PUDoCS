@@ -3,9 +3,11 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Dimensi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Asset } from 'expo-asset';
+import { useAuth } from '../../context/AuthContext';
 import { studentService } from '../../services/studentService';
 import Card from '../../components/Card';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -13,15 +15,133 @@ import colors from '../../styles/colors';
 
 const { width } = Dimensions.get('window');
 
-const StudentTimetable = () => {
-    // Navigation State: 'landing' | 'ug' | 'pg' | 'viewer'
-    const [view, setView] = useState('landing');
+const StudentTimetable = ({ route }) => {
+    const navigation = useNavigation();
+    const { user } = useAuth();
+    // Always start in 'viewer' mode - no more landing/UG/PG selection
+    const [view, setView] = useState('viewer');
     const [selectedProgram, setSelectedProgram] = useState(null);
     const [timetable, setTimetable] = useState(null);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [selectedDay, setSelectedDay] = useState('Monday');
     const [availableDays, setAvailableDays] = useState([]);
     const [fadeAnim] = useState(new Animated.Value(0));
+
+    // Helper function to map program name
+    const mapProgramName = (program) => {
+        if (!program) return program;
+        
+        const programUpper = program.toUpperCase();
+        
+        if (programUpper.includes('B.TECH') || programUpper.includes('BTECH')) {
+            return 'B.Tech';
+        } else if (programUpper.includes('B.SC') || programUpper.includes('BSC')) {
+            return 'B.Sc CS';
+        } else if (programUpper.includes('M.SC') || programUpper.includes('MSC')) {
+            if (programUpper.includes('DATA ANALYTICS') || programUpper.includes('DATA SCIENCE')) {
+                return 'M.Sc Data Analytics';
+            } else if (programUpper.includes('INTEGRATED')) {
+                return 'M.Sc CS Integrated';
+            } else {
+                return 'M.Sc CS';
+            }
+        } else if (programUpper.includes('M.TECH') || programUpper.includes('MTECH')) {
+            // M.Tech DS variations
+            if (programUpper.includes('DATA SCIENCE') || programUpper.includes('DATA ANALYTICS') || 
+                programUpper.includes(' DS ') || programUpper.includes('DS') || 
+                programUpper.includes('DA') || programUpper.includes('DS & AI')) {
+                return 'M.Tech DS';
+            } else if (programUpper.includes('NIS') || programUpper.includes('NETWORK')) {
+                return 'M.Tech NIS';
+            } else if (programUpper.includes('CSE') || programUpper.includes('COMPUTER SCIENCE')) {
+                return 'M.Tech CSE';
+            }
+        } else if (programUpper.includes('M.SC') || programUpper.includes('MSC')) {
+            // M.Sc variations
+            if (programUpper.includes('DATA ANALYTICS') || programUpper.includes('DATA SCIENCE') || programUpper.includes('DA')) {
+                return 'M.Sc Data Analytics';
+            } else if (programUpper.includes('CS INTEGRATED') || programUpper.includes('INTEGRATED')) {
+                return 'M.Sc CS Integrated';
+            } else if (programUpper.includes('CS') || programUpper.includes('COMPUTER SCIENCE')) {
+                return 'M.Sc CS';
+            }
+        } else if (programUpper.includes('MCA')) {
+            return 'MCA';
+        }
+        
+        // If program is already in correct format, return as-is
+        if (program === 'M.Tech DS' || program === 'M.Tech Data Science') {
+            return 'M.Tech DS';
+        }
+        if (program === 'M.Tech CSE' || program === 'M.Tech Computer Science') {
+            return 'M.Tech CSE';
+        }
+        if (program === 'M.Tech NIS' || program === 'M.Tech Network') {
+            return 'M.Tech NIS';
+        }
+        if (program === 'M.Sc Data Analytics' || program === 'M.Sc Data Science') {
+            return 'M.Sc Data Analytics';
+        }
+        
+        return program;
+    };
+
+    // Auto-load timetable on mount - either from route params or from student profile
+    useEffect(() => {
+        const loadTimetableData = async () => {
+            setLoading(true);
+            
+            try {
+                let program, year;
+                
+                // Priority 1: Use route params if provided (from StudentDetails)
+                if (route?.params?.autoLoad && route?.params?.program && route?.params?.year) {
+                    program = route.params.program;
+                    year = route.params.year;
+                    console.log('🚀 Loading timetable from route params:', { program, year });
+                } 
+                // Priority 2: Load from student profile
+                else if (user?.uid) {
+                    const profile = await studentService.getProfile(user.uid, user.email);
+                    if (profile?.program && profile?.year) {
+                        program = profile.program;
+                        year = profile.year;
+                        console.log('🚀 Loading timetable from profile:', { program, year, profile });
+                    } else {
+                        console.warn('⚠️ No program/year in profile. Profile:', profile);
+                        setLoading(false);
+                        return;
+                    }
+                } else {
+                    console.warn('⚠️ No user or route params');
+                    setLoading(false);
+                    return;
+                }
+                
+                // Map program name to match timetable format
+                const mappedProgram = mapProgramName(program);
+                console.log('📅 Program mapping:', { original: program, mapped: mappedProgram, year });
+                
+                // Set selected program for display
+                setSelectedProgram({
+                    name: mappedProgram,
+                    year: year,
+                    label: `${mappedProgram} - Year ${year}`,
+                    category: program.includes('B.') || program.includes('B.Tech') ? 'UG' : 'PG'
+                });
+                
+                // Load timetable
+                console.log('📅 Loading timetable for:', mappedProgram, 'Year', year);
+                await loadTimetable(mappedProgram, year, true);
+            } catch (error) {
+                console.error('❌ Error loading timetable data:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        
+        loadTimetableData();
+    }, [route?.params, user?.uid]);
 
     useEffect(() => {
         Animated.timing(fadeAnim, {
@@ -61,8 +181,15 @@ const StudentTimetable = () => {
     const loadTimetable = async (program, year, forceRefresh = false) => {
         setLoading(true);
         try {
+            console.log('📅 Loading timetable:', { program, year, forceRefresh });
             // Force refresh from database to get latest updates
             const timetableData = await studentService.getTimetable(program, year, forceRefresh || true);
+            
+            console.log('📅 Timetable result:', { 
+                found: !!timetableData, 
+                hasSchedule: !!(timetableData?.schedule), 
+                scheduleLength: timetableData?.schedule?.length || 0 
+            });
             
             if (timetableData && timetableData.schedule && timetableData.schedule.length > 0) {
                 // Has schedule data - show schedule viewer
@@ -70,11 +197,12 @@ const StudentTimetable = () => {
                 setView('viewer');
             } else {
                 // No timetable data - show empty state
+                console.warn('⚠️ No timetable found or empty schedule');
                 setTimetable({ type: 'empty', program, year });
                 setView('viewer');
             }
         } catch (error) {
-            console.error('Error loading timetable:', error);
+            console.error('❌ Error loading timetable:', error);
             // On error, show empty state
             setTimetable({ type: 'empty', program, year });
             setView('viewer');
@@ -84,8 +212,8 @@ const StudentTimetable = () => {
     };
 
     const handleBack = () => {
-        if (view === 'viewer') setView(selectedProgram.category === 'UG' ? 'ug' : 'pg');
-        else setView('landing');
+        // Always navigate back - no more UG/PG selection
+        navigation.goBack();
     };
 
     const mergeConsecutiveSlots = (slots) => {
@@ -181,12 +309,10 @@ const StudentTimetable = () => {
         <Animated.View style={[styles.viewContainer, { opacity: fadeAnim }]}>
             <ScrollView showsVerticalScrollIndicator={false}>
                 <ProgramSection
-                    title="B.Tech programs"
+                    title="B.Tech CSE programs"
                     items={[
-                        { label: 'B.Tech – 1st Year', name: 'B.Tech', year: 1, category: 'UG' },
-                        { label: 'B.Tech – 2nd Year', name: 'B.Tech', year: 2, category: 'UG' },
-                        { label: 'B.Tech – 3rd Year', name: 'B.Tech', year: 3, category: 'UG' },
-                        { label: 'B.Tech – 4th Year', name: 'B.Tech', year: 4, category: 'UG' },
+                        { label: 'B.Tech CSE – 1st Year', name: 'B.Tech', year: 1, category: 'UG' },
+                        { label: 'B.Tech CSE – 2nd Year', name: 'B.Tech', year: 2, category: 'UG' },
                     ]}
                 />
                 <ProgramSection
@@ -207,10 +333,9 @@ const StudentTimetable = () => {
                 <ProgramSection
                     title="M.Sc – Master of Science"
                     items={[
-                        { label: 'M.Sc Computer Science – 1st Year', name: 'M.Sc CS', year: 1, category: 'PG' },
                         { label: 'M.Sc Computer Science – 2nd Year', name: 'M.Sc CS', year: 2, category: 'PG' },
-                        { label: 'M.Sc CS Integrated – 5th Year', name: 'M.Sc CS Integrated', year: 5, category: 'PG' },
-                        { label: 'M.Sc CS Integrated – 6th Year', name: 'M.Sc CS Integrated', year: 6, category: 'PG' },
+                        { label: 'M.Sc Data Analytics – 1st Year', name: 'M.Sc Data Analytics', year: 1, category: 'PG' },
+                        { label: 'M.Sc CS Integrated – 1st Year', name: 'M.Sc CS Integrated', year: 1, category: 'PG' },
                     ]}
                 />
                 <ProgramSection
@@ -223,10 +348,8 @@ const StudentTimetable = () => {
                 <ProgramSection
                     title="M.Tech – Master of Technology"
                     items={[
-                        { label: 'M.Tech Data Science & AI – 1st Year', name: 'M.Tech DS', year: 1, category: 'PG' },
-                        { label: 'M.Tech NIS – 2nd Year', name: 'M.Tech NIS', year: 2, category: 'PG' },
+                        { label: 'M.Tech Data Science – 1st Year', name: 'M.Tech DS', year: 1, category: 'PG' },
                         { label: 'M.Tech CSE – 1st Year', name: 'M.Tech CSE', year: 1, category: 'PG' },
-                        { label: 'M.Tech CSE – 2nd Year', name: 'M.Tech CSE', year: 2, category: 'PG' },
                     ]}
                 />
             </ScrollView>
@@ -415,44 +538,41 @@ const StudentTimetable = () => {
         );
     };
 
+    // Always show viewer - no more landing/UG/PG selection
     if (loading) return <LoadingSpinner />;
+
+    const displayTitle = selectedProgram?.label || 'Timetable';
 
     return (
         <View style={styles.container}>
             <LinearGradient colors={[colors.primary, colors.secondary]} style={styles.header}>
                 <SafeAreaView edges={['top']}>
                     <View style={styles.headerContent}>
-                        {view !== 'landing' && (
-                            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-                                <MaterialCommunityIcons name="arrow-left" size={24} color={colors.white} />
-                            </TouchableOpacity>
-                        )}
+                        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+                            <MaterialCommunityIcons name="arrow-left" size={24} color={colors.white} />
+                        </TouchableOpacity>
                         <View style={styles.titleContainer}>
                             <Text style={styles.headerTitle}>
-                                {view === 'landing' ? 'Timetable' :
-                                    view === 'ug' ? 'Undergraduate' :
-                                        view === 'pg' ? 'Postgraduate' :
-                                            selectedProgram?.label}
+                                {displayTitle}
                             </Text>
                         </View>
-                        {view === 'viewer' && selectedProgram && (
+                        {selectedProgram && (
                             <TouchableOpacity 
-                                onPress={() => loadTimetable(selectedProgram.name, selectedProgram.year, true)}
+                                onPress={() => {
+                                    loadTimetable(selectedProgram.name, selectedProgram.year, true);
+                                }}
                                 style={styles.refreshButton}
                             >
                                 <MaterialCommunityIcons name="refresh" size={24} color={colors.white} />
                             </TouchableOpacity>
                         )}
-                        {!(view === 'viewer' && selectedProgram) && <View style={styles.headerRight} />}
+                        {!selectedProgram && <View style={styles.headerRight} />}
                     </View>
                 </SafeAreaView>
             </LinearGradient>
 
             <View style={styles.content}>
-                {view === 'landing' && renderLanding()}
-                {view === 'ug' && renderUGSelection()}
-                {view === 'pg' && renderPGSelection()}
-                {view === 'viewer' && renderViewer()}
+                {renderViewer()}
             </View>
         </View>
     );

@@ -2,7 +2,8 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { View } from 'react-native';
-import FloatingTabBar from '../components/FloatingTabBar';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
+import CustomBottomTabBar from '../components/CustomBottomTabBar';
 import colors from '../styles/colors';
 
 // Student screens
@@ -22,14 +23,29 @@ import StudentComplaint from '../screens/student/StudentComplaint';
 import StudentDetailView from '../screens/student/StudentDetailView';
 import StudentAttendance from '../screens/student/StudentAttendance';
 import StudentGallery from '../screens/student/StudentGallery';
+import StudentDetails from '../screens/student/StudentDetails';
 
 const Tab = createBottomTabNavigator();
 
 
+// List of main screens where tab bar should be visible
+const MAIN_SCREENS = ['Dashboard', 'Students', 'StudentDetails', 'Notices', 'Profile'];
+
+const getTabBarVisibility = (route) => {
+    const routeName = getFocusedRouteNameFromRoute(route) ?? route.name;
+    return MAIN_SCREENS.includes(routeName);
+};
+
 const StudentNavigator = () => {
     return (
         <Tab.Navigator
-            tabBar={(props) => <FloatingTabBar {...props} />}
+            tabBar={(props) => {
+                const route = props.state.routes[props.state.index];
+                if (!getTabBarVisibility(route)) {
+                    return null; // Hide tab bar on sub-pages
+                }
+                return <CustomBottomTabBar {...props} />;
+            }}
             screenOptions={{
                 headerShown: false,
             }}
@@ -54,6 +70,19 @@ const StudentNavigator = () => {
                     tabBarIcon: ({ focused, color, size }) => (
                         <MaterialCommunityIcons 
                             name="account-group-outline" 
+                            size={size || 24} 
+                            color={color} 
+                        />
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="StudentDetails"
+                component={StudentDetails}
+                options={{
+                    tabBarIcon: ({ focused, color, size }) => (
+                        <MaterialCommunityIcons 
+                            name="leaf" 
                             size={size || 24} 
                             color={color} 
                         />

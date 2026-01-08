@@ -8,15 +8,19 @@ import Card from '../../components/Card';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import colors from '../../styles/colors';
 import { isSmallScreen } from '../../utils/responsive';
+import { useNavigation } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
 const StudentDirectory = () => {
+    const navigation = useNavigation();
     const [view, setView] = useState('landing');
     const [selectedClass, setSelectedClass] = useState(null);
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(false);
     const [fadeAnim] = useState(new Animated.Value(0));
+    const [classTimetable, setClassTimetable] = useState(null);
+    const [loadingTimetable, setLoadingTimetable] = useState(false);
 
     useEffect(() => {
         Animated.timing(fadeAnim, {
@@ -26,9 +30,45 @@ const StudentDirectory = () => {
         }).start();
     }, [view]);
 
+    const loadClassTimetable = async (program, year) => {
+        setLoadingTimetable(true);
+        try {
+            // Map program name to match timetable format
+            let mappedProgram = program;
+            if (program === 'B.Tech') {
+                mappedProgram = 'B.Tech';
+            } else if (program === 'B.Sc CS') {
+                mappedProgram = 'B.Sc CS';
+            } else if (program === 'M.Sc CS') {
+                mappedProgram = 'M.Sc CS';
+            } else if (program === 'M.Sc Data Analytics') {
+                mappedProgram = 'M.Sc Data Analytics';
+            } else if (program === 'M.Sc CS Integrated') {
+                mappedProgram = 'M.Sc CS Integrated';
+            } else if (program === 'M.Tech DS' || program === 'M.Tech Data Analytics') {
+                mappedProgram = 'M.Tech DS';
+            } else if (program === 'M.Tech CSE') {
+                mappedProgram = 'M.Tech CSE';
+            } else if (program === 'M.Tech NIS') {
+                mappedProgram = 'M.Tech NIS';
+            } else if (program === 'MCA') {
+                mappedProgram = 'MCA';
+            }
+            
+            const timetableData = await studentService.getTimetable(mappedProgram, year, true);
+            setClassTimetable(timetableData);
+        } catch (error) {
+            console.error('Error loading class timetable:', error);
+            setClassTimetable(null);
+        } finally {
+            setLoadingTimetable(false);
+        }
+    };
+
     const loadStudents = async (program, year) => {
         setLoading(true);
         setStudents([]); // Clear previous students
+        setClassTimetable(null); // Clear previous timetable
         try {
             console.log('=== Loading Students ===');
             console.log('Program:', program);
@@ -38,6 +78,8 @@ const StudentDirectory = () => {
             let mappedProgram = program;
             if (program === 'M.Tech DS') {
                 mappedProgram = 'M.Tech Data Analytics';
+            } else if (program === 'M.Tech NIS') {
+                mappedProgram = 'M.Tech NIS';
             } else if (program === 'M.Sc DS') {
                 mappedProgram = 'M.Sc Data Analytics';
             }
@@ -53,6 +95,9 @@ const StudentDirectory = () => {
             
             setStudents(data || []);
             setView('directory');
+            
+            // Load timetable for this class
+            loadClassTimetable(program, year);
             
             if (!data || data.length === 0) {
                 console.warn('⚠️ No students found. Possible reasons:');
@@ -98,6 +143,48 @@ const StudentDirectory = () => {
         </View>
     );
 
+    // Classroom Allocation Data
+    const ugClassroomAllocation = [
+        { courseName: 'I BTECH (CSE)', roomNumber: '103', location: 'Ground Floor (CS Annexe)' },
+        { courseName: 'II BTECH (CSE)', roomNumber: '203', location: 'First Floor (CS Annexe)' },
+        { courseName: 'I BSC (Computer Science)', roomNumber: 'SH 220', location: 'First Floor (West)' },
+        { courseName: 'II BSC (Computer Science)', roomNumber: '204', location: 'First Floor (CS Annexe)' },
+        { courseName: 'III BSC (Computer Science)', roomNumber: '205', location: 'First Floor (CS Annexe)' },
+    ];
+
+    const pgClassroomAllocation = [
+        { courseName: 'I MSC (Data Analytics)', roomNumber: 'SH 314', location: 'Second Floor (North)' },
+        { courseName: 'I MCA', roomNumber: 'SH 367', location: 'Second Floor (South)' },
+        { courseName: 'I MSC Int (Computer Science)', roomNumber: 'SH 308', location: 'Second Floor (East)' },
+        { courseName: 'I MTECH (Data Science)', roomNumber: 'SH 310', location: 'Second Floor (East)' },
+        { courseName: 'I MTECH (Computer Science)', roomNumber: 'SH 221', location: 'First Floor (West)' },
+        { courseName: 'II MSC (Computer Science)', roomNumber: 'SH 321', location: 'Second Floor (West)' },
+        { courseName: 'II MCA', roomNumber: 'SH 346', location: 'Second Floor (East)' },
+    ];
+
+    const ClassroomAllocationTable = ({ data, title }) => (
+        <View style={styles.classroomSection}>
+            <View style={styles.classroomHeader}>
+                <MaterialCommunityIcons name="map-marker" size={20} color={colors.primary} />
+                <Text style={styles.classroomTitle}>{title}</Text>
+            </View>
+            <Card style={styles.classroomTableCard}>
+                <View style={styles.classroomTableHeader}>
+                    <Text style={[styles.classroomTableHeaderText, styles.classroomCourseCol]}>Course Name</Text>
+                    <Text style={[styles.classroomTableHeaderText, styles.classroomRoomCol]}>Room</Text>
+                    <Text style={[styles.classroomTableHeaderText, styles.classroomLocationCol]}>Location</Text>
+                </View>
+                {data.map((item, index) => (
+                    <View key={index} style={[styles.classroomTableRow, index % 2 === 1 && styles.classroomTableRowEven]}>
+                        <Text style={[styles.classroomTableCell, styles.classroomCourseCol]}>{item.courseName}</Text>
+                        <Text style={[styles.classroomTableCell, styles.classroomRoomCol]}>{item.roomNumber}</Text>
+                        <Text style={[styles.classroomTableCell, styles.classroomLocationCol]}>{item.location}</Text>
+                    </View>
+                ))}
+            </Card>
+        </View>
+    );
+
     const renderLanding = () => (
         <Animated.View style={[styles.viewContainer, { opacity: fadeAnim }]}>
             <Text style={styles.landingTitle}>Student Directory</Text>
@@ -123,14 +210,19 @@ const StudentDirectory = () => {
 
     const renderUGSelection = () => (
         <Animated.View style={[styles.viewContainer, { opacity: fadeAnim }]}>
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.selectionScrollContent}
+            >
+                <ClassroomAllocationTable 
+                    data={ugClassroomAllocation} 
+                    title="Classroom Allocation - Even Semester (2025 - 2026)"
+                />
                 <ProgramSection
-                    title="B.Tech programs"
+                    title="B.Tech CSE programs"
                     items={[
-                        { label: 'B.Tech – 1st Year', name: 'B.Tech', year: 1, category: 'UG' },
-                        { label: 'B.Tech – 2nd Year', name: 'B.Tech', year: 2, category: 'UG' },
-                        { label: 'B.Tech – 3rd Year', name: 'B.Tech', year: 3, category: 'UG' },
-                        { label: 'B.Tech – 4th Year', name: 'B.Tech', year: 4, category: 'UG' },
+                        { label: 'B.Tech CSE – 1st Year', name: 'B.Tech', year: 1, category: 'UG' },
+                        { label: 'B.Tech CSE – 2nd Year', name: 'B.Tech', year: 2, category: 'UG' },
                     ]}
                 />
                 <ProgramSection
@@ -147,11 +239,17 @@ const StudentDirectory = () => {
 
     const renderPGSelection = () => (
         <Animated.View style={[styles.viewContainer, { opacity: fadeAnim }]}>
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.selectionScrollContent}
+            >
+                <ClassroomAllocationTable 
+                    data={pgClassroomAllocation} 
+                    title="Classroom Allocation - Even Semester (2025 - 2026)"
+                />
                 <ProgramSection
                     title="M.Sc – Master of Science"
                     items={[
-                        { label: 'M.Sc Computer Science – 1st Year', name: 'M.Sc CS', year: 1, category: 'PG' },
                         { 
                             label: 'M.Sc Computer Science – 2nd Year', 
                             name: 'M.Sc CS', 
@@ -163,39 +261,24 @@ const StudentDirectory = () => {
                             courseCoordinator: 'M.Sc Programmes'
                         },
                         { 
-                            label: 'M.Sc CS Integrated – 5th Year', 
-                            name: 'M.Sc CS Integrated', 
-                            year: 5, 
-                            category: 'PG',
-                            classRepBoy: 'Not assigned',
-                            classRepGirl: 'Not assigned',
-                            staffCoordinator: 'Not assigned',
-                            courseCoordinator: 'M.Sc Programmes'
-                        },
-                        { 
-                            label: 'M.Sc CS Integrated – 6th Year', 
-                            name: 'M.Sc CS Integrated', 
-                            year: 6, 
-                            category: 'PG',
-                            classRepBoy: 'Not assigned',
-                            classRepGirl: 'Not assigned',
-                            staffCoordinator: 'Not assigned',
-                            courseCoordinator: 'M.Sc Programmes'
-                        },
-                    ]}
-                />
-                <ProgramSection
-                    title="M.Sc Data Science"
-                    items={[
-                        { 
-                            label: 'M.Sc Data Science – 1st Year', 
+                            label: 'M.Sc Data Analytics – 1st Year', 
                             name: 'M.Sc Data Analytics', 
                             year: 1, 
                             category: 'PG',
                             classRepBoy: 'Not assigned',
                             classRepGirl: 'Not assigned',
                             staffCoordinator: 'Not assigned',
-                            courseCoordinator: 'M.Sc Data Science'
+                            courseCoordinator: 'M.Sc Data Analytics'
+                        },
+                        { 
+                            label: 'M.Sc CS Integrated – 1st Year', 
+                            name: 'M.Sc CS Integrated', 
+                            year: 1, 
+                            category: 'PG',
+                            classRepBoy: 'Not assigned',
+                            classRepGirl: 'Not assigned',
+                            staffCoordinator: 'Not assigned',
+                            courseCoordinator: 'M.Sc Programmes'
                         },
                     ]}
                 />
@@ -228,7 +311,7 @@ const StudentDirectory = () => {
                     title="M.Tech – Master of Technology"
                     items={[
                         { 
-                            label: 'M.Tech Data Science & AI – 1st Year', 
+                            label: 'M.Tech Data Science – 1st Year', 
                             name: 'M.Tech Data Analytics', 
                             year: 1, 
                             category: 'PG',
@@ -236,16 +319,6 @@ const StudentDirectory = () => {
                             classRepGirl: 'Not assigned',
                             staffCoordinator: 'Not assigned',
                             courseCoordinator: 'M.Tech Data Analytics'
-                        },
-                        { 
-                            label: 'M.Tech NIS – 2nd Year', 
-                            name: 'M.Tech NIS', 
-                            year: 2, 
-                            category: 'PG',
-                            classRepBoy: 'Not assigned',
-                            classRepGirl: 'Not assigned',
-                            staffCoordinator: 'Not assigned',
-                            courseCoordinator: 'M.Tech NIS'
                         },
                         { 
                             label: 'M.Tech CSE – 1st Year', 
@@ -266,6 +339,16 @@ const StudentDirectory = () => {
                             classRepGirl: 'Not assigned',
                             staffCoordinator: 'Not assigned',
                             courseCoordinator: 'M.Tech CSE'
+                        },
+                        { 
+                            label: 'M.Tech NIS – 2nd Year', 
+                            name: 'M.Tech NIS', 
+                            year: 2, 
+                            category: 'PG',
+                            classRepBoy: 'Not assigned',
+                            classRepGirl: 'Not assigned',
+                            staffCoordinator: 'Not assigned',
+                            courseCoordinator: 'M.Tech NIS'
                         },
                     ]}
                 />
@@ -346,6 +429,76 @@ const StudentDirectory = () => {
                                 );
                             })}
                         </Card>
+
+                        {/* Class Timetable Section */}
+                        {selectedClass && (
+                            <View style={styles.timetableSection}>
+                                <View style={styles.timetableHeader}>
+                                    <MaterialCommunityIcons name="calendar-clock" size={20} color={colors.primary} />
+                                    <Text style={styles.timetableTitle}>Class Timetable</Text>
+                                </View>
+                                {loadingTimetable ? (
+                                    <Card style={styles.timetableCard}>
+                                        <LoadingSpinner />
+                                    </Card>
+                                ) : classTimetable && classTimetable.schedule && classTimetable.schedule.length > 0 ? (
+                                    <Card style={styles.timetableCard}>
+                                        <TouchableOpacity
+                                            onPress={() => {
+                                                // Map program name for navigation
+                                                let mappedProgram = selectedClass.name;
+                                                if (selectedClass.name === 'B.Tech') {
+                                                    mappedProgram = 'B.Tech';
+                                                } else if (selectedClass.name === 'B.Sc CS') {
+                                                    mappedProgram = 'B.Sc CS';
+                                                } else if (selectedClass.name === 'M.Sc CS') {
+                                                    mappedProgram = 'M.Sc CS';
+                                                } else if (selectedClass.name === 'M.Sc Data Analytics') {
+                                                    mappedProgram = 'M.Sc Data Analytics';
+                                                } else if (selectedClass.name === 'M.Sc CS Integrated') {
+                                                    mappedProgram = 'M.Sc CS Integrated';
+                                                } else if (selectedClass.name === 'M.Tech CSE') {
+                                                    mappedProgram = 'M.Tech CSE';
+                                                } else if (selectedClass.name === 'M.Tech NIS') {
+                                                    mappedProgram = 'M.Tech NIS';
+                                                } else if (selectedClass.name === 'M.Tech DS' || selectedClass.name === 'M.Tech Data Analytics') {
+                                                    mappedProgram = 'M.Tech DS';
+                                                } else if (selectedClass.name === 'M.Tech CSE') {
+                                                    mappedProgram = 'M.Tech CSE';
+                                                } else if (selectedClass.name === 'MCA') {
+                                                    mappedProgram = 'MCA';
+                                                }
+                                                
+                                                navigation.navigate('Timetable', {
+                                                    program: mappedProgram,
+                                                    year: selectedClass.year,
+                                                    autoLoad: true
+                                                });
+                                            }}
+                                            style={styles.timetableCardContent}
+                                        >
+                                            <View style={styles.timetableInfo}>
+                                                <Text style={styles.timetableText}>
+                                                    View {selectedClass.label} Timetable
+                                                </Text>
+                                                <Text style={styles.timetableSubtext}>
+                                                    Tap to view full schedule
+                                                </Text>
+                                            </View>
+                                            <MaterialCommunityIcons name="chevron-right" size={20} color={colors.primary} />
+                                        </TouchableOpacity>
+                                    </Card>
+                                ) : (
+                                    <Card style={styles.timetableCard}>
+                                        <View style={styles.timetableCardContent}>
+                                            <Text style={styles.timetableEmptyText}>
+                                                No timetable available for {selectedClass.label}
+                                            </Text>
+                                        </View>
+                                    </Card>
+                                )}
+                            </View>
+                        )}
                     </>
                 )}
 
@@ -461,6 +614,9 @@ const styles = StyleSheet.create({
     viewContainer: {
         flex: 1,
         padding: 20,
+    },
+    selectionScrollContent: {
+        paddingBottom: 120, // Extra padding to ensure content doesn't hide behind navigation bar
     },
     landingTitle: {
         fontSize: 24,
@@ -678,6 +834,49 @@ const styles = StyleSheet.create({
         flex: 1,
         textAlign: 'right',
     },
+    // Timetable Styles
+    timetableSection: {
+        marginTop: 20,
+        marginBottom: 10,
+    },
+    timetableHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+        gap: 8,
+    },
+    timetableTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: colors.textPrimary,
+    },
+    timetableCard: {
+        padding: 16,
+    },
+    timetableCardContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+    timetableInfo: {
+        flex: 1,
+    },
+    timetableText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: colors.textPrimary,
+        marginBottom: 4,
+    },
+    timetableSubtext: {
+        fontSize: 13,
+        color: colors.textSecondary,
+    },
+    timetableEmptyText: {
+        fontSize: 14,
+        color: colors.textSecondary,
+        textAlign: 'center',
+        fontStyle: 'italic',
+    },
     // Table Styles
     tableCard: {
         padding: 0,
@@ -728,6 +927,78 @@ const styles = StyleSheet.create({
         flex: 2,
         paddingHorizontal: 4, // Less padding on small screens
         minWidth: 100,
+    },
+    // Classroom Allocation Table Styles
+    classroomSection: {
+        marginBottom: 25,
+        marginTop: 10,
+    },
+    classroomHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+        marginLeft: 4,
+    },
+    classroomTitle: {
+        fontSize: 14,
+        fontWeight: '700',
+        color: colors.primary,
+        textTransform: 'uppercase',
+        letterSpacing: 1,
+        marginLeft: 8,
+    },
+    classroomTableCard: {
+        padding: 0,
+        overflow: 'hidden',
+        borderRadius: 12,
+        elevation: 2,
+        shadowColor: colors.black,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 5,
+    },
+    classroomTableHeader: {
+        flexDirection: 'row',
+        backgroundColor: colors.primary,
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        borderBottomWidth: 2,
+        borderBottomColor: colors.primaryDark,
+    },
+    classroomTableHeaderText: {
+        fontSize: isSmallScreen() ? 10 : 11,
+        fontWeight: '700',
+        color: colors.white,
+        textTransform: 'uppercase',
+    },
+    classroomTableRow: {
+        flexDirection: 'row',
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.gray100,
+        minHeight: 44,
+    },
+    classroomTableRowEven: {
+        backgroundColor: colors.gray50,
+    },
+    classroomTableCell: {
+        fontSize: isSmallScreen() ? 11 : 12,
+        color: colors.textPrimary,
+        paddingVertical: 4,
+    },
+    classroomCourseCol: {
+        flex: 2.5,
+        paddingRight: 8,
+    },
+    classroomRoomCol: {
+        flex: 1,
+        paddingHorizontal: 4,
+        textAlign: 'center',
+    },
+    classroomLocationCol: {
+        flex: 2,
+        paddingLeft: 8,
     },
 });
 

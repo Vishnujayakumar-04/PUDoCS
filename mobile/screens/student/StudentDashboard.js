@@ -53,7 +53,7 @@ const StudentDashboard = ({ navigation }) => {
             // Load profile if user is available
             if (user?.uid) {
                 try {
-                    const profileData = await studentService.getProfile(user.uid);
+                    const profileData = await studentService.getProfile(user.uid, user.email);
                     setProfile(profileData);
                 } catch (error) {
                     console.error('Error loading profile:', error);
@@ -95,17 +95,9 @@ const StudentDashboard = ({ navigation }) => {
 
     // Quick Access Features with icons
     const features = [
-        { title: 'Timetable', screen: 'Timetable', icon: 'calendar-clock', color: colors.secondary },
-        { title: 'Attendance', screen: 'Attendance', icon: 'account-check-outline', color: colors.accent },
-        { title: 'Gallery', screen: 'Gallery', icon: 'image-multiple', color: '#9B59B6' },
-        { title: 'Notices', screen: 'Notices', icon: 'bell-outline', color: colors.accent },
-        { title: 'Exams', screen: 'Exams', icon: 'file-document-outline', color: colors.warning },
-        { title: 'Events', screen: 'Events', icon: 'calendar-star', color: colors.info },
-        { title: 'Results', screen: 'Results', icon: 'trophy-outline', color: colors.success },
         { title: 'Faculty', screen: 'Staff', icon: 'account-group-outline', color: '#6366F1' },
-        { title: 'Letters', screen: 'Letters', icon: 'email-outline', color: colors.primaryDark },
-        { title: 'Certificates', screen: 'Letters', icon: 'certificate', color: '#F59E0B' },
-        { title: 'Complaint', screen: 'Complaint', icon: 'alert-circle-outline', color: '#EF4444' },
+        { title: 'Events', screen: 'Events', icon: 'calendar-star', color: colors.info },
+        { title: 'Gallery', screen: 'Gallery', icon: 'image-multiple', color: '#9B59B6' },
     ];
 
     const getCategoryColor = (category) => {
@@ -171,54 +163,6 @@ const StudentDashboard = ({ navigation }) => {
                             </PremiumCard>
                         ))}
                     </View>
-                </View>
-
-                {/* Recent Notices Section */}
-                <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Recent Notices</Text>
-                        <TouchableOpacity onPress={() => safeNavigate(navigation, 'Notices')}>
-                            <Text style={styles.seeAllText}>See All</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    {notices.length === 0 ? (
-                        <PremiumCard style={styles.emptyCard}>
-                            <MaterialCommunityIcons name="bell-off-outline" size={32} color={colors.gray300} />
-                            <Text style={styles.emptyText}>No recent notices</Text>
-                        </PremiumCard>
-                    ) : (
-                        notices.map((notice, idx) => (
-                            <PremiumCard 
-                                key={notice.id || idx} 
-                                style={styles.noticeCard}
-                                delay={300}
-                                index={idx}
-                            >
-                                <View style={styles.noticeContent}>
-                                    <View style={[styles.categoryIndicator, { backgroundColor: getCategoryColor(notice.category) }]} />
-                                    <View style={styles.noticeTextContainer}>
-                                        <View style={styles.noticeHeader}>
-                                            <View style={[styles.categoryBadge, { backgroundColor: getCategoryColor(notice.category) + '15' }]}>
-                                                <Text style={[styles.categoryText, { color: getCategoryColor(notice.category) }]}>
-                                                    {notice.category || 'General'}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                        <Text style={styles.noticeTitle} numberOfLines={2}>{notice.title}</Text>
-                                        {notice.content && (
-                                            <Text style={styles.noticeDescription} numberOfLines={2}>
-                                                {notice.content}
-                                            </Text>
-                                        )}
-                                        <Text style={styles.noticeDate}>
-                                            {formatDate(notice.createdAt)}
-                                        </Text>
-                                    </View>
-                                </View>
-                            </PremiumCard>
-                        ))
-                    )}
                 </View>
 
                 <View style={{ height: getMargin(100) }} />

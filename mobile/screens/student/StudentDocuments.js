@@ -4,13 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as DocumentPicker from 'expo-document-picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { doc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import PremiumCard from '../../components/PremiumCard';
 import Button from '../../components/Button';
 import colors from '../../styles/colors';
 import { useAuth } from '../../context/AuthContext';
-import { db, storage } from '../../services/firebaseConfig';
+import { studentStorageService } from '../../services/studentStorageService';
 
 const DOCUMENT_TYPES = [
     { id: 'tenthMarksheet', label: '10th Marksheet (PDF)' },
@@ -56,33 +54,24 @@ const StudentDocuments = () => {
                 return;
             }
 
-            // Upload to Firebase Storage
-            const response = await fetch(file.uri);
-            const blob = await response.blob();
+            // Mock Upload: Just use local URI
+            // In a real local-first app, you might move this file to a permanent location
+            // But for now, we'll use the cache URI or move it if needed.
+            // Since we are mocking "cloud storage" with local storage, we just save the URI.
+            const downloadUrl = file.uri;
 
-            const storageRef = ref(
-                storage,
-                `studentDocuments/${user.uid}/${docType.id}.pdf`
-            );
+            console.log(`Mock uploaded ${docType.id} to ${downloadUrl}`);
 
-            await uploadBytes(storageRef, blob);
-            const downloadUrl = await getDownloadURL(storageRef);
+            // Save metadata locally
+            await studentStorageService.saveDocumentMetadata(user.uid, docType.id, {
+                label: docType.label,
+                url: downloadUrl,
+                fileName: file.name,
+                size: file.size,
+                uploadedAt: new Date().toISOString(),
+            });
 
-            // Save metadata in Firestore so staff/office can see it
-            const studentDocRef = doc(db, 'studentDocuments', user.uid);
-            await setDoc(
-                studentDocRef,
-                {
-                    [docType.id]: {
-                        label: docType.label,
-                        url: downloadUrl,
-                        uploadedAt: new Date().toISOString(),
-                    },
-                },
-                { merge: true }
-            );
-
-            Alert.alert('Success', `${docType.label} uploaded successfully.`);
+            Alert.alert('Success', `${docType.label} uploaded successfully (Local Mock).`);
         } catch (error) {
             console.error('Upload error:', error);
             Alert.alert('Upload Failed', 'Could not upload the document. Please try again.');
@@ -258,5 +247,3 @@ const styles = StyleSheet.create({
 });
 
 export default StudentDocuments;
-
-

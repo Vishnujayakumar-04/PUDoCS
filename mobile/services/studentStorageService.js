@@ -48,11 +48,11 @@ export const studentStorageService = {
             const students = await studentStorageService.getStudents();
             // Check if student already exists (by registerNumber or id)
             const existingIndex = students.findIndex(
-                s => s.registerNumber === student.registerNumber || 
-                     s.id === student.id ||
-                     (student.id && s.id === student.id)
+                s => s.registerNumber === student.registerNumber ||
+                    s.id === student.id ||
+                    (student.id && s.id === student.id)
             );
-            
+
             if (existingIndex >= 0) {
                 // Update existing student
                 students[existingIndex] = { ...students[existingIndex], ...student };
@@ -60,7 +60,7 @@ export const studentStorageService = {
                 // Add new student
                 students.push(student);
             }
-            
+
             await studentStorageService.saveStudents(students);
             console.log(`✓ Added/Updated student ${student.name} to local storage`);
             return true;
@@ -75,13 +75,13 @@ export const studentStorageService = {
         try {
             const existingStudents = await studentStorageService.getStudents();
             const studentsMap = new Map();
-            
+
             // Add existing students to map
             existingStudents.forEach(s => {
                 const key = s.registerNumber || s.id;
                 if (key) studentsMap.set(key, s);
             });
-            
+
             // Add/update new students
             newStudents.forEach(student => {
                 const key = student.registerNumber || student.id;
@@ -91,7 +91,7 @@ export const studentStorageService = {
                     studentsMap.set(`temp_${Date.now()}_${Math.random()}`, student);
                 }
             });
-            
+
             const allStudents = Array.from(studentsMap.values());
             await studentStorageService.saveStudents(allStudents);
             console.log(`✓ Added/Updated ${newStudents.length} students to local storage`);
@@ -107,7 +107,7 @@ export const studentStorageService = {
         try {
             const students = await studentStorageService.getStudents();
             const index = students.findIndex(s => s.id === studentId || s.registerNumber === studentId);
-            
+
             if (index >= 0) {
                 students[index] = { ...students[index], ...updates };
                 await studentStorageService.saveStudents(students);
@@ -164,13 +164,13 @@ export const studentStorageService = {
         try {
             const students = await studentStorageService.getStudents();
             const yearNum = typeof year === 'string' ? parseInt(year, 10) : year;
-            
+
             const filtered = students.filter(s => {
                 const programMatch = s.program === program || s.program?.trim() === program?.trim();
                 const yearMatch = s.year === yearNum || s.year === yearNum.toString() || parseInt(s.year) === yearNum;
                 return programMatch && yearMatch && (s.isActive !== false); // Only active students
             });
-            
+
             console.log(`✓ Filtered ${filtered.length} students from local storage (${program}, Year ${yearNum})`);
             return filtered;
         } catch (error) {
@@ -178,5 +178,35 @@ export const studentStorageService = {
             return [];
         }
     },
-};
 
+    // Save document metadata
+    saveDocumentMetadata: async (studentId, docTypeId, metadata) => {
+        try {
+            const key = `@student_documents_${studentId}`;
+            const existingStr = await AsyncStorage.getItem(key);
+            let documents = existingStr ? JSON.parse(existingStr) : {};
+
+            documents[docTypeId] = metadata;
+
+            await AsyncStorage.setItem(key, JSON.stringify(documents));
+            console.log(`✓ Saved document metadata for ${studentId} - ${docTypeId}`);
+            return true;
+        } catch (error) {
+            console.error('Error saving document metadata:', error);
+            return false;
+        }
+    },
+
+    // Get document metadata
+    getDocumentMetadata: async (studentId) => {
+        try {
+            const key = `@student_documents_${studentId}`;
+            const existingStr = await AsyncStorage.getItem(key);
+            console.log(`✓ Retrieved document metadata for ${studentId} from local storage`);
+            return existingStr ? JSON.parse(existingStr) : {};
+        } catch (error) {
+            console.error('Error getting document metadata:', error);
+            return {};
+        }
+    },
+};

@@ -14,9 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as DocumentPicker from 'expo-document-picker';
-import { postNoticeWithMultipleFiles } from '../../utils/postNoticeWithImage';
-import { db } from '../../services/firebaseConfig';
-import { collection, addDoc } from 'firebase/firestore';
+import { officeService } from '../../services/officeService';
 import Header from '../../components/Header';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
@@ -135,64 +133,33 @@ const OfficeNoticesScreen = () => {
 
                 setPosting(true);
 
-                // Prepare event notice data
-                const eventNoticeData = {
-                    title: eventData.name,
-                    content: eventData.description || `Join us for ${eventData.name}!\n\n📅 Date: ${eventData.date}\n⏰ Time: ${eventData.time || 'TBA'}\n📍 Venue: ${eventData.venue || 'TBA'}\n\n${eventData.registrationLink ? `🔗 Register: ${eventData.registrationLink}` : ''}`,
-                    category: 'Event',
-                    priority: 'High',
-                    targetAudience: {
-                        course: '',
-                        program: '',
-                        year: '',
-                    },
-                    eventDate: eventData.date,
-                    eventTime: eventData.time,
-                    venue: eventData.venue,
-                    registrationLink: eventData.registrationLink,
-                    contact: eventData.contact,
-                    theme: eventData.theme,
-                    organizedBy: eventData.organizedBy,
-                    association: eventData.association,
+                // Prepare event payload for local storage
+                const eventPayload = {
+                    name: eventData.name,
+                    description: eventData.description || `Join us for ${eventData.name}!`,
+                    date: eventData.date,
+                    time: eventData.time || 'TBA',
+                    venue: eventData.venue || 'TBA',
+                    location: eventData.venue || 'TBA', // duplicate for safety
+                    registrationLink: eventData.registrationLink || '',
+                    contact: eventData.contact || '',
+                    theme: eventData.theme || '',
+                    organizedBy: eventData.organizedBy || '',
+                    association: eventData.association || '',
                     links: links.length > 0 ? links : (eventData.registrationLink ? [eventData.registrationLink] : []),
+                    imageUrls: selectedImages,
+                    pdfUrls: selectedPDFs,
+                    // Map first image to imageUrl for compatibility
+                    imageUrl: selectedImages.length > 0 ? selectedImages[0] : null,
+                    images: selectedImages,
+                    visibleTo: ['students', 'staff', 'office'],
                 };
 
-                await postNoticeWithMultipleFiles(
-                    eventNoticeData,
-                    selectedImages,
-                    selectedPDFs.map(pdf => pdf.uri)
-                );
-
-                // Also post to events collection
-                try {
-                    const eventPayload = {
-                        name: eventData.name,
-                        description: eventData.description || eventNoticeData.content,
-                        date: eventData.date,
-                        time: eventData.time || '',
-                        venue: eventData.venue || '',
-                        location: eventData.venue || '',
-                        registrationLink: eventData.registrationLink || '',
-                        contact: eventData.contact || '',
-                        theme: eventData.theme || '',
-                        organizedBy: eventData.organizedBy || '',
-                        association: eventData.association || '',
-                        links: links.length > 0 ? links : (eventData.registrationLink ? [eventData.registrationLink] : []),
-                        type: 'event',
-                        category: 'Event',
-                        visibleTo: ['students', 'staff', 'office'],
-                        createdAt: new Date().toISOString(),
-                    };
-
-                    const eventRef = await addDoc(collection(db, "events"), eventPayload);
-                    console.log('✅ Event posted with ID:', eventRef.id);
-                } catch (eventError) {
-                    console.error('⚠️ Error posting to events collection:', eventError);
-                }
+                await officeService.postEvent(eventPayload);
 
                 Alert.alert(
                     'Success',
-                    'Event posted successfully! All users (Student, Staff, Office) will receive a notification.',
+                    'Event posted successfully! (Local Storage)',
                     [
                         {
                             text: 'OK',
@@ -212,21 +179,21 @@ const OfficeNoticesScreen = () => {
 
                 setPosting(true);
 
-                // Prepare notice data with links
-                const noticeDataWithLinks = {
+                // Prepare notice payload
+                const noticePayload = {
                     ...noticeData,
                     links: links.length > 0 ? links : null,
+                    imageUrls: selectedImages.length > 0 ? selectedImages : null,
+                    pdfUrls: selectedPDFs.length > 0 ? selectedPDFs : null,
+                    // Compat
+                    imageUrl: selectedImages.length > 0 ? selectedImages[0] : null,
                 };
 
-                await postNoticeWithMultipleFiles(
-                    noticeDataWithLinks,
-                    selectedImages,
-                    selectedPDFs.map(pdf => pdf.uri)
-                );
+                await officeService.postNotice(noticePayload);
 
                 Alert.alert(
                     'Success',
-                    'Notice posted successfully! All users (Student, Staff, Office) will receive a notification.',
+                    'Notice posted successfully! (Local Storage)',
                     [
                         {
                             text: 'OK',
@@ -551,38 +518,6 @@ const OfficeNoticesScreen = () => {
                                 </>
                             )}
 
-                            {/* Category */}
-                            <Text style={styles.label}>Category</Text>
-                            <CustomPicker
-                                selectedValue={noticeData.category}
-                                onValueChange={(value) => setNoticeData({ ...noticeData, category: value })}
-                                items={[
-                                    { label: 'Administrative', value: 'Administrative' },
-                                    { label: 'Academic', value: 'Academic' },
-                                    { label: 'Exam', value: 'Exam' },
-                                    { label: 'Event', value: 'Event' },
-                                ]}
-                                placeholder="Select Category"
-                                style={styles.input}
-                                enabled={!posting}
-                            />
-
-                            {/* Priority */}
-                            <Text style={styles.label}>Priority</Text>
-                            <CustomPicker
-                                selectedValue={noticeData.priority}
-                                onValueChange={(value) => setNoticeData({ ...noticeData, priority: value })}
-                                items={[
-                                    { label: 'Urgent', value: 'Urgent' },
-                                    { label: 'High', value: 'High' },
-                                    { label: 'Medium', value: 'Medium' },
-                                    { label: 'Low', value: 'Low' },
-                                ]}
-                                placeholder="Select Priority"
-                                style={styles.input}
-                                enabled={!posting}
-                            />
-
                             {/* Add Images Section */}
                             <Text style={styles.sectionTitle}>Images (Optional)</Text>
                             <TouchableOpacity
@@ -800,8 +735,8 @@ const styles = StyleSheet.create({
     },
     priorityLabel: {
         fontSize: 14,
-        fontWeight: '600',
-        marginBottom: 2,
+        fontWeight: '700',
+        marginBottom: 4,
     },
     priorityDesc: {
         fontSize: 12,
@@ -809,155 +744,166 @@ const styles = StyleSheet.create({
     },
     fab: {
         position: 'absolute',
-        bottom: 100, // Increased to avoid tab bar
-        right: 20,
         width: 56,
         height: 56,
-        borderRadius: 28,
-        backgroundColor: colors.primary,
-        justifyContent: 'center',
         alignItems: 'center',
+        justifyContent: 'center',
+        right: 20,
+        bottom: 20,
+        backgroundColor: colors.primary,
+        borderRadius: 28,
         elevation: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        zIndex: 1000,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.30,
+        shadowRadius: 4.65,
     },
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'center',
-        padding: 20,
+        justifyContent: 'flex-end', // Bottom sheet style could be used, but centered is fine
     },
     modalContent: {
         backgroundColor: colors.white,
-        borderRadius: 12,
-        padding: 20,
-        maxHeight: '90%',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        height: '90%', // Almost full screen
+        width: '100%',
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: -2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.gray200,
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: colors.textPrimary,
     },
     modalHeaderRight: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
     },
     toggleButton: {
-        backgroundColor: colors.primary + '20',
+        marginRight: 16,
         paddingHorizontal: 12,
         paddingVertical: 6,
-        borderRadius: 6,
+        backgroundColor: colors.primary + '20',
+        borderRadius: 16,
     },
     toggleButtonText: {
         fontSize: 12,
-        fontWeight: '600',
         color: colors.primary,
-    },
-    modalTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: colors.textPrimary,
+        fontWeight: '600',
     },
     modalScrollView: {
-        maxHeight: '70%',
+        padding: 16,
     },
     label: {
         fontSize: 14,
         fontWeight: '600',
         color: colors.textPrimary,
-        marginTop: 8,
-        marginBottom: 4,
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: colors.textPrimary,
-        marginTop: 12,
         marginBottom: 8,
-    },
-    hintText: {
-        fontSize: 12,
-        color: colors.textSecondary,
-        marginBottom: 8,
-        fontStyle: 'italic',
+        marginTop: 16,
     },
     input: {
         backgroundColor: colors.gray100,
         borderRadius: 8,
-        paddingVertical: 12,
-        paddingHorizontal: 16,
+        padding: 12,
         fontSize: 14,
-        marginBottom: 12,
         color: colors.textPrimary,
     },
     textArea: {
-        height: 120,
+        height: 100,
         textAlignVertical: 'top',
+    },
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: colors.textPrimary,
+        marginTop: 24,
+        marginBottom: 12,
     },
     fileButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.primary + '15',
-        borderWidth: 1,
-        borderColor: colors.primary + '30',
-        borderRadius: 8,
+        justifyContent: 'center',
         padding: 12,
+        borderWidth: 1,
+        borderColor: colors.primary,
+        borderRadius: 8,
+        borderStyle: 'dashed',
         marginBottom: 12,
     },
     fileButtonText: {
         marginLeft: 8,
-        fontSize: 14,
-        fontWeight: '600',
         color: colors.primary,
+        fontWeight: '600',
     },
     selectedFilesContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 8,
-        marginBottom: 12,
     },
     fileItem: {
-        position: 'relative',
         width: 80,
         height: 80,
         borderRadius: 8,
         overflow: 'hidden',
-        marginRight: 8,
-        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: colors.gray200,
     },
     imagePreview: {
         width: '100%',
         height: '100%',
-        resizeMode: 'cover',
-    },
-    pdfItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.gray100,
-        borderRadius: 8,
-        padding: 8,
-        marginRight: 8,
-        marginBottom: 8,
-        maxWidth: 200,
-    },
-    pdfName: {
-        flex: 1,
-        marginLeft: 8,
-        fontSize: 12,
-        color: colors.textPrimary,
     },
     removeFileButton: {
-        marginLeft: 8,
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        backgroundColor: colors.white,
+        borderRadius: 10,
+        width: 20,
+        height: 20,
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 2,
+    },
+    pdfItem: {
+        width: 80,
+        height: 80,
+        borderRadius: 8,
+        backgroundColor: colors.gray100,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 4,
+        borderWidth: 1,
+        borderColor: colors.gray200,
+    },
+    pdfName: {
+        fontSize: 10,
+        color: colors.textSecondary,
+        textAlign: 'center',
+        marginTop: 4,
     },
     linkInputContainer: {
         flexDirection: 'row',
-        marginBottom: 12,
         gap: 8,
+        alignItems: 'center',
     },
     linkInput: {
         flex: 1,
@@ -965,37 +911,46 @@ const styles = StyleSheet.create({
     },
     addLinkButton: {
         backgroundColor: colors.primary,
-        borderRadius: 8,
         width: 44,
         height: 44,
+        borderRadius: 8,
         justifyContent: 'center',
         alignItems: 'center',
     },
     linksContainer: {
-        marginBottom: 12,
+        marginTop: 12,
         gap: 8,
     },
     linkItem: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'center', // Changed from flex-start to center for better alignment
         backgroundColor: colors.gray100,
+        padding: 8,
         borderRadius: 8,
-        padding: 12,
-        marginBottom: 8,
     },
     linkText: {
         flex: 1,
         marginLeft: 8,
-        fontSize: 14,
-        color: colors.textPrimary,
+        color: colors.primary,
+        fontSize: 13,
+        marginRight: 24, // Space for remove button
+    },
+    hintText: {
+        fontSize: 12,
+        color: colors.textSecondary,
+        marginBottom: 12,
+        fontStyle: 'italic',
     },
     modalButtons: {
         flexDirection: 'row',
         gap: 12,
-        marginTop: 16,
+        padding: 16,
+        borderTopWidth: 1,
+        borderTopColor: colors.gray200,
     },
     modalButton: {
         flex: 1,
+        // Force the button to expand
     },
 });
 

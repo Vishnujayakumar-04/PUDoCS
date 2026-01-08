@@ -2,7 +2,8 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import FloatingTabBar from '../components/FloatingTabBar';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
+import CustomBottomTabBarStaff from '../components/CustomBottomTabBarStaff';
 import colors from '../styles/colors';
 
 // Staff screens
@@ -33,10 +34,24 @@ const ExamStack = () => {
     );
 };
 
+// List of main screens where tab bar should be visible
+const MAIN_SCREENS = ['Dashboard', 'Students', 'Attendance', 'Notices', 'Profile'];
+
+const getTabBarVisibility = (route) => {
+    const routeName = getFocusedRouteNameFromRoute(route) ?? route.name;
+    return MAIN_SCREENS.includes(routeName);
+};
+
 const StaffNavigator = () => {
     return (
         <Tab.Navigator
-            tabBar={(props) => <FloatingTabBar {...props} />}
+            tabBar={(props) => {
+                const route = props.state.routes[props.state.index];
+                if (!getTabBarVisibility(route)) {
+                    return null; // Hide tab bar on sub-pages
+                }
+                return <CustomBottomTabBarStaff {...props} />;
+            }}
             screenOptions={{
                 headerShown: false,
             }}
@@ -68,19 +83,6 @@ const StaffNavigator = () => {
                 }}
             />
             <Tab.Screen
-                name="Exams"
-                component={ExamStack}
-                options={{
-                    tabBarIcon: ({ focused, color, size }) => (
-                        <MaterialCommunityIcons 
-                            name="file-document-outline" 
-                            size={size || 24} 
-                            color={color} 
-                        />
-                    ),
-                }}
-            />
-            <Tab.Screen
                 name="Notices"
                 component={StaffNotices}
                 options={{
@@ -97,7 +99,26 @@ const StaffNavigator = () => {
                 name="Attendance"
                 component={StaffAttendance}
                 options={{
-                    tabBarButton: () => null,
+                    tabBarIcon: ({ focused, color, size }) => (
+                        <MaterialCommunityIcons 
+                            name="account-check" 
+                            size={size || 24} 
+                            color={color} 
+                        />
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="Profile"
+                component={StaffProfile}
+                options={{
+                    tabBarIcon: ({ focused, color, size }) => (
+                        <MaterialCommunityIcons 
+                            name="account-outline" 
+                            size={size || 24} 
+                            color={color} 
+                        />
+                    ),
                 }}
             />
             <Tab.Screen
@@ -136,15 +157,15 @@ const StaffNavigator = () => {
                 }}
             />
             <Tab.Screen
-                name="Profile"
-                component={StaffProfile}
+                name="Gallery"
+                component={StudentGallery}
                 options={{
-                    tabBarButton: () => null, // Accessible via Dashboard avatar
+                    tabBarButton: () => null, // Accessible via Dashboard
                 }}
             />
             <Tab.Screen
-                name="Gallery"
-                component={StudentGallery}
+                name="Exams"
+                component={ExamStack}
                 options={{
                     tabBarButton: () => null, // Accessible via Dashboard
                 }}

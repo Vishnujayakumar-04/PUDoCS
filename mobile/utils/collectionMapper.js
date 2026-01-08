@@ -18,15 +18,12 @@ export const getStudentCollectionName = (course, program, year) => {
     const normalizedProgram = program?.trim().toLowerCase() || '';
     
     if (course === 'UG') {
-        // UG Collections
+        // UG Collections - Only CSE and BSC CS as per classroom allocation
         if (normalizedProgram.includes('btech') || normalizedProgram.includes('b.tech')) {
-            if (normalizedProgram.includes('it')) {
-                return `students_ug_btech_it_${yearNum}`;
-            } else if (normalizedProgram.includes('cse')) {
+            if (normalizedProgram.includes('cse')) {
                 return `students_ug_btech_cse_${yearNum}`;
-            } else {
-                return `students_ug_btech_${yearNum}`;
             }
+            // No IT or generic BTECH - only CSE
         } else if (normalizedProgram.includes('bsc') && (normalizedProgram.includes('cs') || normalizedProgram.includes('computer science'))) {
             return `students_ug_bsc_cs_${yearNum}`;
         }
@@ -43,11 +40,11 @@ export const getStudentCollectionName = (course, program, year) => {
         } else if (normalizedProgram.includes('mca')) {
             return `students_pg_mca_${yearNum}`;
         } else if (normalizedProgram.includes('mtech') || normalizedProgram.includes('m.tech')) {
-            if (normalizedProgram.includes('data analytics') || normalizedProgram.includes('da') || normalizedProgram.includes('ds & ai')) {
+            if (normalizedProgram.includes('data analytics') || normalizedProgram.includes('data science') || normalizedProgram.includes('da') || normalizedProgram.includes('ds & ai') || normalizedProgram.includes('ds')) {
                 return `students_pg_mtech_da_${yearNum}`;
-            } else if (normalizedProgram.includes('nis')) {
+            } else if (normalizedProgram.includes('nis') || normalizedProgram.includes('network')) {
                 return `students_pg_mtech_nis_${yearNum}`;
-            } else if (normalizedProgram.includes('cse')) {
+            } else if (normalizedProgram.includes('cse') || normalizedProgram.includes('computer science')) {
                 return `students_pg_mtech_cse_${yearNum}`;
             }
         }
@@ -85,12 +82,18 @@ export const getCollectionFromDisplayName = (programDisplayName, year) => {
         'mca': { course: 'PG', collection: `students_pg_mca_${yearNum}` },
         'master of computer applications': { course: 'PG', collection: `students_pg_mca_${yearNum}` },
         'mtech data analytics': { course: 'PG', collection: `students_pg_mtech_da_${yearNum}` },
+        'mtech data science': { course: 'PG', collection: `students_pg_mtech_da_${yearNum}` },
+        'm.tech data science': { course: 'PG', collection: `students_pg_mtech_da_${yearNum}` },
         'mtech ds & ai': { course: 'PG', collection: `students_pg_mtech_da_${yearNum}` },
         'mtech ds': { course: 'PG', collection: `students_pg_mtech_da_${yearNum}` },
         'm.tech ds': { course: 'PG', collection: `students_pg_mtech_da_${yearNum}` },
-        'mtech nis': { course: 'PG', collection: `students_pg_mtech_nis_${yearNum}` },
         'mtech cse': { course: 'PG', collection: `students_pg_mtech_cse_${yearNum}` },
+        'mtech computer science': { course: 'PG', collection: `students_pg_mtech_cse_${yearNum}` },
         'm.tech cse': { course: 'PG', collection: `students_pg_mtech_cse_${yearNum}` },
+        'm.tech computer science': { course: 'PG', collection: `students_pg_mtech_cse_${yearNum}` },
+        'mtech nis': { course: 'PG', collection: `students_pg_mtech_nis_${yearNum}` },
+        'm.tech nis': { course: 'PG', collection: `students_pg_mtech_nis_${yearNum}` },
+        'mtech network': { course: 'PG', collection: `students_pg_mtech_nis_${yearNum}` },
     };
     
     // Try exact match first
@@ -116,30 +119,29 @@ export const getCollectionFromDisplayName = (programDisplayName, year) => {
 export const getAllCollectionsForCourse = (course) => {
     if (course === 'UG') {
         return [
-            'students_ug_btech_it_1',
-            'students_ug_btech_it_2',
-            'students_ug_btech_it_3',
-            'students_ug_btech_it_4',
+            // BTECH CSE - Only Year 1 and 2 as per classroom allocation
             'students_ug_btech_cse_1',
             'students_ug_btech_cse_2',
-            'students_ug_btech_cse_3',
-            'students_ug_btech_cse_4',
+            // BSC Computer Science - Year 1, 2, and 3 as per classroom allocation
             'students_ug_bsc_cs_1',
             'students_ug_bsc_cs_2',
             'students_ug_bsc_cs_3',
         ];
     } else if (course === 'PG') {
         return [
+            // M.Sc Computer Science - Only Year 2 (Year 1 removed as per user request)
             'students_pg_msc_cs_2',
+            // M.Sc Data Analytics - Year 1 as per classroom allocation
             'students_pg_msc_da_1',
-            'students_pg_msc_cs_int_5',
-            'students_pg_msc_cs_int_6',
-            'students_pg_mca_2',
+            // M.Sc CS Integrated - Year 1 only (changed from Year 5/6)
+            'students_pg_msc_cs_int_1',
+            // MCA - Year 1 and 2 as per classroom allocation
             'students_pg_mca_1',
+            'students_pg_mca_2',
+            // M.Tech Data Science/Analytics - Year 1 only as per classroom allocation
             'students_pg_mtech_da_1',
-            'students_pg_mtech_nis_2',
+            // M.Tech CSE - Year 1 only as per classroom allocation
             'students_pg_mtech_cse_1',
-            'students_pg_mtech_cse_2',
         ];
     }
     return [];
@@ -191,19 +193,18 @@ export const parseCollectionName = (collectionName) => {
                 } else {
                     program = 'M.Sc Computer Science';
                 }
-            } else if (parts[3] === 'ds') {
-                program = 'M.Sc Data Science';
+            } else if (parts[3] === 'da') {
+                program = 'M.Sc Data Analytics';
             }
         } else if (parts[2] === 'mca') {
             program = 'MCA';
         } else if (parts[2] === 'mtech') {
             if (parts[3] === 'da') {
                 program = 'M.Tech Data Analytics';
-            } else if (parts[3] === 'nis') {
-                program = 'M.Tech NIS';
             } else if (parts[3] === 'cse') {
                 program = 'M.Tech CSE';
             }
+            // M.Tech NIS removed - not in classroom allocation
         }
     }
     

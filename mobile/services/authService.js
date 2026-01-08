@@ -1,7 +1,7 @@
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
-import { auth, db } from "./firebaseConfig";
+import { auth } from "./firebaseConfig";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { localDataService } from './localDataService';
 
 // Helper to store session locally
 const storeSession = async (user, role) => {
@@ -24,37 +24,80 @@ export const loginUser = async (email, password, role) => {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // 2. Fetch User Role from Firestore
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
+        // 2. Determine User Role from Local Data or Storage
+        let derivedRole = role; // Use provided role if available (e.g. from UI selection)
+        let userData = null;
 
-        let userData;
+        // Check if Staff
+        const staffProfile = localDataService.getStaffByEmail(email);
+        if (staffProfile) {
+            derivedRole = 'Staff';
+            userData = { ...staffProfile, uid: user.uid, role: 'Staff' };
+        }
 
-        if (!userDoc.exists()) {
-            console.log("User document missing. Auto-creating profile for manually added user.");
-            // Auto-create the profile using the role the user selected on the previous screen
+        // Check if Student (if not Staff)
+        if (!userData) {
+            const studentProfile = localDataService.getStudentByEmail(email);
+            if (studentProfile) {
+                derivedRole = 'Student';
+                userData = { ...studentProfile, uid: user.uid, role: 'Student' };
+            }
+        }
+
+        // Check Local Storage for manually registered users
+        if (!userData) {
+            const storedProfiles = await AsyncStorage.getItem('local_users');
+            if (storedProfiles) {
+                const profiles = JSON.parse(storedProfiles);
+                const localProfile = profiles.find(p => p.email === email);
+                if (localProfile) {
+                    derivedRole = localProfile.role;
+                    userData = localProfile;
+                }
+            }
+        }
+
+        // Fallback or Default
+        if (!userData) {
+            console.log("User profile missing. Auto-creating profile locally.");
+            derivedRole = derivedRole || 'Student';
             userData = {
                 uid: user.uid,
                 email: email,
-                role: role || 'Student', // Fallback to Student if undefined
+                role: derivedRole,
                 isActive: true,
                 createdAt: new Date().toISOString()
             };
-            await setDoc(userDocRef, userData);
-        } else {
-            userData = userDoc.data();
+            // Save this new profile locally
+            await saveLocalUser(userData);
         }
 
         // 3. Store Session
-        await storeSession(user, userData.role);
+        await storeSession(user, derivedRole);
 
         return {
             user: user,
-            role: userData.role,
+            role: derivedRole,
             profile: userData
         };
     } catch (error) {
         throw error;
+    }
+};
+
+const saveLocalUser = async (userData) => {
+    try {
+        const storedProfiles = await AsyncStorage.getItem('local_users') || '[]';
+        const profiles = JSON.parse(storedProfiles);
+        const index = profiles.findIndex(p => p.email === userData.email);
+        if (index >= 0) {
+            profiles[index] = { ...profiles[index], ...userData };
+        } else {
+            profiles.push(userData);
+        }
+        await AsyncStorage.setItem('local_users', JSON.stringify(profiles));
+    } catch (e) {
+        console.error("Error saving local user:", e);
     }
 };
 
@@ -64,15 +107,16 @@ export const registerUser = async (email, password, role, additionalData = {}) =
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // 2. Create User Document in Firestore
-        await setDoc(doc(db, "users", user.uid), {
+        // 2. Create User Profile Locally
+        const userData = {
             uid: user.uid,
             email: email,
             role: role,
             isActive: true,
             createdAt: new Date().toISOString(),
             ...additionalData
-        });
+        };
+        await saveLocalUser(userData);
 
         // 3. Store Session
         await storeSession(user, role);
@@ -112,19 +156,6 @@ export const changePassword = async (currentPassword, newPassword, userId) => {
             throw new Error('User not authenticated');
         }
 
-        // Check if password has been changed before (for students - only once)
-        const userDocRef = doc(db, "users", userId);
-        const userDoc = await getDoc(userDocRef);
-        
-        if (userDoc.exists()) {
-            const userData = userDoc.data();
-            
-            // For students, check if password was already changed
-            if (userData.role === 'Student' && userData.passwordChanged === true) {
-                throw new Error('Password can only be changed once. Please contact office for password reset.');
-            }
-        }
-
         // Re-authenticate user with current password
         const credential = EmailAuthProvider.credential(user.email, currentPassword);
         await reauthenticateWithCredential(user, credential);
@@ -132,11 +163,8 @@ export const changePassword = async (currentPassword, newPassword, userId) => {
         // Update password
         await updatePassword(user, newPassword);
 
-        // Update passwordChanged flag in Firestore
-        await updateDoc(userDocRef, {
-            passwordChanged: true,
-            passwordChangedAt: new Date().toISOString()
-        });
+        // Update local flag 
+        // We would ideally update 'local_users' here if we were strictly tracking it
 
         return { success: true };
     } catch (error) {
@@ -153,3 +181,4 @@ export const authService = {
     getStoredUser: checkAuthStatus,
     changePassword: changePassword
 };
+

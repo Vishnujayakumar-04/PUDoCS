@@ -3,9 +3,8 @@ import { View, Text, StyleSheet, ScrollView, TextInput, Alert } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../../services/firebaseConfig';
 import { useAuth } from '../../context/AuthContext';
+import { studentService } from '../../services/studentService';
 import PremiumCard from '../../components/PremiumCard';
 import Button from '../../components/Button';
 import colors from '../../styles/colors';
@@ -31,7 +30,7 @@ const StudentComplaint = () => {
 
         setSubmitting(true);
         try {
-            await addDoc(collection(db, 'complaints'), {
+            await studentService.submitComplaint({
                 studentId: user?.uid,
                 studentEmail: user?.email,
                 subject: subject.trim(),
@@ -248,4 +247,3 @@ const styles = StyleSheet.create({
 });
 
 export default StudentComplaint;
-

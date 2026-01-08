@@ -44,6 +44,10 @@ yarn-error.*
 # Uncomment the line below if you want to exclude firebaseConfig.js
 # services/firebaseConfig.js
 
+# Firebase Service Account Key (NEVER commit this!)
+serviceAccountKey.json
+*.json.key
+
 # Large assets (optional - you may want to track these)
 # Uncomment if you don't want to track large image files
 # assets/Gallery/

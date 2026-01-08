@@ -12,6 +12,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { attendanceService } from '../../services/attendanceService';
 import { studentService } from '../../services/studentService';
+import { getDefaultSubjects } from '../../utils/defaultSubjects';
 import PremiumHeader from '../../components/PremiumHeader';
 import PremiumCard from '../../components/PremiumCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -34,16 +35,45 @@ const StudentAttendance = ({ navigation }) => {
         setLoading(true);
         try {
             // Get student profile to get program and year
-            const studentProfile = await studentService.getProfile(user?.uid);
+            const studentProfile = await studentService.getProfile(user?.uid, user?.email);
             setProfile(studentProfile);
+            console.log('📊 Student Profile loaded:', studentProfile);
             
             if (studentProfile && studentProfile.program && studentProfile.year) {
-                const studentId = user?.uid || studentProfile.registerNumber;
-                const attendanceData = await attendanceService.getStudentAttendance(
+                console.log('📊 Loading attendance for:', {
+                    program: studentProfile.program,
+                    year: studentProfile.year,
+                    registerNumber: studentProfile.registerNumber
+                });
+                
+                const studentId = user?.uid || studentProfile.registerNumber || studentProfile.id;
+                let attendanceData = await attendanceService.getStudentAttendance(
                     studentId,
                     studentProfile.program,
                     studentProfile.year
                 );
+                
+                console.log('📊 Attendance data received:', attendanceData.length, 'subjects');
+                
+                // If no attendance data but we have default subjects, show them with 0 attendance
+                if (attendanceData.length === 0) {
+                    const defaultSubjects = getDefaultSubjects(studentProfile.program, studentProfile.year);
+                    console.log('📊 Using default subjects:', defaultSubjects.length);
+                    attendanceData = defaultSubjects.map(subject => ({
+                        code: subject.code,
+                        name: subject.name,
+                        credits: subject.hours || 3,
+                        type: subject.type || 'Hardcore',
+                        faculty: subject.faculty || '',
+                        totalClasses: 0,
+                        attendedClasses: 0,
+                        notAttendedClasses: 0,
+                        attendancePercentage: 0,
+                        isEligible: false,
+                        records: [],
+                    }));
+                }
+                
                 setAttendance(attendanceData);
                 
                 // Calculate overall attendance
