@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Image } from 'react-native';
 import { studentStorageService } from './studentStorageService';
 import { localDataService } from './localDataService';
 
@@ -97,12 +98,54 @@ export const studentService = {
         ];
     },
 
-    // Get events (Mock data)
+    // Get events (shared from AsyncStorage) – seeds Alumni Meet if missing
     getEvents: async () => {
-        return [
-            { name: "Inforia '25 - Dept Fest", date: "24-26 Feb 2026", location: "Auditorium" },
-            { name: "Workshop on GenAI", date: "12 March 2026", location: "Lab 2" }
-        ];
+        try {
+            const existingStr = await AsyncStorage.getItem('events');
+            let events = existingStr ? JSON.parse(existingStr) : [];
+
+            // Seed Alumni Meet once if no events present
+            const alreadySeeded = events.some(
+                (e) => e.id === '1' || (e.name || e.title) === 'Alumni Meet 2026'
+            );
+
+            if (!alreadySeeded) {
+                const alumniMeetImage = Image.resolveAssetSource(
+                    require('../assets/Notice/Alumini meet.jpeg')
+                );
+
+                const initialEvent = {
+                    id: '1',
+                    name: 'Alumni Meet 2026',
+                    title: 'Alumni Meet 2026',
+                    category: 'Alumni / University Event',
+                    description:
+                        'The Department of Computer Science, Pondicherry University, through PUDoCS Footprints – Alumni Association, invites alumni to Alumni Meet 2026. The event focuses on reconnecting alumni with the department and reliving memories while strengthening alumni–student–faculty relations.',
+                    theme: 'Retracing where it all began',
+                    date: '2026-01-26',
+                    time: '10:00 AM',
+                    venue: 'Cultural-cum-Convention Centre',
+                    location: 'Cultural-cum-Convention Centre, Pondicherry University',
+                    organizedBy:
+                        'PUDoCS Footprints – Alumni Association\nDepartment of Computer Science\nPondicherry University',
+                    registrationRequired: true,
+                    registrationLink: 'https://forms.gle/Rro7DNsh8VD9Zziz9',
+                    contact: '+91 9346101109',
+                    email: 'footprintscscpu@gmail.com',
+                    image: alumniMeetImage.uri,
+                    createdAt: new Date('2026-01-08').toISOString(),
+                    type: 'event',
+                };
+
+                events = [initialEvent, ...events];
+                await AsyncStorage.setItem('events', JSON.stringify(events));
+            }
+
+            return events;
+        } catch (error) {
+            console.error('Error getting events:', error);
+            return [];
+        }
     },
 
     // Get attendance (Mock data)

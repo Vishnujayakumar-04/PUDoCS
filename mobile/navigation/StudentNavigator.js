@@ -24,12 +24,13 @@ import StudentDetailView from '../screens/student/StudentDetailView';
 import StudentAttendance from '../screens/student/StudentAttendance';
 import StudentGallery from '../screens/student/StudentGallery';
 import StudentDetails from '../screens/student/StudentDetails';
+import StudentNotifications from '../screens/student/StudentNotifications';
 
 const Tab = createBottomTabNavigator();
 
 
 // List of main screens where tab bar should be visible
-const MAIN_SCREENS = ['Dashboard', 'Students', 'StudentDetails', 'Notices', 'Profile'];
+const MAIN_SCREENS = ['Dashboard', 'Students', 'StudentDetails', 'Notifications', 'Profile'];
 
 const getTabBarVisibility = (route) => {
     const routeName = getFocusedRouteNameFromRoute(route) ?? route.name;
@@ -90,8 +91,8 @@ const StudentNavigator = () => {
                 }}
             />
             <Tab.Screen
-                name="Notices"
-                component={StudentNotices}
+                name="Notifications"
+                component={StudentNotifications}
                 options={{
                     tabBarIcon: ({ focused, color, size }) => (
                         <MaterialCommunityIcons 
@@ -101,6 +102,11 @@ const StudentNavigator = () => {
                         />
                     ),
                 }}
+            />
+            <Tab.Screen
+                name="Notices"
+                component={StudentNotices}
+                options={{ tabBarButton: () => null }}
             />
             <Tab.Screen
                 name="Profile"

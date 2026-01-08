@@ -10,7 +10,7 @@ const CustomBottomTabBar = ({ state, descriptors, navigation }) => {
     const insets = useSafeAreaInsets();
 
     // Define the 5 main tabs in order
-    const mainTabs = ['Dashboard', 'Students', 'StudentDetails', 'Notices', 'Profile'];
+    const mainTabs = ['Dashboard', 'Students', 'StudentDetails', 'Notifications', 'Profile'];
     
     // Map route names to icons
     const getIcon = (routeName, isFocused) => {
@@ -21,7 +21,7 @@ const CustomBottomTabBar = ({ state, descriptors, navigation }) => {
                 return { name: 'account-group-outline', color: isFocused ? colors.primary : colors.gray400 };
             case 'StudentDetails':
                 return { name: 'leaf', color: colors.white }; // Center button - always white
-            case 'Notices':
+            case 'Notifications':
                 return { name: 'bell-outline', color: isFocused ? colors.primary : colors.gray400 };
             case 'Profile':
                 return { name: 'account-outline', color: isFocused ? colors.primary : colors.gray400 };

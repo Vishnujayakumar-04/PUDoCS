@@ -1,3 +1,4 @@
+import { Image } from 'react-native';
 import { storage } from './firebaseConfig';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { studentStorageService } from './studentStorageService';
@@ -211,7 +212,41 @@ export const officeService = {
     getEvents: async () => {
         try {
             const existingStr = await AsyncStorage.getItem('events');
-            return existingStr ? JSON.parse(existingStr) : [];
+            if (existingStr) {
+                const events = JSON.parse(existingStr);
+                // Check if Alumni Meet event already exists
+                const hasAlumniMeet = events.some(e => e.id === '1' || e.name === 'Alumni Meet 2026');
+                if (hasAlumniMeet || events.length > 0) {
+                    return events;
+                }
+            }
+            
+            // Initialize with Alumni Meet 2026 event if no events exist
+            const alumniMeetImage = Image.resolveAssetSource(require('../assets/Notice/Alumini meet.jpeg'));
+            const initialEvent = {
+                id: '1',
+                name: "Alumni Meet 2026",
+                title: "Alumni Meet 2026",
+                category: "Alumni / University Event",
+                description: "The Department of Computer Science, Pondicherry University, through PUDoCS Footprints – Alumni Association, invites alumni to Alumni Meet 2026. The event focuses on reconnecting alumni with the department and reliving memories while strengthening alumni–student–faculty relations.",
+                theme: "Retracing where it all began",
+                date: "2026-01-26",
+                time: "10:00 AM",
+                venue: "Cultural-cum-Convention Centre",
+                location: "Cultural-cum-Convention Centre, Pondicherry University",
+                organizedBy: "PUDoCS Footprints – Alumni Association\nDepartment of Computer Science\nPondicherry University",
+                registrationRequired: true,
+                registrationLink: "https://forms.gle/Rro7DNsh8VD9Zziz9",
+                contact: "+91 9346101109",
+                email: "footprintscscpu@gmail.com",
+                image: alumniMeetImage.uri,
+                createdAt: new Date('2026-01-08').toISOString(),
+                type: 'event'
+            };
+            
+            // Save to AsyncStorage for future use
+            await AsyncStorage.setItem('events', JSON.stringify([initialEvent]));
+            return [initialEvent];
         } catch (error) {
             console.error('Error getting events:', error);
             return [];
@@ -234,6 +269,36 @@ export const officeService = {
             return event;
         } catch (error) {
             console.error('Error posting event:', error);
+            throw error;
+        }
+    },
+
+    updateEvent: async (id, updates) => {
+        try {
+            const existingStr = await AsyncStorage.getItem('events');
+            let events = existingStr ? JSON.parse(existingStr) : [];
+            const index = events.findIndex(e => e.id === id);
+            if (index >= 0) {
+                events[index] = { ...events[index], ...updates, updatedAt: new Date().toISOString() };
+                await AsyncStorage.setItem('events', JSON.stringify(events));
+                return events[index];
+            }
+            throw new Error('Event not found');
+        } catch (error) {
+            console.error('Error updating event:', error);
+            throw error;
+        }
+    },
+
+    deleteEvent: async (id) => {
+        try {
+            const existingStr = await AsyncStorage.getItem('events');
+            let events = existingStr ? JSON.parse(existingStr) : [];
+            events = events.filter(e => e.id !== id);
+            await AsyncStorage.setItem('events', JSON.stringify(events));
+            return true;
+        } catch (error) {
+            console.error('Error deleting event:', error);
             throw error;
         }
     },

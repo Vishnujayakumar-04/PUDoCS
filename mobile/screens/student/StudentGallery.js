@@ -15,6 +15,51 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { galleryService } from '../../services/galleryService';
+
+// Only use static requires from _component_ files, NOT from services!
+const ALUMNI_MEET_IMAGES = [
+    require('../../assets/Gallery/IMG_9554.JPG'),
+    require('../../assets/Gallery/IMG_9555.JPG'),
+    require('../../assets/Gallery/IMG_9562.JPG'),
+    require('../../assets/Gallery/IMG_9569.JPG'),
+    require('../../assets/Gallery/IMG_9621.JPG'),
+    require('../../assets/Gallery/IMG_9655.JPG'),
+    require('../../assets/Gallery/IMG_9659.JPG'),
+    require('../../assets/Gallery/IMG_9663.JPG'),
+    require('../../assets/Gallery/IMG_9666.JPG'),
+    require('../../assets/Gallery/IMG_9675.JPG'),
+    require('../../assets/Gallery/IMG_9684.JPG'),
+    require('../../assets/Gallery/IMG_9686.JPG'),
+    require('../../assets/Gallery/IMG_9691.JPG'),
+    require('../../assets/Gallery/IMG_9694.JPG'),
+    require('../../assets/Gallery/IMG_9697.JPG'),
+    require('../../assets/Gallery/IMG_9699.JPG'),
+    require('../../assets/Gallery/IMG_9703.JPG'),
+    require('../../assets/Gallery/IMG_9704.JPG'),
+    require('../../assets/Gallery/IMG_9705.JPG'),
+    require('../../assets/Gallery/IMG_9706.JPG'),
+    require('../../assets/Gallery/IMG_9707.JPG'),
+    require('../../assets/Gallery/IMG_9708.JPG'),
+    require('../../assets/Gallery/IMG_9711.JPG'),
+    require('../../assets/Gallery/IMG_9717.JPG'),
+    require('../../assets/Gallery/IMG_9719.JPG'),
+    require('../../assets/Gallery/IMG_9721.JPG'),
+    require('../../assets/Gallery/IMG_9723.JPG'),
+    require('../../assets/Gallery/IMG_9726.JPG'),
+    require('../../assets/Gallery/IMG_9728.JPG'),
+    require('../../assets/Gallery/IMG_9730.JPG'),
+    require('../../assets/Gallery/Artboard 2.png'),
+    require('../../assets/Gallery/Invitation.png'),
+    require('../../assets/Gallery/4.JPG'),
+    require('../../assets/Gallery/5.JPG'),
+    require('../../assets/Gallery/6.JPG'),
+    require('../../assets/Gallery/IMG_0036.JPG'),
+    require('../../assets/Gallery/IMG_0038.JPG'),
+    require('../../assets/Gallery/IMG_0056.JPG'),
+    require('../../assets/Gallery/IMG_0066.JPG'),
+    require('../../assets/Gallery/IMG_9517.JPG'),
+    require('../../assets/Gallery/IMG_9546.JPG'),
+];
 import PremiumHeader from '../../components/PremiumHeader';
 import PremiumCard from '../../components/PremiumCard';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -23,13 +68,40 @@ import { moderateScale, getFontSize, getPadding, getMargin } from '../../utils/r
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+// Image Item Component with fade animation
+const ImageItem = ({ item, index, isActive }) => {
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        fadeAnim.setValue(0);
+        Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+        }).start();
+    }, [isActive]);
+
+    return (
+        <View style={styles.imageContainer}>
+            <Animated.Image
+                source={{ uri: item.url }}
+                style={[
+                    styles.fullImage,
+                    { opacity: fadeAnim }
+                ]}
+                resizeMode="contain"
+            />
+        </View>
+    );
+};
+
 const StudentGallery = ({ navigation }) => {
     const [albums, setAlbums] = useState([]);
     const [selectedAlbum, setSelectedAlbum] = useState(null);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     const [modalVisible, setModalVisible] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [imageAnimations] = useState([]);
+    const flatListRef = useRef(null);
 
     useEffect(() => {
         loadAlbums();
@@ -38,7 +110,27 @@ const StudentGallery = ({ navigation }) => {
     const loadAlbums = async () => {
         setLoading(true);
         try {
-            const albumsData = await galleryService.getAlbums();
+            let albumsData = await galleryService.getAlbums();
+            // Only seed album if not already there
+            const hasAlumniMeet = albumsData.some(album => album.title === "Alumni Meet 2025");
+            if (!hasAlumniMeet) {
+                const images = ALUMNI_MEET_IMAGES.map((img, i) => ({
+                    url: Image.resolveAssetSource(img).uri,
+                    name: `alumni_meet_${i+1}.jpg`,
+                    order: i,
+                }));
+                const newAlbum = {
+                    id: `alumni-meet-2025`,
+                    title: "Alumni Meet 2025",
+                    description: `The Department of Computer Science, Pondicherry University organized Footprints Alumni Meet 2025 on 26th January 2025 at the Convention Cum Cultural Complex. The event brought together alumni, faculty members, and current students to reconnect, share experiences, and strengthen industry–academia relationships.\n\nThe program included University Anthem, Welcome Address, Special Address, Honouring of the Guests, Presidential Address, Student Achievement Awards, Alumni Experience Sharing, Cultural Performances, Games, Vote of Thanks, and concluded with National Anthem followed by Lunch & Networking.\n\nThis gallery features key moments from the event including stage sessions, guest interactions, felicitation, award distribution, cultural events, group photographs, and informal networking moments.`,
+                    images,
+                    postedBy: "Office",
+                    createdAt: new Date('2025-01-26').toISOString(),
+                    updatedAt: new Date('2025-01-26').toISOString(),
+                };
+                albumsData = [newAlbum, ...albumsData];
+                await AsyncStorage.setItem('gallery_albums', JSON.stringify(albumsData));
+            }
             setAlbums(albumsData);
         } catch (error) {
             console.error('Error loading albums:', error);
@@ -61,13 +153,27 @@ const StudentGallery = ({ navigation }) => {
 
     const nextImage = () => {
         if (selectedAlbum && selectedImageIndex < selectedAlbum.images.length - 1) {
-            setSelectedImageIndex(selectedImageIndex + 1);
+            const nextIndex = selectedImageIndex + 1;
+            setSelectedImageIndex(nextIndex);
+            // Scroll to the next image
+            setTimeout(() => {
+                if (flatListRef.current) {
+                    flatListRef.current.scrollToIndex({ index: nextIndex, animated: true });
+                }
+            }, 100);
         }
     };
 
     const prevImage = () => {
         if (selectedImageIndex > 0) {
-            setSelectedImageIndex(selectedImageIndex - 1);
+            const prevIndex = selectedImageIndex - 1;
+            setSelectedImageIndex(prevIndex);
+            // Scroll to the previous image
+            setTimeout(() => {
+                if (flatListRef.current) {
+                    flatListRef.current.scrollToIndex({ index: prevIndex, animated: true });
+                }
+            }, 100);
         }
     };
 
@@ -167,11 +273,12 @@ const StudentGallery = ({ navigation }) => {
                             {/* Image Carousel */}
                             {selectedAlbum && selectedAlbum.images && (
                                 <FlatList
+                                    ref={flatListRef}
                                     data={selectedAlbum.images}
                                     horizontal
                                     pagingEnabled
                                     showsHorizontalScrollIndicator={false}
-                                    keyExtractor={(item, index) => index.toString()}
+                                    keyExtractor={(item, index) => `image-${index}`}
                                     initialScrollIndex={selectedImageIndex}
                                     getItemLayout={(data, index) => ({
                                         length: SCREEN_WIDTH,
@@ -184,14 +291,19 @@ const StudentGallery = ({ navigation }) => {
                                         );
                                         setSelectedImageIndex(index);
                                     }}
+                                    onScrollToIndexFailed={(info) => {
+                                        // Handle scroll to index failure
+                                        const wait = new Promise(resolve => setTimeout(resolve, 500));
+                                        wait.then(() => {
+                                            flatListRef.current?.scrollToIndex({ index: info.index, animated: true });
+                                        });
+                                    }}
                                     renderItem={({ item, index }) => (
-                                        <View style={styles.imageContainer}>
-                                            <Animated.Image
-                                                source={{ uri: item.url }}
-                                                style={styles.fullImage}
-                                                resizeMode="contain"
-                                            />
-                                        </View>
+                                        <ImageItem 
+                                            item={item} 
+                                            index={index}
+                                            isActive={index === selectedImageIndex}
+                                        />
                                     )}
                                 />
                             )}
@@ -393,6 +505,9 @@ const styles = StyleSheet.create({
     },
     nextButton: {
         right: 16,
+    },
+    navButtonDisabled: {
+        opacity: 0.3,
     },
     descriptionContainer: {
         position: 'absolute',

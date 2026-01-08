@@ -64,6 +64,13 @@ const OfficeDashboard = ({ navigation }) => {
     const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [notificationModalVisible, setNotificationModalVisible] = useState(false);
+    
+    // Static notifications
+    const notifications = [
+        { id: '1', message: 'Examination results have been published.', date: new Date().toISOString() },
+        { id: '2', message: 'The college will reopen on 19-01-2026.', date: new Date().toISOString() },
+    ];
     const [creatingStaff, setCreatingStaff] = useState(false);
     const [fixAccountModalVisible, setFixAccountModalVisible] = useState(false);
     const [staffEmailToFix, setStaffEmailToFix] = useState('');
@@ -314,10 +321,25 @@ const OfficeDashboard = ({ navigation }) => {
         }
     };
 
+    const formatEventDate = (dateValue) => {
+        if (!dateValue) return '';
+        try {
+            const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+            if (isNaN(date.getTime())) return '';
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        } catch (e) {
+            return '';
+        }
+    };
+
     const marqueeItems = [
-        "Welcome to Office Portal! Manage fees and administrative tasks.",
+        "Examination results have been published.",
+        "The college will reopen on 19-01-2026.",
         ...notices.map(n => n.title).filter(Boolean),
-        ...events.map(e => e.name).filter(Boolean),
+        ...events.map(e => {
+            const eventDate = formatEventDate(e.date);
+            return eventDate ? `📅 Event: ${e.name || e.title} (${eventDate})` : `📅 Event: ${e.name || e.title}`;
+        }).filter(Boolean),
     ];
 
     // Quick Access Features with icons
@@ -385,6 +407,9 @@ const OfficeDashboard = ({ navigation }) => {
                 onAvatarPress={() => handleNavigate('Profile')}
                 user={user}
                 profile={user?.profile}
+                showNotification={true}
+                onNotificationPress={() => setNotificationModalVisible(true)}
+                notificationCount={notifications.length}
             />
             <Marquee items={marqueeItems} />
 
@@ -577,6 +602,47 @@ const OfficeDashboard = ({ navigation }) => {
 
                 <View style={{ height: 100 }} />
             </ScrollView>
+
+            {/* Notification Modal */}
+            <Modal
+                visible={notificationModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setNotificationModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Notifications</Text>
+                            <TouchableOpacity
+                                onPress={() => setNotificationModalVisible(false)}
+                                style={styles.closeButton}
+                            >
+                                <MaterialCommunityIcons name="close" size={24} color={colors.textPrimary} />
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView style={styles.notificationList}>
+                            {notifications.map((notification) => (
+                                <View key={notification.id} style={styles.notificationItem}>
+                                    <View style={styles.notificationIcon}>
+                                        <MaterialCommunityIcons name="bell" size={20} color={colors.primary} />
+                                    </View>
+                                    <View style={styles.notificationTextContainer}>
+                                        <Text style={styles.notificationText}>{notification.message}</Text>
+                                        <Text style={styles.notificationDate}>
+                                            {new Date(notification.date).toLocaleDateString('en-US', { 
+                                                month: 'short', 
+                                                day: 'numeric',
+                                                year: 'numeric'
+                                            })}
+                                        </Text>
+                                    </View>
+                                </View>
+                            ))}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
 
             {/* Fix Staff Account Modal */}
             <Modal
@@ -1309,6 +1375,67 @@ const styles = StyleSheet.create({
     loadingContainer: {
         padding: 40,
         alignItems: 'center',
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: colors.white,
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        maxHeight: '80%',
+        paddingBottom: 20,
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 20,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.gray200,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: colors.textPrimary,
+    },
+    closeButton: {
+        padding: 4,
+    },
+    notificationList: {
+        padding: 16,
+    },
+    notificationItem: {
+        flexDirection: 'row',
+        padding: 16,
+        backgroundColor: colors.gray50,
+        borderRadius: 12,
+        marginBottom: 12,
+    },
+    notificationIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: colors.primary + '15',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    notificationTextContainer: {
+        flex: 1,
+    },
+    notificationText: {
+        fontSize: 15,
+        color: colors.textPrimary,
+        fontWeight: '500',
+        marginBottom: 4,
+        lineHeight: 20,
+    },
+    notificationDate: {
+        fontSize: 12,
+        color: colors.textSecondary,
     },
 });
 

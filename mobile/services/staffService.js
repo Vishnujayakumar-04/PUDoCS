@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Image } from 'react-native';
 import { allocateSeatsLogic } from '../utils/seatAllocation';
 import { studentStorageService } from './studentStorageService';
 import { localDataService } from './localDataService';
@@ -283,8 +284,24 @@ export const staffService = {
     },
 
     createEvent: async (eventData) => {
-        const id = Date.now().toString();
-        return { id, ...eventData };
+        try {
+            const event = {
+                id: Date.now().toString(),
+                ...eventData,
+                createdAt: new Date().toISOString(),
+                type: 'event'
+            };
+
+            // Save to AsyncStorage (shared with all roles)
+            const existingStr = await AsyncStorage.getItem('events');
+            const events = existingStr ? JSON.parse(existingStr) : [];
+            events.unshift(event);
+            await AsyncStorage.setItem('events', JSON.stringify(events));
+            return event;
+        } catch (error) {
+            console.error('Error creating event:', error);
+            throw error;
+        }
     },
 
     // Get notices
@@ -294,11 +311,53 @@ export const staffService = {
         ];
     },
 
-    // Get events
+    // Get events (shared from AsyncStorage) – seeds Alumni Meet if missing
     getEvents: async () => {
-        return [
-            { id: '1', name: "Dept Fest", date: "2026-02-24" }
-        ];
+        try {
+            const existingStr = await AsyncStorage.getItem('events');
+            let events = existingStr ? JSON.parse(existingStr) : [];
+
+            const alreadySeeded = events.some(
+                (e) => e.id === '1' || (e.name || e.title) === 'Alumni Meet 2026'
+            );
+
+            if (!alreadySeeded) {
+                const alumniMeetImage = Image.resolveAssetSource(
+                    require('../assets/Notice/Alumini meet.jpeg')
+                );
+
+                const initialEvent = {
+                    id: '1',
+                    name: 'Alumni Meet 2026',
+                    title: 'Alumni Meet 2026',
+                    category: 'Alumni / University Event',
+                    description:
+                        'The Department of Computer Science, Pondicherry University, through PUDoCS Footprints – Alumni Association, invites alumni to Alumni Meet 2026. The event focuses on reconnecting alumni with the department and reliving memories while strengthening alumni–student–faculty relations.',
+                    theme: 'Retracing where it all began',
+                    date: '2026-01-26',
+                    time: '10:00 AM',
+                    venue: 'Cultural-cum-Convention Centre',
+                    location: 'Cultural-cum-Convention Centre, Pondicherry University',
+                    organizedBy:
+                        'PUDoCS Footprints – Alumni Association\nDepartment of Computer Science\nPondicherry University',
+                    registrationRequired: true,
+                    registrationLink: 'https://forms.gle/Rro7DNsh8VD9Zziz9',
+                    contact: '+91 9346101109',
+                    email: 'footprintscscpu@gmail.com',
+                    image: alumniMeetImage.uri,
+                    createdAt: new Date('2026-01-08').toISOString(),
+                    type: 'event',
+                };
+
+                events = [initialEvent, ...events];
+                await AsyncStorage.setItem('events', JSON.stringify(events));
+            }
+
+            return events;
+        } catch (error) {
+            console.error('Error getting events:', error);
+            return [];
+        }
     }
 };
 

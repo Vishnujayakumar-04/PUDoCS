@@ -10,7 +10,7 @@ const CustomBottomTabBarOffice = ({ state, descriptors, navigation }) => {
     const insets = useSafeAreaInsets();
 
     // Define the 5 main tabs in order for Office
-    const mainTabs = ['Dashboard', 'Fees', 'AdminAccess', 'Notices', 'Profile'];
+    const mainTabs = ['Dashboard', 'Fees', 'AdminAccess', 'Notifications', 'Profile'];
     
     // Map route names to icons
     const getIcon = (routeName, isFocused) => {
@@ -21,7 +21,7 @@ const CustomBottomTabBarOffice = ({ state, descriptors, navigation }) => {
                 return { name: 'cash-multiple', color: isFocused ? colors.primary : colors.gray400 };
             case 'AdminAccess':
                 return { name: 'shield-account', color: colors.white }; // Center button - always white
-            case 'Notices':
+            case 'Notifications':
                 return { name: 'bell-outline', color: isFocused ? colors.primary : colors.gray400 };
             case 'Profile':
                 return { name: 'account-outline', color: isFocused ? colors.primary : colors.gray400 };

@@ -2,6 +2,7 @@ import { storage } from './firebaseConfig';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as FileSystem from 'expo-file-system/legacy';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Image } from 'react-native';
 
 /**
  * Gallery Service (Local First)
@@ -12,12 +13,20 @@ const STORAGE_KEY = 'gallery_albums';
 
 export const galleryService = {
     /**
-     * Get all gallery albums
+     * Get all gallery albums - automatically seeds Alumni Meet gallery if missing
      */
     getAlbums: async () => {
         try {
             const data = await AsyncStorage.getItem(STORAGE_KEY);
-            return data ? JSON.parse(data) : [];
+            let albums = data ? JSON.parse(data) : [];
+
+            // Check if Alumni Meet gallery already exists
+            const hasAlumniMeet = albums.some(
+                (album) => album.id === 'alumni-meet-2025' || album.title === 'Alumni Meet 2025'
+            );
+// (Seeding is now handled in StudentGallery/OfficeGallery)
+
+            return albums;
         } catch (error) {
             console.error('Error getting gallery albums:', error);
             return [];

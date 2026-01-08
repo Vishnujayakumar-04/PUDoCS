@@ -17,11 +17,12 @@ import StudentTimetable from '../screens/student/StudentTimetable';
 import AdminAccess from '../screens/office/AdminAccess';
 import OfficeAttendance from '../screens/office/OfficeAttendance';
 import OfficeGallery from '../screens/office/OfficeGallery';
+import StudentNotifications from '../screens/student/StudentNotifications';
 
 const Tab = createBottomTabNavigator();
 
 // List of main screens where tab bar should be visible
-const MAIN_SCREENS = ['Dashboard', 'Fees', 'AdminAccess', 'Notices', 'Profile'];
+const MAIN_SCREENS = ['Dashboard', 'Fees', 'AdminAccess', 'Notifications', 'Profile'];
 
 const getTabBarVisibility = (route) => {
     const routeName = getFocusedRouteNameFromRoute(route) ?? route.name;
@@ -69,8 +70,8 @@ const OfficeNavigator = () => {
                 }}
             />
             <Tab.Screen
-                name="Notices"
-                component={OfficeNotices}
+                name="Notifications"
+                component={StudentNotifications}
                 options={{
                     tabBarIcon: ({ focused, color, size }) => (
                         <MaterialCommunityIcons 
@@ -80,6 +81,11 @@ const OfficeNavigator = () => {
                         />
                     ),
                 }}
+            />
+            <Tab.Screen
+                name="Notices"
+                component={OfficeNotices}
+                options={{ tabBarButton: () => null }}
             />
             <Tab.Screen
                 name="StaffDirectory"

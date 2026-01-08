@@ -1,27 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Dimensions, Animated, Linking, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Card from '../../components/Card';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import { useAuth } from '../../context/AuthContext';
 import { studentService } from '../../services/studentService';
+import { staffService } from '../../services/staffService';
+import { officeService } from '../../services/officeService';
 import colors from '../../styles/colors';
 
 const { width } = Dimensions.get('window');
 
 const StudentEvents = () => {
+    const { role } = useAuth();
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [fadeAnim] = useState(new Animated.Value(0));
 
     useEffect(() => {
         loadEvents();
-    }, []);
+    }, [role]);
 
     const loadEvents = async () => {
         try {
-            const data = await studentService.getEvents();
+            let data = [];
+            // Use appropriate service based on user role
+            if (role === 'Staff') {
+                data = await staffService.getEvents();
+            } else if (role === 'Office') {
+                data = await officeService.getEvents();
+            } else {
+                // Default to student service
+                data = await studentService.getEvents();
+            }
             setEvents(data || []);
             Animated.timing(fadeAnim, {
                 toValue: 1,
@@ -42,6 +55,27 @@ const StudentEvents = () => {
             return new Date(dateValue).toLocaleDateString();
         } catch (e) {
             return dateValue.toString();
+        }
+    };
+
+    const handleRegistration = async (event) => {
+        if (event.registrationLink) {
+            try {
+                const supported = await Linking.canOpenURL(event.registrationLink);
+                if (supported) {
+                    await Linking.openURL(event.registrationLink);
+                } else {
+                    Alert.alert('Error', 'Cannot open registration link');
+                }
+            } catch (error) {
+                Alert.alert('Error', 'Failed to open registration link');
+            }
+        } else if (event.contact || event.email) {
+            // Show contact info if no registration link
+            const contactInfo = [];
+            if (event.contact) contactInfo.push(`Phone: ${event.contact}`);
+            if (event.email) contactInfo.push(`Email: ${event.email}`);
+            Alert.alert('Contact Information', contactInfo.join('\n'));
         }
     };
 
@@ -100,11 +134,54 @@ const StudentEvents = () => {
                                     <Text style={styles.metaText}>{event.location}</Text>
                                 </View>
                                 {event.description && <Text style={styles.description}>{event.description}</Text>}
+                                
+                                {event.theme && (
+                                    <View style={styles.themeContainer}>
+                                        <Text style={styles.themeLabel}>Theme:</Text>
+                                        <Text style={styles.themeText}>{event.theme}</Text>
+                                    </View>
+                                )}
+                                
+                                {event.organizedBy && (
+                                    <View style={styles.organizedByContainer}>
+                                        <Text style={styles.organizedByLabel}>Organized By:</Text>
+                                        <Text style={styles.organizedByText}>{event.organizedBy}</Text>
+                                    </View>
+                                )}
 
-                                <TouchableOpacity style={styles.registerBtn}>
-                                    <Text style={styles.registerBtnText}>Interesting</Text>
-                                    <MaterialCommunityIcons name="star-outline" size={18} color={colors.primary} />
-                                </TouchableOpacity>
+                                {(event.registrationLink || event.registrationRequired) ? (
+                                    <TouchableOpacity 
+                                        style={styles.registerBtn}
+                                        onPress={() => handleRegistration(event)}
+                                    >
+                                        <Text style={styles.registerBtnText}>
+                                            {event.registrationLink ? 'Register Now' : 'Contact for Registration'}
+                                        </Text>
+                                        <MaterialCommunityIcons name="link" size={18} color={colors.primary} />
+                                    </TouchableOpacity>
+                                ) : (
+                                    <TouchableOpacity style={styles.registerBtn}>
+                                        <Text style={styles.registerBtnText}>Interesting</Text>
+                                        <MaterialCommunityIcons name="star-outline" size={18} color={colors.primary} />
+                                    </TouchableOpacity>
+                                )}
+                                
+                                {(event.contact || event.email) && (
+                                    <View style={styles.contactContainer}>
+                                        {event.contact && (
+                                            <View style={styles.contactItem}>
+                                                <MaterialCommunityIcons name="phone" size={14} color={colors.textSecondary} />
+                                                <Text style={styles.contactText}>{event.contact}</Text>
+                                            </View>
+                                        )}
+                                        {event.email && (
+                                            <View style={styles.contactItem}>
+                                                <MaterialCommunityIcons name="email" size={14} color={colors.textSecondary} />
+                                                <Text style={styles.contactText}>{event.email}</Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                )}
                             </View>
                         </Card>
                     ))
@@ -257,6 +334,55 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: colors.textSecondary,
         marginTop: 15,
+    },
+    themeContainer: {
+        marginTop: 12,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        backgroundColor: colors.gray100,
+        borderRadius: 8,
+    },
+    themeLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: colors.textSecondary,
+        marginBottom: 4,
+    },
+    themeText: {
+        fontSize: 14,
+        fontStyle: 'italic',
+        color: colors.primary,
+        fontWeight: '500',
+    },
+    organizedByContainer: {
+        marginTop: 10,
+    },
+    organizedByLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: colors.textSecondary,
+        marginBottom: 4,
+    },
+    organizedByText: {
+        fontSize: 13,
+        color: colors.textSecondary,
+        lineHeight: 18,
+    },
+    contactContainer: {
+        marginTop: 12,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: colors.gray200,
+    },
+    contactItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
+    contactText: {
+        fontSize: 13,
+        color: colors.textSecondary,
+        marginLeft: 6,
     },
 });
 

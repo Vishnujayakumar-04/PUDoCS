@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Animated, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Animated, Dimensions, Modal } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { studentService } from '../../services/studentService';
@@ -20,6 +20,13 @@ const StudentDashboard = ({ navigation }) => {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [notificationModalVisible, setNotificationModalVisible] = useState(false);
+    
+    // Static notifications
+    const notifications = [
+        { id: '1', message: 'Examination results have been published.', date: new Date().toISOString() },
+        { id: '2', message: 'The college will reopen on 19-01-2026.', date: new Date().toISOString() },
+    ];
 
     // Animation Values
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -86,11 +93,25 @@ const StudentDashboard = ({ navigation }) => {
         }
     };
 
+    const formatEventDate = (dateValue) => {
+        if (!dateValue) return '';
+        try {
+            const date = typeof dateValue === 'string' ? new Date(dateValue) : dateValue;
+            if (isNaN(date.getTime())) return '';
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        } catch (e) {
+            return '';
+        }
+    };
+
     const marqueeItems = [
-        "Exam Results Published! Check Results tab.",
-        "Winter Vacation starts from 24th Dec to 2nd Jan.",
+        "Examination results have been published.",
+        "The college will reopen on 19-01-2026.",
         ...notices.map(n => n.title).filter(Boolean),
-        ...events.map(e => e.name).filter(Boolean),
+        ...events.map(e => {
+            const eventDate = formatEventDate(e.date);
+            return eventDate ? `📅 Event: ${e.name || e.title} (${eventDate})` : `📅 Event: ${e.name || e.title}`;
+        }).filter(Boolean),
     ];
 
     // Quick Access Features with icons
@@ -119,6 +140,9 @@ const StudentDashboard = ({ navigation }) => {
                 onAvatarPress={() => safeNavigate(navigation, 'Profile')}
                 user={user}
                 profile={profile}
+                showNotification={true}
+                onNotificationPress={() => setNotificationModalVisible(true)}
+                notificationCount={notifications.length}
             />
             <Marquee items={marqueeItems} />
 
@@ -167,6 +191,47 @@ const StudentDashboard = ({ navigation }) => {
 
                 <View style={{ height: getMargin(100) }} />
             </ScrollView>
+
+            {/* Notification Modal */}
+            <Modal
+                visible={notificationModalVisible}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setNotificationModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>Notifications</Text>
+                            <TouchableOpacity
+                                onPress={() => setNotificationModalVisible(false)}
+                                style={styles.closeButton}
+                            >
+                                <MaterialCommunityIcons name="close" size={24} color={colors.textPrimary} />
+                            </TouchableOpacity>
+                        </View>
+                        <ScrollView style={styles.notificationList}>
+                            {notifications.map((notification) => (
+                                <View key={notification.id} style={styles.notificationItem}>
+                                    <View style={styles.notificationIcon}>
+                                        <MaterialCommunityIcons name="bell" size={20} color={colors.primary} />
+                                    </View>
+                                    <View style={styles.notificationTextContainer}>
+                                        <Text style={styles.notificationText}>{notification.message}</Text>
+                                        <Text style={styles.notificationDate}>
+                                            {new Date(notification.date).toLocaleDateString('en-US', { 
+                                                month: 'short', 
+                                                day: 'numeric',
+                                                year: 'numeric'
+                                            })}
+                                        </Text>
+                                    </View>
+                                </View>
+                            ))}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 };
@@ -315,6 +380,67 @@ const styles = StyleSheet.create({
         fontSize: getFontSize(14),
         color: colors.textSecondary,
         marginTop: getMargin(12),
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: colors.white,
+        borderTopLeftRadius: moderateScale(24),
+        borderTopRightRadius: moderateScale(24),
+        maxHeight: '80%',
+        paddingBottom: getPadding(20),
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: getPadding(20),
+        borderBottomWidth: 1,
+        borderBottomColor: colors.gray200,
+    },
+    modalTitle: {
+        fontSize: getFontSize(20),
+        fontWeight: 'bold',
+        color: colors.textPrimary,
+    },
+    closeButton: {
+        padding: getPadding(4),
+    },
+    notificationList: {
+        padding: getPadding(16),
+    },
+    notificationItem: {
+        flexDirection: 'row',
+        padding: getPadding(16),
+        backgroundColor: colors.gray50,
+        borderRadius: moderateScale(12),
+        marginBottom: getMargin(12),
+    },
+    notificationIcon: {
+        width: moderateScale(40),
+        height: moderateScale(40),
+        borderRadius: moderateScale(20),
+        backgroundColor: colors.primary + '15',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: getMargin(12),
+    },
+    notificationTextContainer: {
+        flex: 1,
+    },
+    notificationText: {
+        fontSize: getFontSize(15),
+        color: colors.textPrimary,
+        fontWeight: '500',
+        marginBottom: getMargin(4),
+        lineHeight: getFontSize(20),
+    },
+    notificationDate: {
+        fontSize: getFontSize(12),
+        color: colors.textSecondary,
     },
 });
 

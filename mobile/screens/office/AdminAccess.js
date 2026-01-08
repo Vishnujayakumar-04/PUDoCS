@@ -31,6 +31,7 @@ const AdminAccess = ({ navigation }) => {
     const [staffData, setStaffData] = useState({ name: '', email: '', designation: '', department: 'Computer Science', phone: '' });
     const [studentData, setStudentData] = useState({ name: '', registerNumber: '', email: '', course: '', program: '', year: '', section: '' });
     const [noticeData, setNoticeData] = useState({ title: '', content: '', category: 'Administrative', priority: 'High' });
+    const [eventData, setEventData] = useState({ name: '', description: '', category: 'Academic', date: '', time: '', venue: '', location: '', registrationLink: '', contact: '', email: '', theme: '', organizedBy: '' });
     const [timetableData, setTimetableData] = useState({ program: '', year: '', room: '' });
     const [officerData, setOfficerData] = useState({ name: '', email: '', designation: '', department: 'Computer Science', phone: '' });
     const [examData, setExamData] = useState({ name: '', subject: '', date: '', time: '', venue: '', course: '', program: '', year: '' });
@@ -40,6 +41,7 @@ const AdminAccess = ({ navigation }) => {
         { id: 'staff', label: 'Staff', icon: 'account-tie' },
         { id: 'student', label: 'Student', icon: 'school' },
         { id: 'notice', label: 'Notice', icon: 'bell' },
+        { id: 'event', label: 'Event', icon: 'calendar-star' },
         { id: 'timetable', label: 'Timetable', icon: 'calendar-clock' },
         { id: 'officer', label: 'Officer', icon: 'account-cog' },
         { id: 'exam', label: 'Exam Schedule', icon: 'file-document-edit' },
@@ -59,6 +61,9 @@ const AdminAccess = ({ navigation }) => {
                     break;
                 case 'notice':
                     data = await officeService.getNotices();
+                    break;
+                case 'event':
+                    data = await officeService.getEvents();
                     break;
                 case 'timetable':
                     data = await officeService.getTimetables();
@@ -125,6 +130,22 @@ const AdminAccess = ({ navigation }) => {
                     priority: item.priority || 'High',
                 });
                 break;
+            case 'event':
+                setEventData({
+                    name: item.name || item.title || '',
+                    description: item.description || '',
+                    category: item.category || 'Academic',
+                    date: item.date || '',
+                    time: item.time || '',
+                    venue: item.venue || '',
+                    location: item.location || '',
+                    registrationLink: item.registrationLink || '',
+                    contact: item.contact || '',
+                    email: item.email || '',
+                    theme: item.theme || '',
+                    organizedBy: item.organizedBy || '',
+                });
+                break;
             case 'timetable':
                 setTimetableData({
                     program: item.program || '',
@@ -186,6 +207,9 @@ const AdminAccess = ({ navigation }) => {
                                 case 'notice':
                                     await officeService.deleteNotice(item.id);
                                     break;
+                                case 'event':
+                                    await officeService.deleteEvent(item.id);
+                                    break;
                                 case 'timetable':
                                     await officeService.deleteTimetable(item.id);
                                     break;
@@ -243,6 +267,14 @@ const AdminAccess = ({ navigation }) => {
                         await officeService.postNotice(noticeData);
                     }
                     break;
+                case 'event':
+                    if (!eventData.name || !eventData.date) return Alert.alert('Error', 'Fill event name and date');
+                    if (editingItem) {
+                        await officeService.updateEvent(editingItem.id, eventData);
+                    } else {
+                        await officeService.postEvent(eventData);
+                    }
+                    break;
                 case 'timetable':
                     if (!timetableData.program || !timetableData.year) return Alert.alert('Error', 'Fill program and year');
                     // Timetable save uses saveTimetable
@@ -293,6 +325,7 @@ const AdminAccess = ({ navigation }) => {
         setStaffData({ name: '', email: '', designation: '', department: 'Computer Science', phone: '' });
         setStudentData({ name: '', registerNumber: '', email: '', course: '', program: '', year: '', section: '' });
         setNoticeData({ title: '', content: '', category: 'Administrative', priority: 'High' });
+        setEventData({ name: '', description: '', category: 'Academic', date: '', time: '', venue: '', location: '', registrationLink: '', contact: '', email: '', theme: '', organizedBy: '' });
         setTimetableData({ program: '', year: '', room: '' });
         setOfficerData({ name: '', email: '', designation: '', department: 'Computer Science', phone: '' });
         setExamData({ name: '', subject: '', date: '', time: '', venue: '', course: '', program: '', year: '' });
@@ -368,6 +401,33 @@ const AdminAccess = ({ navigation }) => {
                         <TextInput style={[styles.input, styles.textArea]} placeholder="Content" value={noticeData.content} onChangeText={t => setNoticeData({ ...noticeData, content: t })} multiline />
                         <Text style={styles.label}>Category</Text>
                         <CustomPicker selectedValue={noticeData.category} onValueChange={v => setNoticeData({ ...noticeData, category: v })} items={[{ label: 'Administrative', value: 'Administrative' }, { label: 'Academic', value: 'Academic' }, { label: 'Exam', value: 'Exam' }, { label: 'Event', value: 'Event' }]} style={styles.input} />
+                    </>
+                );
+            case 'event':
+                return (
+                    <>
+                        <Text style={styles.label}>Event Name *</Text>
+                        <TextInput style={styles.input} placeholder="Event Name" value={eventData.name} onChangeText={t => setEventData({ ...eventData, name: t })} />
+                        <Text style={styles.label}>Description</Text>
+                        <TextInput style={[styles.input, styles.textArea]} placeholder="Description" value={eventData.description} onChangeText={t => setEventData({ ...eventData, description: t })} multiline />
+                        <Text style={styles.label}>Category</Text>
+                        <CustomPicker selectedValue={eventData.category} onValueChange={v => setEventData({ ...eventData, category: v })} items={[{ label: 'Academic', value: 'Academic' }, { label: 'Alumni / University Event', value: 'Alumni / University Event' }, { label: 'Cultural', value: 'Cultural' }, { label: 'Sports', value: 'Sports' }, { label: 'Workshop', value: 'Workshop' }]} style={styles.input} />
+                        <Text style={styles.label}>Date *</Text>
+                        <TextInput style={styles.input} placeholder="Date (YYYY-MM-DD)" value={eventData.date} onChangeText={t => setEventData({ ...eventData, date: t })} />
+                        <Text style={styles.label}>Time</Text>
+                        <TextInput style={styles.input} placeholder="Time (e.g., 10:00 AM)" value={eventData.time} onChangeText={t => setEventData({ ...eventData, time: t })} />
+                        <Text style={styles.label}>Venue</Text>
+                        <TextInput style={styles.input} placeholder="Venue" value={eventData.venue} onChangeText={t => setEventData({ ...eventData, venue: t, location: t })} />
+                        <Text style={styles.label}>Registration Link</Text>
+                        <TextInput style={styles.input} placeholder="Registration URL" value={eventData.registrationLink} onChangeText={t => setEventData({ ...eventData, registrationLink: t })} keyboardType="url" />
+                        <Text style={styles.label}>Contact</Text>
+                        <TextInput style={styles.input} placeholder="Phone" value={eventData.contact} onChangeText={t => setEventData({ ...eventData, contact: t })} />
+                        <Text style={styles.label}>Email</Text>
+                        <TextInput style={styles.input} placeholder="Email" value={eventData.email} onChangeText={t => setEventData({ ...eventData, email: t })} keyboardType="email-address" />
+                        <Text style={styles.label}>Theme</Text>
+                        <TextInput style={styles.input} placeholder="Theme/Tagline" value={eventData.theme} onChangeText={t => setEventData({ ...eventData, theme: t })} />
+                        <Text style={styles.label}>Organized By</Text>
+                        <TextInput style={[styles.input, styles.textArea]} placeholder="Organized By" value={eventData.organizedBy} onChangeText={t => setEventData({ ...eventData, organizedBy: t })} multiline />
                     </>
                 );
             case 'timetable':

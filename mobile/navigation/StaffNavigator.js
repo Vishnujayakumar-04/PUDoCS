@@ -20,6 +20,7 @@ import StudentEvents from '../screens/student/StudentEvents';
 import StudentTimetable from '../screens/student/StudentTimetable';
 import StaffProfile from '../screens/staff/StaffProfile';
 import StudentGallery from '../screens/student/StudentGallery';
+import StudentNotifications from '../screens/student/StudentNotifications';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -35,7 +36,7 @@ const ExamStack = () => {
 };
 
 // List of main screens where tab bar should be visible
-const MAIN_SCREENS = ['Dashboard', 'Students', 'Attendance', 'Notices', 'Profile'];
+const MAIN_SCREENS = ['Dashboard', 'Students', 'Attendance', 'Notifications', 'Profile'];
 
 const getTabBarVisibility = (route) => {
     const routeName = getFocusedRouteNameFromRoute(route) ?? route.name;
@@ -83,8 +84,8 @@ const StaffNavigator = () => {
                 }}
             />
             <Tab.Screen
-                name="Notices"
-                component={StaffNotices}
+                name="Notifications"
+                component={StudentNotifications}
                 options={{
                     tabBarIcon: ({ focused, color, size }) => (
                         <MaterialCommunityIcons 
@@ -94,6 +95,11 @@ const StaffNavigator = () => {
                         />
                     ),
                 }}
+            />
+            <Tab.Screen
+                name="Notices"
+                component={StaffNotices}
+                options={{ tabBarButton: () => null }}
             />
             <Tab.Screen
                 name="Attendance"

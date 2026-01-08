@@ -8,7 +8,7 @@ import colors from '../styles/colors';
 import staffImages from '../assets/staffImages';
 import { moderateScale, getFontSize, getPadding, getMargin } from '../utils/responsive';
 
-const PremiumHeader = ({ title, subtitle, showAvatar = false, onAvatarPress, user, profile }) => {
+const PremiumHeader = ({ title, subtitle, showAvatar = false, onAvatarPress, user, profile, showNotification = false, onNotificationPress, notificationCount = 0 }) => {
     // Get photo source from user or profile
     const getPhotoSource = () => {
         // Check if profile has imageKey (for staff photos)
@@ -56,21 +56,43 @@ const PremiumHeader = ({ title, subtitle, showAvatar = false, onAvatarPress, use
                         <Text style={styles.title}>{title}</Text>
                         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
                     </View>
-                    {showAvatar && (
-                        <TouchableOpacity
-                            onPress={onAvatarPress}
-                            style={styles.avatarButton}
-                            activeOpacity={0.8}
-                        >
-                            <View style={styles.avatarContainer}>
-                                <Image
-                                    source={photoSource}
-                                    style={styles.avatarImage}
-                                    resizeMode="cover"
+                    <View style={styles.rightContainer}>
+                        {showNotification && (
+                            <TouchableOpacity
+                                onPress={onNotificationPress}
+                                style={styles.notificationButton}
+                                activeOpacity={0.8}
+                            >
+                                <MaterialCommunityIcons 
+                                    name="bell-outline" 
+                                    size={moderateScale(24)} 
+                                    color={colors.white} 
                                 />
-                            </View>
-                        </TouchableOpacity>
-                    )}
+                                {notificationCount > 0 && (
+                                    <View style={styles.notificationBadge}>
+                                        <Text style={styles.notificationBadgeText}>
+                                            {notificationCount > 9 ? '9+' : notificationCount}
+                                        </Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                        )}
+                        {showAvatar && (
+                            <TouchableOpacity
+                                onPress={onAvatarPress}
+                                style={styles.avatarButton}
+                                activeOpacity={0.8}
+                            >
+                                <View style={styles.avatarContainer}>
+                                    <Image
+                                        source={photoSource}
+                                        style={styles.avatarImage}
+                                        resizeMode="cover"
+                                    />
+                                </View>
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 </View>
             </SafeAreaView>
         </LinearGradient>
@@ -97,6 +119,33 @@ const styles = StyleSheet.create({
     textContainer: {
         flex: 1,
         marginRight: getPadding(12),
+    },
+    rightContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: getMargin(12),
+    },
+    notificationButton: {
+        position: 'relative',
+        padding: getPadding(8),
+    },
+    notificationBadge: {
+        position: 'absolute',
+        top: 4,
+        right: 4,
+        backgroundColor: colors.error,
+        borderRadius: moderateScale(10),
+        minWidth: moderateScale(20),
+        height: moderateScale(20),
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: colors.primary,
+    },
+    notificationBadgeText: {
+        color: colors.white,
+        fontSize: getFontSize(10),
+        fontWeight: 'bold',
     },
     title: {
         fontSize: getFontSize(24),
@@ -141,6 +190,9 @@ PremiumHeader.propTypes = {
     onAvatarPress: PropTypes.func,
     user: PropTypes.object,
     profile: PropTypes.object,
+    showNotification: PropTypes.bool,
+    onNotificationPress: PropTypes.func,
+    notificationCount: PropTypes.number,
 };
 
 PremiumHeader.defaultProps = {
@@ -149,6 +201,9 @@ PremiumHeader.defaultProps = {
     onAvatarPress: null,
     user: null,
     profile: null,
+    showNotification: false,
+    onNotificationPress: null,
+    notificationCount: 0,
 };
 
 export default PremiumHeader;
