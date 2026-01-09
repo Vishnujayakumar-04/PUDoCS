@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Linking, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -174,6 +174,23 @@ const StudentDetailView = ({ route, navigation }) => {
             </LinearGradient>
 
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+                {/* Avatar Section */}
+                <View style={styles.avatarSection}>
+                    <View style={styles.avatarContainer}>
+                        {student.photoUrl ? (
+                            <Image source={{ uri: student.photoUrl }} style={styles.avatar} />
+                        ) : (
+                            <View style={styles.initialsAvatar}>
+                                <Text style={styles.initialsText}>
+                                    {(student.name || 'U').charAt(0).toUpperCase()}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
+                    <Text style={styles.studentName}>{student.name}</Text>
+                    <Text style={styles.studentRegNo}>{student.registerNumber}</Text>
+                </View>
+
                 {/* Basic Information */}
                 <PremiumCard style={styles.card}>
                     <Text style={styles.cardTitle}>Basic Information</Text>
@@ -270,6 +287,54 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 20,
+    },
+    avatarSection: {
+        alignItems: 'center',
+        marginBottom: 24,
+    },
+    avatarContainer: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        backgroundColor: colors.primary + '10',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 12,
+        borderWidth: 3,
+        borderColor: colors.white,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        overflow: 'hidden',
+    },
+    avatar: {
+        width: '100%',
+        height: '100%',
+    },
+    initialsAvatar: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.primary + '10',
+    },
+    initialsText: {
+        fontSize: 40,
+        fontWeight: '700',
+        color: colors.primary,
+    },
+    studentName: {
+        fontSize: 22,
+        fontWeight: '700',
+        color: colors.textPrimary,
+        marginBottom: 4,
+    },
+    studentRegNo: {
+        fontSize: 14,
+        color: colors.textSecondary,
+        fontWeight: '500',
     },
     card: {
         marginBottom: 16,

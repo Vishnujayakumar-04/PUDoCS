@@ -9,7 +9,17 @@ export const studentService = {
         try {
             console.log('🔍 Getting profile for:', { studentId, email });
 
-            // If we have an email, search in our local static data
+            // 1. Check local storage (AsyncStorage) for the currently logged-in user's profile
+            const savedProfile = await AsyncStorage.getItem('user_profile');
+            if (savedProfile) {
+                const parsed = JSON.parse(savedProfile);
+                if (parsed.email === email || parsed.id === studentId) {
+                    console.log('✅ Found profile in AsyncStorage:', parsed.name);
+                    return parsed;
+                }
+            }
+
+            // 2. Fallback: Search in our static local data
             if (email) {
                 const programs = localDataService.getAvailablePrograms();
                 for (const program of programs) {
@@ -22,11 +32,11 @@ export const studentService = {
                         const student = students.find(s =>
                             (s.email && s.email.toLowerCase() === email.toLowerCase()) ||
                             // Construct email if not present
-                            (`${s.registerNumber.toLowerCase()}@pondiuni.ac.in` === email.toLowerCase())
+                            (s.registerNumber && `${s.registerNumber.toLowerCase()}@pondiuni.ac.in` === email.toLowerCase())
                         );
 
                         if (student) {
-                            console.log('✅ Found profile locally:', student.name);
+                            console.log('✅ Found static profile:', student.name);
                             return {
                                 ...student,
                                 email: student.email || `${student.registerNumber.toLowerCase()}@pondiuni.ac.in`,
@@ -38,17 +48,7 @@ export const studentService = {
                 }
             }
 
-            // Fallback: Check local storage (AsyncStorage) for any saved profile
-            // This handles cases where we might have saved a profile manually
-            const savedProfile = await AsyncStorage.getItem('user_profile');
-            if (savedProfile) {
-                const parsed = JSON.parse(savedProfile);
-                if (parsed.email === email || parsed.id === studentId) {
-                    return parsed;
-                }
-            }
-
-            console.warn('⚠️ Profile not found locally for:', email);
+            console.warn('⚠️ Profile not found for:', email);
             return null;
         } catch (error) {
             console.error("Error fetching profile:", error);
@@ -163,22 +163,30 @@ export const studentService = {
         try {
             console.log("Fetching students - Program:", program, "Year:", year);
 
-            // Get from local service
-            const students = localDataService.getStudents(program, year);
+            // Get static students from local service (JSON)
+            const staticStudents = localDataService.getStudents(program, year) || [];
 
-            if (students && students.length > 0) {
-                console.log(`✅ Found ${students.length} students locally`);
+            // Get dynamic students from storage (User uploads, etc.)
+            const dynamicStudents = await studentStorageService.getStudents();
+            const dynamicMap = new Map();
+            dynamicStudents.forEach(s => {
+                if (s.registerNumber) dynamicMap.set(s.registerNumber, s);
+            });
 
-                // Hydrate students with default fields if missing
-                return students.map(s => ({
+            // Map and merge
+            const mergedStudents = staticStudents.map(s => {
+                const dynamic = dynamicMap.get(s.registerNumber);
+                return {
                     ...s,
+                    ...(dynamic || {}), // Priority to dynamic data (e.g. photoUrl)
                     program,
                     year,
-                    email: s.email || `${s.registerNumber.toLowerCase()}@pondiuni.ac.in`
-                }));
-            }
+                    email: s.email || dynamic?.email || `${s.registerNumber.toLowerCase()}@pondiuni.ac.in`
+                };
+            });
 
-            return [];
+            console.log(`✅ Returned ${mergedStudents.length} merged students`);
+            return mergedStudents;
         } catch (error) {
             console.error("Error fetching students:", error);
             return [];

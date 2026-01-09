@@ -1,0 +1,308 @@
+{
+  "program": "M.Sc Data Analytics",
+  "year": 1,
+  "class": "I M.Sc Data Analytics",
+  "room": "SH308 – II Floor",
+  "schedule": [
+    {
+      "day": "Monday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Data Mining Techniques",
+          "subjectCode": "DSPL402",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. S. RAVI"
+          },
+          "room": "SH308"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Data Mining Techniques",
+          "subjectCode": "DSPL402",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. S. RAVI"
+          },
+          "room": "SH308"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Data Mining Techniques",
+          "subjectCode": "DSPL402",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. S. RAVI"
+          },
+          "room": "SH308"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Data Visualization",
+          "subjectCode": "DSPL403",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. SL. JAYALAKSHMI"
+          },
+          "room": "SH308"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Data Visualization",
+          "subjectCode": "DSPL403",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. SL. JAYALAKSHMI"
+          },
+          "room": "SH308"
+        }
+      ]
+    },
+    {
+      "day": "Tuesday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Data Visualization",
+          "subjectCode": "DSPL403",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. SL. JAYALAKSHMI"
+          },
+          "room": "SH308"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Data Visualization",
+          "subjectCode": "DSPL403",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. SL. JAYALAKSHMI"
+          },
+          "room": "SH308"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Advanced Statistics & Probability",
+          "subjectCode": "DSPL401",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr G. KRISHNAPRIYA"
+          },
+          "room": "SH308"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Advanced Statistics & Probability",
+          "subjectCode": "DSPL401",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr G. KRISHNAPRIYA"
+          },
+          "room": "SH308"
+        }
+      ]
+    },
+    {
+      "day": "Wednesday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Advanced Statistics & Probability",
+          "subjectCode": "DSPL401",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr G. KRISHNAPRIYA"
+          },
+          "room": "SH308"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Advanced Statistics & Probability",
+          "subjectCode": "DSPL401",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr G. KRISHNAPRIYA"
+          },
+          "room": "SH308"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Advanced Statistics & Probability",
+          "subjectCode": "DSPL401",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr G. KRISHNAPRIYA"
+          },
+          "room": "SH308"
+        }
+      ]
+    },
+    {
+      "day": "Thursday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Machine Learning Lab",
+          "subjectCode": "DSL402",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. S. RAVI"
+          },
+          "room": "SH308"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Machine Learning Lab",
+          "subjectCode": "DSL402",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. S. RAVI"
+          },
+          "room": "SH308"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Machine Learning Lab",
+          "subjectCode": "DSL402",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. S. RAVI"
+          },
+          "room": "SH308"
+        },
+        {
+          "startTime": "01:30 PM",
+          "endTime": "02:30 PM",
+          "subject": "Advanced Python Programming",
+          "subjectCode": "DSLC301",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "DR. VENGATTARAMAN"
+          },
+          "room": "SH308"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Advanced Python Programming",
+          "subjectCode": "DSLC301",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "DR. VENGATTARAMAN"
+          },
+          "room": "SH308"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Advanced Python Programming",
+          "subjectCode": "DSLC301",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "DR. VENGATTARAMAN"
+          },
+          "room": "SH308"
+        }
+      ]
+    },
+    {
+      "day": "Friday",
+      "slots": [
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Optimization Techniques Lab",
+          "subjectCode": "DSL404",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Mr. NELSON JAMES"
+          },
+          "room": "SH308"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Optimization Techniques Lab",
+          "subjectCode": "DSL404",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Mr. NELSON JAMES"
+          },
+          "room": "SH308"
+        }
+      ]
+    }
+  ],
+  "subjects": [
+    {
+      "code": "DSPL401",
+      "name": "Advanced Statistics & Probability",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr G. KRISHNAPRIYA"
+    },
+    {
+      "code": "DSPL402",
+      "name": "Data Mining Techniques",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr. S. RAVI"
+    },
+    {
+      "code": "DSPL403",
+      "name": "Data Visualization",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr. SL. JAYALAKSHMI"
+    },
+    {
+      "code": "DSPL404",
+      "name": "Optimization Techniques",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr. NELSON JAMES"
+    },
+    {
+      "code": "DSLC301",
+      "name": "Advanced Python Programming",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "DR. VENGATTARAMAN"
+    },
+    {
+      "code": "DSL402",
+      "name": "Machine Learning Lab",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr. S. RAVI"
+    },
+    {
+      "code": "DSL404",
+      "name": "Optimization Techniques Lab",
+      "type": "Hardcore",
+      "hours": 2,
+      "faculty": "Mr. NELSON JAMES"
+    }
+  ],
+  "notes": [
+    "Note: DSPL404 (Optimization Techniques) is listed in course details but does not appear in the weekly schedule"
+  ]
+}
+

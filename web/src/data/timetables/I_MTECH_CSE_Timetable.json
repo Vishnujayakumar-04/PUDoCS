@@ -1,0 +1,342 @@
+{
+  "program": "M.Tech CSE",
+  "year": 1,
+  "class": "I M.Tech CSE",
+  "room": "104 – Ground Floor (Annexe Building)",
+  "schedule": [
+    {
+      "day": "Monday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Advanced Operating Systems",
+          "subjectCode": "CSCS701",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. R. SUNITHA"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Advanced Operating Systems",
+          "subjectCode": "CSCS701",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. R. SUNITHA"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Blockchain Technology",
+          "subjectCode": "CSCS703",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. R. SUBRAMANIAN"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Blockchain Technology",
+          "subjectCode": "CSCS703",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. R. SUBRAMANIAN"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Operating Systems Lab",
+          "subjectCode": "CSCS781",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. R. SUNITHA"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "04:30 PM",
+          "endTime": "05:30 PM",
+          "subject": "Operating Systems Lab",
+          "subjectCode": "CSCS781",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. R. SUNITHA"
+          },
+          "room": "104"
+        }
+      ]
+    },
+    {
+      "day": "Tuesday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Machine Learning",
+          "subjectCode": "CSCS702",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. V. UMA"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Machine Learning",
+          "subjectCode": "CSCS702",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. V. UMA"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Advanced Operating Systems",
+          "subjectCode": "CSCS701",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. R. SUNITHA"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Advanced Operating Systems",
+          "subjectCode": "CSCS701",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. R. SUNITHA"
+          },
+          "room": "104"
+        }
+      ]
+    },
+    {
+      "day": "Wednesday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Advanced Algorithms",
+          "subjectCode": "CSCS704",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. B. KAVITHA"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Advanced Algorithms",
+          "subjectCode": "CSCS704",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. B. KAVITHA"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Advanced Algorithms",
+          "subjectCode": "CSCS704",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. B. KAVITHA"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "01:30 PM",
+          "endTime": "02:30 PM",
+          "subject": "Machine Learning Lab",
+          "subjectCode": "CSCS782",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. V. UMA"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Machine Learning Lab",
+          "subjectCode": "CSCS782",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. V. UMA"
+          },
+          "room": "104"
+        }
+      ]
+    },
+    {
+      "day": "Thursday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Blockchain Technology",
+          "subjectCode": "CSCS703",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. R. SUBRAMANIAN"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Blockchain Technology",
+          "subjectCode": "CSCS703",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. R. SUBRAMANIAN"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Machine Learning",
+          "subjectCode": "CSCS702",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. V. UMA"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Machine Learning",
+          "subjectCode": "CSCS702",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. V. UMA"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Operating Systems Lab",
+          "subjectCode": "CSCS781",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. R. SUNITHA"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Operating Systems Lab",
+          "subjectCode": "CSCS781",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. R. SUNITHA"
+          },
+          "room": "104"
+        }
+      ]
+    },
+    {
+      "day": "Friday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Machine Learning Lab",
+          "subjectCode": "CSCS782",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. V. UMA"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Machine Learning Lab",
+          "subjectCode": "CSCS782",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. V. UMA"
+          },
+          "room": "104"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Machine Learning Lab",
+          "subjectCode": "CSCS782",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. V. UMA"
+          },
+          "room": "104"
+        }
+      ]
+    }
+  ],
+  "subjects": [
+    {
+      "code": "CSCS701",
+      "name": "Advanced Operating Systems",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr. R. SUNITHA"
+    },
+    {
+      "code": "CSCS702",
+      "name": "Machine Learning",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr. V. UMA"
+    },
+    {
+      "code": "CSCS703",
+      "name": "Blockchain Technology",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr. R. SUBRAMANIAN"
+    },
+    {
+      "code": "CSCS704",
+      "name": "Advanced Algorithms",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr. B. KAVITHA"
+    },
+    {
+      "code": "CSCS781",
+      "name": "Operating Systems Lab",
+      "type": "Hardcore",
+      "hours": 2,
+      "faculty": "Dr. R. SUNITHA"
+    },
+    {
+      "code": "CSCS782",
+      "name": "Machine Learning Lab",
+      "type": "Hardcore",
+      "hours": 2,
+      "faculty": "Dr. V. UMA"
+    }
+  ]
+}
+

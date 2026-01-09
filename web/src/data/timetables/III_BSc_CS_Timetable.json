@@ -1,0 +1,345 @@
+{
+  "program": "B.Sc CS",
+  "year": 3,
+  "class": "III B.Sc CS",
+  "room": "204 – First Floor (Annexe Building)",
+  "schedule": [
+    {
+      "day": "Monday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Distributed Systems",
+          "subjectCode": "BCMA353",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. T VENGATTARAMAN"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Distributed Systems",
+          "subjectCode": "BCMA353",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. T VENGATTARAMAN"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Management Strategies & Concepts",
+          "subjectCode": "BCMA351",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. RAJPRIYA DARSHINI"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Management Strategies & Concepts",
+          "subjectCode": "BCMA351",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. RAJPRIYA DARSHINI"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Network Programming Lab",
+          "subjectCode": "BCMI356L",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr. R LAKSHMI"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Network Programming Lab",
+          "subjectCode": "BCMI356L",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr. R LAKSHMI"
+          },
+          "room": "204"
+        }
+      ]
+    },
+    {
+      "day": "Tuesday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Network Programming",
+          "subjectCode": "BCMI356",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr. R LAKSHMI"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Network Programming",
+          "subjectCode": "BCMI356",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr. R LAKSHMI"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Software Engineering Theory & Practice",
+          "subjectCode": "BCMA352",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Mr. SEENIVASAN R P"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Distributed Systems",
+          "subjectCode": "BCMA353",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. T VENGATTARAMAN"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "01:30 PM",
+          "endTime": "02:30 PM",
+          "subject": "Operations Research",
+          "subjectCode": "BCMA354",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. M NANDHINI"
+          },
+          "room": "204"
+        }
+      ]
+    },
+    {
+      "day": "Wednesday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Operations Research",
+          "subjectCode": "BCMA354",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. M NANDHINI"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Software Engineering Lab",
+          "subjectCode": "BCMA352L",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Mr. SEENIVASAN R P"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Software Engineering Lab",
+          "subjectCode": "BCMA352L",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Mr. SEENIVASAN R P"
+          },
+          "room": "204"
+        }
+      ]
+    },
+    {
+      "day": "Thursday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Management Strategies & Concepts",
+          "subjectCode": "BCMA351",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. RAJPRIYA DARSHINI"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Operations Research",
+          "subjectCode": "BCMA354",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. M NANDHINI"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Operations Research",
+          "subjectCode": "BCMA354",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. M NANDHINI"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Distributed Systems Lab",
+          "subjectCode": "BCMA353L",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. SUKHVINDER SINGH"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Distributed Systems Lab",
+          "subjectCode": "BCMA353L",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. SUKHVINDER SINGH"
+          },
+          "room": "204"
+        }
+      ]
+    },
+    {
+      "day": "Friday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Software Engineering Theory & Practice",
+          "subjectCode": "BCMA352",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Mr. SEENIVASAN R P"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Software Engineering Theory & Practice",
+          "subjectCode": "BCMA352",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Mr. SEENIVASAN R P"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Network Programming",
+          "subjectCode": "BCMI356",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr. R LAKSHMI"
+          },
+          "room": "204"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Management Strategies & Concepts",
+          "subjectCode": "BCMA351",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. RAJPRIYA DARSHINI"
+          },
+          "room": "204"
+        }
+      ]
+    }
+  ],
+  "subjects": [
+    {
+      "code": "BCMA351",
+      "name": "Management Strategies & Concepts",
+      "type": "Hardcore",
+      "hours": 4,
+      "faculty": "Dr. RAJPRIYA DARSHINI"
+    },
+    {
+      "code": "BCMA352",
+      "name": "Software Engineering Theory & Practice",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Mr. SEENIVASAN R P"
+    },
+    {
+      "code": "BCMA352L",
+      "name": "Software Engineering Lab",
+      "type": "Hardcore",
+      "hours": 2,
+      "faculty": "Mr. SEENIVASAN R P"
+    },
+    {
+      "code": "BCMA353",
+      "name": "Distributed Systems",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr. T VENGATTARAMAN"
+    },
+    {
+      "code": "BCMA353L",
+      "name": "Distributed Systems Lab",
+      "type": "Hardcore",
+      "hours": 2,
+      "faculty": "Dr. SUKHVINDER SINGH"
+    },
+    {
+      "code": "BCMA354",
+      "name": "Operations Research",
+      "type": "Hardcore",
+      "hours": 4,
+      "faculty": "Dr. M NANDHINI"
+    },
+    {
+      "code": "BCMI356",
+      "name": "Network Programming",
+      "type": "Softcore",
+      "hours": 3,
+      "faculty": "Dr. R LAKSHMI"
+    },
+    {
+      "code": "BCMI356L",
+      "name": "Network Programming Lab",
+      "type": "Softcore",
+      "hours": 2,
+      "faculty": "Dr. R LAKSHMI"
+    }
+  ]
+}
+

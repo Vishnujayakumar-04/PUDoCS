@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Dimensions, Linking, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Dimensions, Linking, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -54,7 +54,7 @@ const StudentDirectory = () => {
             } else if (program === 'MCA') {
                 mappedProgram = 'MCA';
             }
-            
+
             const timetableData = await studentService.getTimetable(mappedProgram, year, true);
             setClassTimetable(timetableData);
         } catch (error) {
@@ -73,7 +73,7 @@ const StudentDirectory = () => {
             console.log('=== Loading Students ===');
             console.log('Program:', program);
             console.log('Year:', year, '(type:', typeof year, ')');
-            
+
             // Map program names to database format
             let mappedProgram = program;
             if (program === 'M.Tech DS') {
@@ -83,22 +83,22 @@ const StudentDirectory = () => {
             } else if (program === 'M.Sc DS') {
                 mappedProgram = 'M.Sc Data Analytics';
             }
-            
+
             const data = await studentService.getStudentsByProgram(mappedProgram, year);
-            
+
             console.log('=== Results ===');
             console.log('Received students data:', data?.length || 0, 'students');
-            
+
             if (data && data.length > 0) {
                 console.log('First student sample:', JSON.stringify(data[0], null, 2));
             }
-            
+
             setStudents(data || []);
             setView('directory');
-            
+
             // Load timetable for this class
             loadClassTimetable(program, year);
-            
+
             if (!data || data.length === 0) {
                 console.warn('⚠️ No students found. Possible reasons:');
                 console.warn('1. Students not added to Firestore yet');
@@ -210,12 +210,12 @@ const StudentDirectory = () => {
 
     const renderUGSelection = () => (
         <Animated.View style={[styles.viewContainer, { opacity: fadeAnim }]}>
-            <ScrollView 
+            <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.selectionScrollContent}
             >
-                <ClassroomAllocationTable 
-                    data={ugClassroomAllocation} 
+                <ClassroomAllocationTable
+                    data={ugClassroomAllocation}
                     title="Classroom Allocation - Even Semester (2025 - 2026)"
                 />
                 <ProgramSection
@@ -239,41 +239,41 @@ const StudentDirectory = () => {
 
     const renderPGSelection = () => (
         <Animated.View style={[styles.viewContainer, { opacity: fadeAnim }]}>
-            <ScrollView 
+            <ScrollView
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.selectionScrollContent}
             >
-                <ClassroomAllocationTable 
-                    data={pgClassroomAllocation} 
+                <ClassroomAllocationTable
+                    data={pgClassroomAllocation}
                     title="Classroom Allocation - Even Semester (2025 - 2026)"
                 />
                 <ProgramSection
                     title="M.Sc – Master of Science"
                     items={[
-                        { 
-                            label: 'M.Sc Computer Science – 2nd Year', 
-                            name: 'M.Sc CS', 
-                            year: 2, 
+                        {
+                            label: 'M.Sc Computer Science – 2nd Year',
+                            name: 'M.Sc CS',
+                            year: 2,
                             category: 'PG',
                             classRepBoy: 'Not assigned',
                             classRepGirl: 'Not assigned',
                             staffCoordinator: 'Not assigned',
                             courseCoordinator: 'M.Sc Programmes'
                         },
-                        { 
-                            label: 'M.Sc Data Analytics – 1st Year', 
-                            name: 'M.Sc Data Analytics', 
-                            year: 1, 
+                        {
+                            label: 'M.Sc Data Analytics – 1st Year',
+                            name: 'M.Sc Data Analytics',
+                            year: 1,
                             category: 'PG',
                             classRepBoy: 'Not assigned',
                             classRepGirl: 'Not assigned',
                             staffCoordinator: 'Not assigned',
                             courseCoordinator: 'M.Sc Data Analytics'
                         },
-                        { 
-                            label: 'M.Sc CS Integrated – 1st Year', 
-                            name: 'M.Sc CS Integrated', 
-                            year: 1, 
+                        {
+                            label: 'M.Sc CS Integrated – 1st Year',
+                            name: 'M.Sc CS Integrated',
+                            year: 1,
                             category: 'PG',
                             classRepBoy: 'Not assigned',
                             classRepGirl: 'Not assigned',
@@ -285,20 +285,20 @@ const StudentDirectory = () => {
                 <ProgramSection
                     title="MCA – Master of Applications"
                     items={[
-                        { 
-                            label: 'MCA – 1st Year', 
-                            name: 'MCA', 
-                            year: 1, 
+                        {
+                            label: 'MCA – 1st Year',
+                            name: 'MCA',
+                            year: 1,
                             category: 'PG',
                             classRepBoy: 'Not assigned',
                             classRepGirl: 'Not assigned',
                             staffCoordinator: 'Not assigned',
                             courseCoordinator: 'MCA Programme'
                         },
-                        { 
-                            label: 'MCA – 2nd Year', 
-                            name: 'MCA', 
-                            year: 2, 
+                        {
+                            label: 'MCA – 2nd Year',
+                            name: 'MCA',
+                            year: 2,
                             category: 'PG',
                             classRepBoy: 'Not assigned',
                             classRepGirl: 'Not assigned',
@@ -310,40 +310,40 @@ const StudentDirectory = () => {
                 <ProgramSection
                     title="M.Tech – Master of Technology"
                     items={[
-                        { 
-                            label: 'M.Tech Data Science – 1st Year', 
-                            name: 'M.Tech Data Analytics', 
-                            year: 1, 
+                        {
+                            label: 'M.Tech Data Science – 1st Year',
+                            name: 'M.Tech Data Analytics',
+                            year: 1,
                             category: 'PG',
                             classRepBoy: 'Not assigned',
                             classRepGirl: 'Not assigned',
                             staffCoordinator: 'Not assigned',
                             courseCoordinator: 'M.Tech Data Analytics'
                         },
-                        { 
-                            label: 'M.Tech CSE – 1st Year', 
-                            name: 'M.Tech CSE', 
-                            year: 1, 
+                        {
+                            label: 'M.Tech CSE – 1st Year',
+                            name: 'M.Tech CSE',
+                            year: 1,
                             category: 'PG',
                             classRepBoy: 'Not assigned',
                             classRepGirl: 'Not assigned',
                             staffCoordinator: 'Not assigned',
                             courseCoordinator: 'M.Tech CSE'
                         },
-                        { 
-                            label: 'M.Tech CSE – 2nd Year', 
-                            name: 'M.Tech CSE', 
-                            year: 2, 
+                        {
+                            label: 'M.Tech CSE – 2nd Year',
+                            name: 'M.Tech CSE',
+                            year: 2,
                             category: 'PG',
                             classRepBoy: 'Not assigned',
                             classRepGirl: 'Not assigned',
                             staffCoordinator: 'Not assigned',
                             courseCoordinator: 'M.Tech CSE'
                         },
-                        { 
-                            label: 'M.Tech NIS – 2nd Year', 
-                            name: 'M.Tech NIS', 
-                            year: 2, 
+                        {
+                            label: 'M.Tech NIS – 2nd Year',
+                            name: 'M.Tech NIS',
+                            year: 2,
                             category: 'PG',
                             classRepBoy: 'Not assigned',
                             classRepGirl: 'Not assigned',
@@ -358,7 +358,7 @@ const StudentDirectory = () => {
 
     const renderDirectory = () => (
         <Animated.View style={[styles.directoryContainer, { opacity: fadeAnim }]}>
-            <ScrollView 
+            <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={true}
             >
@@ -391,7 +391,7 @@ const StudentDirectory = () => {
                                 {students.length} {students.length === 1 ? 'Student' : 'Students'}
                             </Text>
                         </View>
-                        
+
                         {/* Table Format */}
                         <Card style={styles.tableCard}>
                             {/* Table Header */}
@@ -400,7 +400,7 @@ const StudentDirectory = () => {
                                 <Text style={[styles.tableHeaderText, styles.regnoColumn]}>Reg No</Text>
                                 <Text style={[styles.tableHeaderText, styles.nameColumn]}>Name</Text>
                             </View>
-                            
+
                             {/* Table Rows */}
                             {students.map((student, index) => {
                                 return (
@@ -422,9 +422,20 @@ const StudentDirectory = () => {
                                         <Text style={[styles.tableCell, styles.regnoColumn]}>
                                             {student.registerNumber || student.RegisterNumber || 'N/A'}
                                         </Text>
-                                        <Text style={[styles.tableCell, styles.nameColumn]} numberOfLines={1}>
-                                            {student.name || student.Name || 'Unknown'}
-                                        </Text>
+                                        <View style={[styles.tableCell, styles.nameColumn, { flexDirection: 'row', alignItems: 'center' }]}>
+                                            <View style={styles.thumbnailContainer}>
+                                                {student.photoUrl ? (
+                                                    <Image source={{ uri: student.photoUrl }} style={styles.thumbnail} />
+                                                ) : (
+                                                    <Text style={styles.thumbnailText}>
+                                                        {(student.name || student.Name || 'U').charAt(0).toUpperCase()}
+                                                    </Text>
+                                                )}
+                                            </View>
+                                            <Text style={styles.nameText} numberOfLines={1}>
+                                                {student.name || student.Name || 'Unknown'}
+                                            </Text>
+                                        </View>
                                     </TouchableOpacity>
                                 );
                             })}
@@ -468,7 +479,7 @@ const StudentDirectory = () => {
                                                 } else if (selectedClass.name === 'MCA') {
                                                     mappedProgram = 'MCA';
                                                 }
-                                                
+
                                                 navigation.navigate('Timetable', {
                                                     program: mappedProgram,
                                                     year: selectedClass.year,
@@ -927,6 +938,30 @@ const styles = StyleSheet.create({
         flex: 2,
         paddingHorizontal: 4, // Less padding on small screens
         minWidth: 100,
+    },
+    thumbnailContainer: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: colors.primary + '15',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 8,
+        overflow: 'hidden',
+    },
+    thumbnail: {
+        width: '100%',
+        height: '100%',
+    },
+    thumbnailText: {
+        fontSize: 10,
+        fontWeight: '700',
+        color: colors.primary,
+    },
+    nameText: {
+        fontSize: 12,
+        color: colors.textPrimary,
+        flex: 1,
     },
     // Classroom Allocation Table Styles
     classroomSection: {

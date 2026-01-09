@@ -11,6 +11,8 @@ import { changePassword } from '../../services/authService';
 import PremiumCard from '../../components/PremiumCard';
 import Button from '../../components/Button';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.75;
@@ -45,6 +47,7 @@ const StudentProfile = ({ navigation }) => {
         motherMobile: '',
         caste: '',
         houseAddress: '',
+        photoUrl: '',
     });
 
     useEffect(() => {
@@ -83,6 +86,7 @@ const StudentProfile = ({ navigation }) => {
                     motherMobile: studentData.motherMobile || '',
                     caste: studentData.caste || '',
                     houseAddress: studentData.houseAddress || '',
+                    photoUrl: studentData.photoUrl || '',
                 });
                 console.log('Profile loaded successfully local:', studentData.name);
             } else {
@@ -107,6 +111,45 @@ const StudentProfile = ({ navigation }) => {
             console.error('Error details:', error.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const pickImage = async () => {
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: 'image/*',
+                copyToCacheDirectory: true,
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const asset = result.assets[0];
+
+                // Convert to base64 to save in AsyncStorage
+                const base64 = await FileSystem.readAsStringAsync(asset.uri, {
+                    encoding: FileSystem.EncodingType.Base64,
+                });
+                const base64String = `data:${asset.mimeType};base64,${base64}`;
+
+                // Update local state
+                setProfile(prev => ({ ...prev, photoUrl: base64String }));
+                setFormData(prev => ({ ...prev, photoUrl: base64String }));
+
+                // Save to storage
+                const studentId = user.uid || user.email;
+                await studentStorageService.updateStudent(studentId, { photoUrl: base64String });
+
+                // Construct and save the profile object
+                const currentProfile = {
+                    ...(profile || {}),
+                    photoUrl: base64String
+                };
+                await AsyncStorage.setItem('user_profile', JSON.stringify(currentProfile));
+
+                Alert.alert('Success', 'Profile photo updated!');
+            }
+        } catch (error) {
+            console.error('Error picking image:', error);
+            Alert.alert('Error', 'Failed to pick image');
         }
     };
 
@@ -373,7 +416,7 @@ const StudentProfile = ({ navigation }) => {
             >
                 {/* Avatar Section */}
                 <View style={styles.avatarSection}>
-                    <View style={styles.avatarContainer}>
+                    <TouchableOpacity style={styles.avatarContainer} onPress={pickImage} activeOpacity={0.9}>
                         <Image
                             source={
                                 profile?.photoUrl
@@ -386,8 +429,11 @@ const StudentProfile = ({ navigation }) => {
                             }
                             style={styles.avatar}
                         />
+                        <View style={styles.cameraBadge}>
+                            <MaterialCommunityIcons name="camera" size={16} color={colors.white} />
+                        </View>
                         <View style={styles.avatarRing} />
-                    </View>
+                    </TouchableOpacity>
                     <Text style={dynamicStyles.studentName}>{profile?.name || 'Student Name'}</Text>
                     <View style={styles.roleBadge}>
                         <Text style={styles.roleText}>Student</Text>
@@ -544,6 +590,23 @@ const StudentProfile = ({ navigation }) => {
                         }}
                         style={styles.changePasswordButton}
                         disabled={profile?.passwordChanged === true}
+                    />
+
+                    <Button
+                        title="Log Out"
+                        onPress={() => {
+                            Alert.alert(
+                                "Logout",
+                                "Are you sure you want to logout?",
+                                [
+                                    { text: "Cancel", style: "cancel" },
+                                    { text: "Logout", onPress: logout, style: 'destructive' }
+                                ]
+                            );
+                        }}
+                        style={{ marginTop: 15, borderColor: colors.error }}
+                        variant="outline"
+                        textStyle={{ color: colors.error }}
                     />
                 </View>
 
@@ -761,7 +824,6 @@ const StudentProfile = ({ navigation }) => {
     );
 };
 
-// ... styles remain mostly same, just add what's needed ...
 const styles = StyleSheet.create({
     // Header
     header: {
@@ -828,6 +890,21 @@ const styles = StyleSheet.create({
         width: 110,
         height: 110,
         borderRadius: 55,
+    },
+    cameraBadge: {
+        position: 'absolute',
+        bottom: 5,
+        right: 5,
+        backgroundColor: colors.primary,
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: colors.white,
+        elevation: 4,
+        zIndex: 10,
     },
     avatarRing: {
         position: 'absolute',

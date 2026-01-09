@@ -14,6 +14,7 @@ import Header from '../../components/Header';
 import colors from '../../styles/colors';
 import staffData from '../../data/staffData';
 import staffImages from '../../assets/staffImages';
+import { moderateScale, verticalScale, getFontSize, getPadding, getMargin } from '../../utils/responsive';
 
 const StudentStaffDirectory = () => {
     const [selectedCategory, setSelectedCategory] = useState('Professor');
@@ -100,7 +101,7 @@ const StudentStaffDirectory = () => {
             >
                 <View style={styles.modalOverlay}>
                     <View style={styles.modalContent}>
-                        <ScrollView>
+                        <ScrollView showsVerticalScrollIndicator={false}>
                             {selectedStaff && (
                                 <>
                                     <Image
@@ -191,7 +192,7 @@ const styles = StyleSheet.create({
     },
     tab: {
         flex: 1,
-        paddingVertical: 14,
+        paddingVertical: getPadding(14),
         alignItems: 'center',
         borderBottomWidth: 3,
         borderBottomColor: 'transparent',
@@ -200,7 +201,7 @@ const styles = StyleSheet.create({
         borderBottomColor: colors.primary,
     },
     tabText: {
-        fontSize: 13,
+        fontSize: getFontSize(13),
         fontWeight: '600',
         color: colors.textSecondary,
     },
@@ -211,7 +212,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scrollContent: {
-        padding: 16,
+        padding: getPadding(16),
     },
     grid: {
         flexDirection: 'row',
@@ -221,39 +222,39 @@ const styles = StyleSheet.create({
     staffCard: {
         width: '48%',
         backgroundColor: colors.white,
-        borderRadius: 12,
-        marginBottom: 16,
+        borderRadius: moderateScale(12),
+        marginBottom: getMargin(16),
         shadowColor: colors.black,
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: verticalScale(2) },
         shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowRadius: moderateScale(4),
         elevation: 3,
         overflow: 'hidden',
     },
     staffImage: {
         width: '100%',
-        height: 180,
+        height: verticalScale(180),
         backgroundColor: colors.gray200,
     },
     staffInfo: {
-        padding: 12,
+        padding: getPadding(12),
     },
     staffName: {
-        fontSize: 14,
+        fontSize: getFontSize(14),
         fontWeight: '600',
         color: colors.textPrimary,
-        marginBottom: 8,
-        minHeight: 36,
+        marginBottom: getMargin(8),
+        minHeight: verticalScale(36),
     },
     designationBadge: {
         backgroundColor: '#FFD700',
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 4,
+        paddingHorizontal: getPadding(8),
+        paddingVertical: getPadding(4),
+        borderRadius: moderateScale(4),
         alignSelf: 'flex-start',
     },
     designationText: {
-        fontSize: 10,
+        fontSize: getFontSize(10),
         fontWeight: '600',
         color: colors.textPrimary,
     },
@@ -261,110 +262,110 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: 'rgba(0,0,0,0.5)',
         justifyContent: 'center',
-        padding: 20,
+        padding: getPadding(20),
     },
     modalContent: {
         backgroundColor: colors.white,
-        borderRadius: 12,
-        padding: 20,
+        borderRadius: moderateScale(12),
+        padding: getPadding(20),
         maxHeight: '90%',
     },
     modalImage: {
         width: '100%',
-        height: 250,
-        borderRadius: 12,
-        marginBottom: 16,
+        height: verticalScale(250),
+        borderRadius: moderateScale(12),
+        marginBottom: getMargin(16),
         backgroundColor: colors.gray200,
     },
     modalName: {
-        fontSize: 22,
+        fontSize: getFontSize(22),
         fontWeight: 'bold',
         color: colors.textPrimary,
-        marginBottom: 12,
+        marginBottom: getMargin(12),
         textAlign: 'center',
     },
     modalBadge: {
         backgroundColor: '#FFD700',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 8,
+        paddingHorizontal: getPadding(16),
+        paddingVertical: getPadding(8),
+        borderRadius: moderateScale(8),
         alignSelf: 'center',
-        marginBottom: 20,
+        marginBottom: getMargin(20),
     },
     modalBadgeText: {
-        fontSize: 14,
+        fontSize: getFontSize(14),
         fontWeight: '600',
         color: colors.textPrimary,
     },
     detailSection: {
-        marginBottom: 16,
-        paddingBottom: 16,
+        marginBottom: getMargin(16),
+        paddingBottom: getPadding(16),
         borderBottomWidth: 1,
         borderBottomColor: colors.borderLight,
     },
     detailLabel: {
-        fontSize: 12,
+        fontSize: getFontSize(12),
         fontWeight: '600',
         color: colors.textSecondary,
-        marginBottom: 6,
+        marginBottom: getMargin(6),
         textTransform: 'uppercase',
     },
     detailValue: {
-        fontSize: 15,
+        fontSize: getFontSize(15),
         color: colors.textPrimary,
-        lineHeight: 22,
+        lineHeight: getFontSize(22),
     },
     subjectItem: {
         flexDirection: 'row',
-        marginBottom: 4,
+        marginBottom: getMargin(4),
     },
     bullet: {
-        fontSize: 15,
+        fontSize: getFontSize(15),
         color: colors.primary,
-        marginRight: 8,
+        marginRight: getMargin(8),
     },
     subjectText: {
-        fontSize: 15,
+        fontSize: getFontSize(15),
         color: colors.textPrimary,
         flex: 1,
     },
     contactSection: {
-        marginTop: 8,
-        gap: 12,
+        marginTop: getMargin(8),
+        gap: getMargin(12),
     },
     contactButton: {
         flexDirection: 'row',
         alignItems: 'center',
         backgroundColor: colors.gray50,
-        padding: 12,
-        borderRadius: 8,
+        padding: getPadding(12),
+        borderRadius: moderateScale(8),
         borderWidth: 1,
         borderColor: colors.border,
     },
     contactLabel: {
-        fontSize: 12,
+        fontSize: getFontSize(12),
         color: colors.textSecondary,
-        marginRight: 12,
+        marginRight: getMargin(12),
         fontWeight: '600',
         textTransform: 'uppercase',
-        width: 60, // Fixed width for alignment
+        width: moderateScale(60), // Fixed width for alignment
     },
     contactText: {
-        fontSize: 14,
+        fontSize: getFontSize(14),
         color: colors.primary,
         flex: 1,
         fontWeight: '500',
     },
     closeButton: {
         backgroundColor: colors.primary,
-        paddingVertical: 14,
-        borderRadius: 8,
+        paddingVertical: getPadding(14),
+        borderRadius: moderateScale(8),
         alignItems: 'center',
-        marginTop: 16,
+        marginTop: getMargin(16),
     },
     closeButtonText: {
         color: colors.white,
-        fontSize: 16,
+        fontSize: getFontSize(16),
         fontWeight: '600',
     },
 });

@@ -1,0 +1,348 @@
+{
+  "program": "M.Tech DS",
+  "year": "I",
+  "class": "I MTECH DS",
+  "room": "SH 310",
+  "location": "Second Floor (East)",
+  "schedule": [
+    {
+      "day": "Monday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Machine Learning and Deep Learning",
+          "subjectCode": "CSDS751",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr M SATHYA"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Machine Learning and Deep Learning",
+          "subjectCode": "CSDS751",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr M SATHYA"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Big Data Analytics",
+          "subjectCode": "CSDS752",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. AMRITHA SARAVANAN"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Security for Data Science",
+          "subjectCode": "CSDS753T",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr T CHITHRALEKHA"
+          },
+          "room": "SH 310"
+        }
+      ]
+    },
+    {
+      "day": "Tuesday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Laboratory - III (Machine Learning Lab)",
+          "subjectCode": "CSDS754",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr M SATHYA"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Laboratory - III (Machine Learning Lab)",
+          "subjectCode": "CSDS754",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr M SATHYA"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Laboratory - III (Machine Learning Lab)",
+          "subjectCode": "CSDS754",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr M SATHYA"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Cloud Computing",
+          "subjectCode": "CSDS772",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr SKV JAYAKUMAR"
+          },
+          "room": "SH 310"
+        }
+      ]
+    },
+    {
+      "day": "Wednesday",
+      "slots": [
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Computational Intelligence",
+          "subjectCode": "CSDS777",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr K SURESH JOSEPH"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Machine Learning and Deep Learning",
+          "subjectCode": "CSDS751",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr M SATHYA"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "01:30 PM",
+          "endTime": "02:30 PM",
+          "subject": "Laboratory - IV (Big Data Analytics Lab)",
+          "subjectCode": "CSDS755",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. JEYAKODI"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Laboratory - IV (Big Data Analytics Lab)",
+          "subjectCode": "CSDS755",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. JEYAKODI"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Laboratory - IV (Big Data Analytics Lab)",
+          "subjectCode": "CSDS755",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. JEYAKODI"
+          },
+          "room": "SH 310"
+        }
+      ]
+    },
+    {
+      "day": "Thursday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Cloud Computing",
+          "subjectCode": "CSDS772",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr SKV JAYAKUMAR"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Cloud Computing",
+          "subjectCode": "CSDS772",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr SKV JAYAKUMAR"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Big Data Analytics",
+          "subjectCode": "CSDS752",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. AMRITHA SARAVANAN"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Big Data Analytics",
+          "subjectCode": "CSDS752",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr. AMRITHA SARAVANAN"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Security for DS Lab",
+          "subjectCode": "CSDS753L",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr T CHITHRALEKHA"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "04:30 PM",
+          "endTime": "05:30 PM",
+          "subject": "Security for DS Lab",
+          "subjectCode": "CSDS753L",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr T CHITHRALEKHA"
+          },
+          "room": "SH 310"
+        }
+      ]
+    },
+    {
+      "day": "Friday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Security for Data Science",
+          "subjectCode": "CSDS753T",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr T CHITHRALEKHA"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Security for Data Science",
+          "subjectCode": "CSDS753T",
+          "type": "Hardcore",
+          "faculty": {
+            "name": "Dr T CHITHRALEKHA"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Computational Intelligence",
+          "subjectCode": "CSDS777",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr K SURESH JOSEPH"
+          },
+          "room": "SH 310"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Computational Intelligence",
+          "subjectCode": "CSDS777",
+          "type": "Softcore",
+          "faculty": {
+            "name": "Dr K SURESH JOSEPH"
+          },
+          "room": "SH 310"
+        }
+      ]
+    }
+  ],
+  "subjects": [
+    {
+      "code": "CSDS751",
+      "name": "Machine Learning and Deep Learning",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr M SATHYA"
+    },
+    {
+      "code": "CSDS752",
+      "name": "Big Data Analytics",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr. AMRITHA SARAVANAN"
+    },
+    {
+      "code": "CSDS753L",
+      "name": "Security for DS Lab",
+      "type": "Hardcore",
+      "hours": 2,
+      "faculty": "Dr T CHITHRALEKHA"
+    },
+    {
+      "code": "CSDS753T",
+      "name": "Security for Data Science",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr T CHITHRALEKHA"
+    },
+    {
+      "code": "CSDS754",
+      "name": "Laboratory - III (Machine Learning Lab)",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr M SATHYA"
+    },
+    {
+      "code": "CSDS755",
+      "name": "Laboratory - IV (Big Data Analytics Lab)",
+      "type": "Hardcore",
+      "hours": 3,
+      "faculty": "Dr. JEYAKODI"
+    },
+    {
+      "code": "CSDS772",
+      "name": "Cloud Computing",
+      "type": "Softcore",
+      "hours": 3,
+      "faculty": "Dr SKV JAYAKUMAR"
+    },
+    {
+      "code": "CSDS777",
+      "name": "Computational Intelligence",
+      "type": "Softcore",
+      "hours": 3,
+      "faculty": "Dr K SURESH JOSEPH"
+    }
+  ],
+  "createdAt": "2025-01-27T00:00:00.000Z",
+  "updatedAt": "2025-01-27T00:00:00.000Z"
+}
+

@@ -1,0 +1,68 @@
+{
+  "program": "MCA",
+  "year": "II",
+  "class": "II MCA",
+  "room": "First Floor Lab",
+  "location": "First Floor",
+  "schedule": [
+    {
+      "day": "Tuesday",
+      "slots": [
+        {
+          "startTime": "01:30 PM",
+          "endTime": "02:30 PM",
+          "subject": "Project Work",
+          "subjectCode": "CSCA 521",
+          "type": "Project",
+          "faculty": {
+            "name": "GUIDE"
+          },
+          "room": "First Floor Lab"
+        },
+        {
+          "startTime": "02:30 PM",
+          "endTime": "03:30 PM",
+          "subject": "Project Work",
+          "subjectCode": "CSCA 521",
+          "type": "Project",
+          "faculty": {
+            "name": "GUIDE"
+          },
+          "room": "First Floor Lab"
+        },
+        {
+          "startTime": "03:30 PM",
+          "endTime": "04:30 PM",
+          "subject": "Project Work",
+          "subjectCode": "CSCA 521",
+          "type": "Project",
+          "faculty": {
+            "name": "GUIDE"
+          },
+          "room": "First Floor Lab"
+        },
+        {
+          "startTime": "04:30 PM",
+          "endTime": "05:30 PM",
+          "subject": "Project Work",
+          "subjectCode": "CSCA 521",
+          "type": "Project",
+          "faculty": {
+            "name": "GUIDE"
+          },
+          "room": "First Floor Lab"
+        }
+      ]
+    }
+  ],
+  "subjects": [
+    {
+      "code": "CSCA 521",
+      "name": "Project Work",
+      "type": "Project",
+      "hours": 4,
+      "faculty": "GUIDE"
+    }
+  ]
+}
+

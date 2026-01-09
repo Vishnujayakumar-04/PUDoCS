@@ -11,7 +11,7 @@ const CustomBottomTabBar = ({ state, descriptors, navigation }) => {
 
     // Define the 5 main tabs in order
     const mainTabs = ['Dashboard', 'Students', 'StudentDetails', 'Notifications', 'Profile'];
-    
+
     // Map route names to icons
     const getIcon = (routeName, isFocused) => {
         switch (routeName) {
@@ -70,19 +70,19 @@ const CustomBottomTabBar = ({ state, descriptors, navigation }) => {
                             {isCenter ? (
                                 // Center button with green circle
                                 <View style={styles.centerButton}>
-                                    <MaterialCommunityIcons 
-                                        name={icon.name} 
-                                        size={24} 
-                                        color={icon.color} 
+                                    <MaterialCommunityIcons
+                                        name={icon.name}
+                                        size={24}
+                                        color={icon.color}
                                     />
                                 </View>
                             ) : (
                                 // Regular buttons
                                 <View style={styles.regularButton}>
-                                    <MaterialCommunityIcons 
-                                        name={icon.name} 
-                                        size={24} 
-                                        color={icon.color} 
+                                    <MaterialCommunityIcons
+                                        name={icon.name}
+                                        size={24}
+                                        color={icon.color}
                                     />
                                     {/* Green dot for Students tab */}
                                     {routeName === 'Students' && (

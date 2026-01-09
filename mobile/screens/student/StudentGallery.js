@@ -18,47 +18,47 @@ import { galleryService } from '../../services/galleryService';
 
 // Only use static requires from _component_ files, NOT from services!
 const ALUMNI_MEET_IMAGES = [
-    require('../../assets/Gallery/IMG_9554.JPG'),
-    require('../../assets/Gallery/IMG_9555.JPG'),
-    require('../../assets/Gallery/IMG_9562.JPG'),
-    require('../../assets/Gallery/IMG_9569.JPG'),
-    require('../../assets/Gallery/IMG_9621.JPG'),
-    require('../../assets/Gallery/IMG_9655.JPG'),
-    require('../../assets/Gallery/IMG_9659.JPG'),
-    require('../../assets/Gallery/IMG_9663.JPG'),
-    require('../../assets/Gallery/IMG_9666.JPG'),
-    require('../../assets/Gallery/IMG_9675.JPG'),
-    require('../../assets/Gallery/IMG_9684.JPG'),
-    require('../../assets/Gallery/IMG_9686.JPG'),
-    require('../../assets/Gallery/IMG_9691.JPG'),
-    require('../../assets/Gallery/IMG_9694.JPG'),
-    require('../../assets/Gallery/IMG_9697.JPG'),
-    require('../../assets/Gallery/IMG_9699.JPG'),
-    require('../../assets/Gallery/IMG_9703.JPG'),
-    require('../../assets/Gallery/IMG_9704.JPG'),
-    require('../../assets/Gallery/IMG_9705.JPG'),
-    require('../../assets/Gallery/IMG_9706.JPG'),
-    require('../../assets/Gallery/IMG_9707.JPG'),
-    require('../../assets/Gallery/IMG_9708.JPG'),
-    require('../../assets/Gallery/IMG_9711.JPG'),
-    require('../../assets/Gallery/IMG_9717.JPG'),
-    require('../../assets/Gallery/IMG_9719.JPG'),
-    require('../../assets/Gallery/IMG_9721.JPG'),
-    require('../../assets/Gallery/IMG_9723.JPG'),
-    require('../../assets/Gallery/IMG_9726.JPG'),
-    require('../../assets/Gallery/IMG_9728.JPG'),
-    require('../../assets/Gallery/IMG_9730.JPG'),
+    require('../../assets/Gallery/IMG_9554.jpg'),
+    require('../../assets/Gallery/IMG_9555.jpg'),
+    require('../../assets/Gallery/IMG_9562.jpg'),
+    require('../../assets/Gallery/IMG_9569.jpg'),
+    require('../../assets/Gallery/IMG_9621.jpg'),
+    require('../../assets/Gallery/IMG_9655.jpg'),
+    require('../../assets/Gallery/IMG_9659.jpg'),
+    require('../../assets/Gallery/IMG_9663.jpg'),
+    require('../../assets/Gallery/IMG_9666.jpg'),
+    require('../../assets/Gallery/IMG_9675.jpg'),
+    require('../../assets/Gallery/IMG_9684.jpg'),
+    require('../../assets/Gallery/IMG_9686.jpg'),
+    require('../../assets/Gallery/IMG_9691.jpg'),
+    require('../../assets/Gallery/IMG_9694.jpg'),
+    require('../../assets/Gallery/IMG_9697.jpg'),
+    require('../../assets/Gallery/IMG_9699.jpg'),
+    require('../../assets/Gallery/IMG_9703.jpg'),
+    require('../../assets/Gallery/IMG_9704.jpg'),
+    require('../../assets/Gallery/IMG_9705.jpg'),
+    require('../../assets/Gallery/IMG_9706.jpg'),
+    require('../../assets/Gallery/IMG_9707.jpg'),
+    require('../../assets/Gallery/IMG_9708.jpg'),
+    require('../../assets/Gallery/IMG_9711.jpg'),
+    require('../../assets/Gallery/IMG_9717.jpg'),
+    require('../../assets/Gallery/IMG_9719.jpg'),
+    require('../../assets/Gallery/IMG_9721.jpg'),
+    require('../../assets/Gallery/IMG_9723.jpg'),
+    require('../../assets/Gallery/IMG_9726.jpg'),
+    require('../../assets/Gallery/IMG_9728.jpg'),
+    require('../../assets/Gallery/IMG_9730.jpg'),
     require('../../assets/Gallery/Artboard 2.png'),
     require('../../assets/Gallery/Invitation.png'),
-    require('../../assets/Gallery/4.JPG'),
-    require('../../assets/Gallery/5.JPG'),
-    require('../../assets/Gallery/6.JPG'),
-    require('../../assets/Gallery/IMG_0036.JPG'),
-    require('../../assets/Gallery/IMG_0038.JPG'),
-    require('../../assets/Gallery/IMG_0056.JPG'),
-    require('../../assets/Gallery/IMG_0066.JPG'),
-    require('../../assets/Gallery/IMG_9517.JPG'),
-    require('../../assets/Gallery/IMG_9546.JPG'),
+    require('../../assets/Gallery/4.jpg'),
+    require('../../assets/Gallery/5.jpg'),
+    require('../../assets/Gallery/6.jpg'),
+    require('../../assets/Gallery/IMG_0036.jpg'),
+    require('../../assets/Gallery/IMG_0038.jpg'),
+    require('../../assets/Gallery/IMG_0056.jpg'),
+    require('../../assets/Gallery/IMG_0066.jpg'),
+    require('../../assets/Gallery/IMG_9517.jpg'),
+    require('../../assets/Gallery/IMG_9546.jpg'),
 ];
 import PremiumHeader from '../../components/PremiumHeader';
 import PremiumCard from '../../components/PremiumCard';
@@ -116,7 +116,7 @@ const StudentGallery = ({ navigation }) => {
             if (!hasAlumniMeet) {
                 const images = ALUMNI_MEET_IMAGES.map((img, i) => ({
                     url: Image.resolveAssetSource(img).uri,
-                    name: `alumni_meet_${i+1}.jpg`,
+                    name: `alumni_meet_${i + 1}.jpg`,
                     order: i,
                 }));
                 const newAlbum = {
@@ -299,8 +299,8 @@ const StudentGallery = ({ navigation }) => {
                                         });
                                     }}
                                     renderItem={({ item, index }) => (
-                                        <ImageItem 
-                                            item={item} 
+                                        <ImageItem
+                                            item={item}
                                             index={index}
                                             isActive={index === selectedImageIndex}
                                         />

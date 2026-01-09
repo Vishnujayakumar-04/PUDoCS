@@ -8,6 +8,7 @@ import {
     KeyboardAvoidingView,
     Platform,
     Alert,
+    useWindowDimensions
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../context/AuthContext';
@@ -21,6 +22,9 @@ const LoginScreen = ({ route, navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+
+    const { width } = useWindowDimensions();
+    const isLargeScreen = width > 768;
 
     const handleLogin = async () => {
         if (!email || !password) {
@@ -59,7 +63,7 @@ const LoginScreen = ({ route, navigation }) => {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardView}
             >
-                <View style={styles.content}>
+                <View style={[styles.content, isLargeScreen && styles.contentLarge]}>
                     {/* Top Bar for Role Badge */}
                     <View style={styles.topBar}>
                         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backLink}>
@@ -131,6 +135,63 @@ const LoginScreen = ({ route, navigation }) => {
                                                     Password: Office@123
                                                 </Text>
                                             )}
+
+                                            {/* Data Migration Tool */}
+                                            <TouchableOpacity
+                                                style={{ marginTop: 15, padding: 8, backgroundColor: colors.accent, borderRadius: 6, alignItems: 'center' }}
+                                                onPress={async () => {
+                                                    try {
+                                                        const { migrationService } = require('../services/migrationService');
+                                                        const { auth } = require('../services/firebaseConfig');
+                                                        const { signInWithEmailAndPassword, createUserWithEmailAndPassword } = require('firebase/auth');
+
+                                                        Alert.alert("Starting Sync...", "Connecting to Firebase...");
+
+                                                        // 1. Auto Login or Register
+                                                        if (!auth.currentUser) {
+                                                            const email = role === 'Staff' ? 'staff@pondiuni.ac.in' : 'office@pondiuni.ac.in';
+                                                            const pwd = role === 'Staff' ? 'Staff@123' : 'Office@123';
+
+                                                            try {
+                                                                console.log(`Attempting login for ${email}`);
+                                                                await signInWithEmailAndPassword(auth, email, pwd);
+                                                            } catch (loginError) {
+                                                                console.log("Login failed, attempting registration...", loginError.code);
+                                                                // If user doesn't exist or invalid credential, try creating it
+                                                                if (loginError.code === 'auth/user-not-found' || loginError.code === 'auth/invalid-credential' || loginError.code === 'auth/wrong-password') {
+                                                                    try {
+                                                                        await createUserWithEmailAndPassword(auth, email, pwd);
+                                                                        Alert.alert("Account Created", "Office/Staff account didn't exist, so it was created automatically.");
+                                                                    } catch (createError) {
+                                                                        if (createError.code === 'auth/email-already-in-use') {
+                                                                            // Edge case: Password was wrong in login, but user exists.
+                                                                            throw new Error("Account exists but password invalid. Please check default credentials.");
+                                                                        }
+                                                                        throw createError;
+                                                                    }
+                                                                } else {
+                                                                    throw loginError;
+                                                                }
+                                                            }
+                                                        }
+
+                                                        Alert.alert("Syncing...", "Uploading data to Firestore. Please wait...");
+
+                                                        // 2. Bootstrap Role
+                                                        await migrationService.bootstrapUserRole(role);
+
+                                                        // 3. Migrate
+                                                        await migrationService.migrateAllData();
+
+                                                        Alert.alert("Success", "Data synchronized to Firebase!");
+                                                    } catch (e) {
+                                                        Alert.alert("Sync Error", e.message);
+                                                        console.error(e);
+                                                    }
+                                                }}
+                                            >
+                                                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>SYNC LOCAL DATA TO FIREBASE</Text>
+                                            </TouchableOpacity>
                                         </View>
                                     )}
                                 </View>
@@ -290,6 +351,11 @@ const styles = StyleSheet.create({
         color: colors.primary,
         fontWeight: '600',
         fontSize: 15,
+    },
+    contentLarge: {
+        width: '100%',
+        maxWidth: 480,
+        alignSelf: 'center',
     },
 });
 

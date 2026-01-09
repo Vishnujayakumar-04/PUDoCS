@@ -1,0 +1,124 @@
+{
+  "program": "M.Sc CS",
+  "year": "II",
+  "class": "II MSC",
+  "room": "First Floor Lab",
+  "location": "First Floor",
+  "schedule": [
+    {
+      "day": "Monday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Project Work",
+          "subjectCode": "CSSC 522 B1",
+          "type": "Project",
+          "faculty": {
+            "name": "PR_SUPERVISOR"
+          },
+          "room": "First Floor Lab"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Project Work",
+          "subjectCode": "CSSC 522 B1",
+          "type": "Project",
+          "faculty": {
+            "name": "PR_SUPERVISOR"
+          },
+          "room": "First Floor Lab"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Project Work",
+          "subjectCode": "CSSC 522 B1",
+          "type": "Project",
+          "faculty": {
+            "name": "PR_SUPERVISOR"
+          },
+          "room": "First Floor Lab"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Project Work",
+          "subjectCode": "CSSC 522 B1",
+          "type": "Project",
+          "faculty": {
+            "name": "PR_SUPERVISOR"
+          },
+          "room": "First Floor Lab"
+        }
+      ]
+    },
+    {
+      "day": "Thursday",
+      "slots": [
+        {
+          "startTime": "09:30 AM",
+          "endTime": "10:30 AM",
+          "subject": "Project Work",
+          "subjectCode": "CSSC 522 B2",
+          "type": "Project",
+          "faculty": {
+            "name": "PR_SUPERVISOR"
+          },
+          "room": "First Floor Lab"
+        },
+        {
+          "startTime": "10:30 AM",
+          "endTime": "11:30 AM",
+          "subject": "Project Work",
+          "subjectCode": "CSSC 522 B2",
+          "type": "Project",
+          "faculty": {
+            "name": "PR_SUPERVISOR"
+          },
+          "room": "First Floor Lab"
+        },
+        {
+          "startTime": "11:30 AM",
+          "endTime": "12:30 PM",
+          "subject": "Project Work",
+          "subjectCode": "CSSC 522 B2",
+          "type": "Project",
+          "faculty": {
+            "name": "PR_SUPERVISOR"
+          },
+          "room": "First Floor Lab"
+        },
+        {
+          "startTime": "12:30 PM",
+          "endTime": "01:30 PM",
+          "subject": "Project Work",
+          "subjectCode": "CSSC 522 B2",
+          "type": "Project",
+          "faculty": {
+            "name": "PR_SUPERVISOR"
+          },
+          "room": "First Floor Lab"
+        }
+      ]
+    }
+  ],
+  "subjects": [
+    {
+      "code": "CSSC 522 B1",
+      "name": "Project Work",
+      "type": "Project",
+      "hours": 4,
+      "faculty": "PR_SUPERVISOR"
+    },
+    {
+      "code": "CSSC 522 B2",
+      "name": "Project Work",
+      "type": "Project",
+      "hours": 4,
+      "faculty": "PR_SUPERVISOR"
+    }
+  ]
+}
+

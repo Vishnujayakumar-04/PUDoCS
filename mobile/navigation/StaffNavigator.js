@@ -2,8 +2,10 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, Platform, useWindowDimensions } from 'react-native';
 import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import CustomBottomTabBarStaff from '../components/CustomBottomTabBarStaff';
+import WebSidebar from '../components/WebSidebar';
 import colors from '../styles/colors';
 
 // Staff screens
@@ -44,139 +46,148 @@ const getTabBarVisibility = (route) => {
 };
 
 const StaffNavigator = () => {
+    const { width } = useWindowDimensions();
+    const isWeb = Platform.OS === 'web' && width > 768;
+
     return (
-        <Tab.Navigator
-            tabBar={(props) => {
-                const route = props.state.routes[props.state.index];
-                if (!getTabBarVisibility(route)) {
-                    return null; // Hide tab bar on sub-pages
-                }
-                return <CustomBottomTabBarStaff {...props} />;
-            }}
-            screenOptions={{
-                headerShown: false,
-            }}
-        >
-            <Tab.Screen
-                name="Dashboard"
-                component={StaffDashboard}
-                options={{
-                    tabBarIcon: ({ focused, color, size }) => (
-                        <MaterialCommunityIcons 
-                            name="home-outline" 
-                            size={size || 24} 
-                            color={color} 
-                        />
-                    ),
+        <View style={{ flex: 1, flexDirection: isWeb ? 'row' : 'column' }}>
+            {isWeb && <WebSidebar role="Staff" />}
+
+            <Tab.Navigator
+                tabBar={(props) => {
+                    if (isWeb) return null;
+
+                    const route = props.state.routes[props.state.index];
+                    if (!getTabBarVisibility(route)) {
+                        return null; // Hide tab bar on sub-pages
+                    }
+                    return <CustomBottomTabBarStaff {...props} />;
                 }}
-            />
-            <Tab.Screen
-                name="Students"
-                component={StaffStudentManagement}
-                options={{
-                    tabBarIcon: ({ focused, color, size }) => (
-                        <MaterialCommunityIcons 
-                            name="account-group-outline" 
-                            size={size || 24} 
-                            color={color} 
-                        />
-                    ),
+                screenOptions={{
+                    headerShown: false,
                 }}
-            />
-            <Tab.Screen
-                name="Notifications"
-                component={StudentNotifications}
-                options={{
-                    tabBarIcon: ({ focused, color, size }) => (
-                        <MaterialCommunityIcons 
-                            name="bell-outline" 
-                            size={size || 24} 
-                            color={color} 
-                        />
-                    ),
-                }}
-            />
-            <Tab.Screen
-                name="Notices"
-                component={StaffNotices}
-                options={{ tabBarButton: () => null }}
-            />
-            <Tab.Screen
-                name="Attendance"
-                component={StaffAttendance}
-                options={{
-                    tabBarIcon: ({ focused, color, size }) => (
-                        <MaterialCommunityIcons 
-                            name="account-check" 
-                            size={size || 24} 
-                            color={color} 
-                        />
-                    ),
-                }}
-            />
-            <Tab.Screen
-                name="Profile"
-                component={StaffProfile}
-                options={{
-                    tabBarIcon: ({ focused, color, size }) => (
-                        <MaterialCommunityIcons 
-                            name="account-outline" 
-                            size={size || 24} 
-                            color={color} 
-                        />
-                    ),
-                }}
-            />
-            <Tab.Screen
-                name="Timetable"
-                component={StudentTimetable}
-                options={{
-                    tabBarButton: () => null,
-                }}
-            />
-            <Tab.Screen
-                name="TimetableManagement"
-                component={StaffTimetable}
-                options={{
-                    tabBarButton: () => null,
-                }}
-            />
-            <Tab.Screen
-                name="Internals"
-                component={StaffInternals}
-                options={{
-                    tabBarButton: () => null,
-                }}
-            />
-            <Tab.Screen
-                name="StaffDirectory"
-                component={StudentStaffDirectory}
-                options={{
-                    tabBarButton: () => null, // Accessible via Dashboard
-                }}
-            />
-            <Tab.Screen
-                name="Events"
-                component={StudentEvents}
-                options={{
-                    tabBarButton: () => null, // Accessible via Dashboard
-                }}
-            />
-            <Tab.Screen
-                name="Gallery"
-                component={StudentGallery}
-                options={{
-                    tabBarButton: () => null, // Accessible via Dashboard
-                }}
-            />
-            <Tab.Screen
-                name="Exams"
-                component={ExamStack}
-                options={{
-                    tabBarButton: () => null, // Accessible via Dashboard
-                }}
-            />
-        </Tab.Navigator>
+            >
+                <Tab.Screen
+                    name="Dashboard"
+                    component={StaffDashboard}
+                    options={{
+                        tabBarIcon: ({ focused, color, size }) => (
+                            <MaterialCommunityIcons
+                                name="home-outline"
+                                size={size || 24}
+                                color={color}
+                            />
+                        ),
+                    }}
+                />
+                <Tab.Screen
+                    name="Students"
+                    component={StaffStudentManagement}
+                    options={{
+                        tabBarIcon: ({ focused, color, size }) => (
+                            <MaterialCommunityIcons
+                                name="account-group-outline"
+                                size={size || 24}
+                                color={color}
+                            />
+                        ),
+                    }}
+                />
+                <Tab.Screen
+                    name="Notifications"
+                    component={StudentNotifications}
+                    options={{
+                        tabBarIcon: ({ focused, color, size }) => (
+                            <MaterialCommunityIcons
+                                name="bell-outline"
+                                size={size || 24}
+                                color={color}
+                            />
+                        ),
+                    }}
+                />
+                <Tab.Screen
+                    name="Notices"
+                    component={StaffNotices}
+                    options={{ tabBarButton: () => null }}
+                />
+                <Tab.Screen
+                    name="Attendance"
+                    component={StaffAttendance}
+                    options={{
+                        tabBarIcon: ({ focused, color, size }) => (
+                            <MaterialCommunityIcons
+                                name="account-check"
+                                size={size || 24}
+                                color={color}
+                            />
+                        ),
+                    }}
+                />
+                <Tab.Screen
+                    name="Profile"
+                    component={StaffProfile}
+                    options={{
+                        tabBarIcon: ({ focused, color, size }) => (
+                            <MaterialCommunityIcons
+                                name="account-outline"
+                                size={size || 24}
+                                color={color}
+                            />
+                        ),
+                    }}
+                />
+                <Tab.Screen
+                    name="Timetable"
+                    component={StudentTimetable}
+                    options={{
+                        tabBarButton: () => null,
+                    }}
+                />
+                <Tab.Screen
+                    name="TimetableManagement"
+                    component={StaffTimetable}
+                    options={{
+                        tabBarButton: () => null,
+                    }}
+                />
+                <Tab.Screen
+                    name="Internals"
+                    component={StaffInternals}
+                    options={{
+                        tabBarButton: () => null,
+                    }}
+                />
+                <Tab.Screen
+                    name="StaffDirectory"
+                    component={StudentStaffDirectory}
+                    options={{
+                        tabBarButton: () => null, // Accessible via Dashboard
+                    }}
+                />
+                <Tab.Screen
+                    name="Events"
+                    component={StudentEvents}
+                    options={{
+                        tabBarButton: () => null, // Accessible via Dashboard
+                    }}
+                />
+                <Tab.Screen
+                    name="Gallery"
+                    component={StudentGallery}
+                    options={{
+                        tabBarButton: () => null, // Accessible via Dashboard
+                    }}
+                />
+                <Tab.Screen
+                    name="Exams"
+                    component={ExamStack}
+                    options={{
+                        tabBarButton: () => null, // Accessible via Dashboard
+                    }}
+                />
+            </Tab.Navigator>
+        </View>
     );
 };
 
