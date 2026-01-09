@@ -21,8 +21,22 @@ import StudentSyllabus from './pages/student/StudentSyllabus';
 import StudentDashboard from './pages/student/StudentDashboard';
 import StaffDashboard from './pages/staff/StaffDashboard';
 import StaffProfile from './pages/staff/StaffProfile';
-import StaffStudentManagement from './pages/staff/StaffStudentManagement';
-// import StaffAttendance from './pages/staff/StaffAttendance';
+import StaffAttendance from './pages/staff/StaffAttendance';
+import StaffGallery from './pages/staff/StaffGallery';
+import StaffTimetable from './pages/staff/StaffTimetable';
+import StaffExams from './pages/staff/StaffExams';
+import StaffInternals from './pages/staff/StaffInternals';
+import StaffNotices from './pages/staff/StaffNotices';
+import StaffEvents from './pages/staff/StaffEvents';
+
+import OfficeDashboard from './pages/office/OfficeDashboard';
+import OfficeFeeManagement from './pages/office/OfficeFeeManagement';
+import OfficeNoticeManagement from './pages/office/OfficeNoticeManagement';
+import OfficeEventManagement from './pages/office/OfficeEventManagement';
+import OfficeAdmissions from './pages/office/OfficeAdmissions';
+import OfficeTimetable from './pages/office/OfficeTimetable';
+import OfficeLetters from './pages/office/OfficeLetters';
+import OfficeSettings from './pages/office/OfficeSettings';
 
 
 
@@ -56,8 +70,23 @@ function App() {
           {/* Staff Routes */}
           <Route path="/staff/dashboard" element={<StaffDashboard />} />
           <Route path="/staff/profile" element={<StaffProfile />} />
-          <Route path="/staff/students" element={<StaffStudentManagement />} />
-          {/* <Route path="/staff/attendance" element={<StaffAttendance />} /> */}
+          <Route path="/staff/attendance" element={<StaffAttendance />} />
+          <Route path="/staff/gallery" element={<StaffGallery />} />
+          <Route path="/staff/timetable" element={<StaffTimetable />} />
+          <Route path="/staff/exams" element={<StaffExams />} />
+          <Route path="/staff/internals" element={<StaffInternals />} />
+          <Route path="/staff/notices" element={<StaffNotices />} />
+          <Route path="/staff/events" element={<StaffEvents />} />
+
+          {/* Office Routes */}
+          <Route path="/office/dashboard" element={<OfficeDashboard />} />
+          <Route path="/office/fees" element={<OfficeFeeManagement />} />
+          <Route path="/office/notices" element={<OfficeNoticeManagement />} />
+          <Route path="/office/events" element={<OfficeEventManagement />} />
+          <Route path="/office/admissions" element={<OfficeAdmissions />} />
+          <Route path="/office/timetable" element={<OfficeTimetable />} />
+          <Route path="/office/letters" element={<OfficeLetters />} />
+          <Route path="/office/settings" element={<OfficeSettings />} />
 
 
         </Routes>

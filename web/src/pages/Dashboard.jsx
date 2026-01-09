@@ -3,15 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, role: authRole } = useAuth();
   const navigate = useNavigate();
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     if (user) {
-      // Determine role from user profile or custom claims
-      // user.role might be on the user object directly or nested in profile
-      const role = user.role || user.profile?.role || 'Student'; // Default to Student if undefined
+      // Prioritize the role from Auth Context, fallback to user profile
+      const role = authRole || user.role || user.profile?.role || 'Student';
 
       console.log('Redirecting based on role:', role);
 

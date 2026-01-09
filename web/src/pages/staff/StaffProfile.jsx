@@ -13,10 +13,11 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { staffService } from '../../services/staffService';
 import { changePassword } from '../../services/authService';
+import staffImages from '../../data/staffImages';
 import Sidebar from '../../components/Sidebar';
 
 const StaffProfile = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, role: authRole } = useAuth();
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -102,9 +103,9 @@ const StaffProfile = () => {
 
     return (
         <div className="flex h-screen bg-gray-50">
-            <Sidebar />
+            <Sidebar role={authRole || 'Staff'} />
 
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden lg:ml-64">
                 {/* Header */}
                 <header className="bg-white shadow-sm z-10">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -128,8 +129,16 @@ const StaffProfile = () => {
                         {/* Profile Card */}
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-8 text-center">
-                                <div className="w-24 h-24 bg-white rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold text-blue-600 border-4 border-blue-200">
-                                    {profile?.name?.charAt(0).toUpperCase()}
+                                <div className="w-32 h-32 bg-white rounded-2xl mx-auto mb-4 flex items-center justify-center text-3xl font-bold text-blue-600 border-4 border-blue-200 overflow-hidden">
+                                    {profile?.photoUrl || staffImages[profile?.imageKey] ? (
+                                        <img
+                                            src={profile.photoUrl || staffImages[profile.imageKey]}
+                                            alt={profile.name}
+                                            className="w-full h-full object-contain bg-gray-50"
+                                        />
+                                    ) : (
+                                        profile?.name?.charAt(0).toUpperCase()
+                                    )}
                                 </div>
                                 <h2 className="text-2xl font-bold text-white mb-1">{profile?.name}</h2>
                                 <p className="text-blue-100">{profile?.email}</p>

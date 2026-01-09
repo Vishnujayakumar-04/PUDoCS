@@ -4,7 +4,7 @@ import { Shield, GraduationCap, Users, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const LoginScreen = () => {
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState(null);
@@ -45,7 +45,30 @@ const LoginScreen = () => {
       await login(email, password, selectedRole);
       navigate('/dashboard');
     } catch (error) {
-      alert('Error: ' + error.message);
+      console.log("Login error:", error);
+
+      const isDefaultAccount = (selectedRole === 'Staff' && email === 'staff@pondiuni.ac.in') ||
+        (selectedRole === 'Office' && email === 'office@pondiuni.ac.in');
+
+      // Check for common firebase error codes for non-existent users
+      const isUserNotFound = error.code === 'auth/user-not-found' ||
+        error.code === 'auth/invalid-credential' ||
+        error.message.includes('invalid-credential');
+
+      if (isDefaultAccount && isUserNotFound) {
+        try {
+          if (window.confirm("Account not found. Create this default account now?")) {
+            await register(email, password, selectedRole);
+            alert("Account created! Logging you in...");
+            navigate('/dashboard');
+            return;
+          }
+        } catch (regError) {
+          alert("Registration failed: " + regError.message);
+        }
+      } else {
+        alert('Login Failed: ' + (error.code || error.message));
+      }
     } finally {
       setLoading(false);
     }

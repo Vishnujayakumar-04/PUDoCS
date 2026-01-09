@@ -175,7 +175,7 @@ const StudentProfile = () => {
         <div className="flex min-h-screen bg-gray-50">
             <Sidebar role="Student" />
 
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex-1 overflow-y-auto lg:ml-64">
                 {/* Header/Banner */}
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-700 h-48 relative">
                     <div className="absolute -bottom-16 left-8 flex items-end">

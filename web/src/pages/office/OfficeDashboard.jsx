@@ -16,26 +16,28 @@ import {
     MapPin,
     Mail,
     LogOut,
-    ChevronRight
+    ChevronRight,
+    CreditCard,
+    FilePlus,
+    School
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { staffService } from '../../services/staffService';
+import { officeService } from '../../services/officeService';
 import Sidebar from '../../components/Sidebar';
 
-const StaffDashboard = () => {
+const OfficeDashboard = () => {
     const { user, logout, role: authRole } = useAuth();
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
     const [notices, setNotices] = useState([]);
     const [events, setEvents] = useState([]);
-    const [upcomingExams, setUpcomingExams] = useState([]);
     const [loading, setLoading] = useState(true);
     const [notificationModalOpen, setNotificationModalOpen] = useState(false);
 
     // Static notifications
     const notifications = [
-        { id: '1', message: 'Examination results have been published.', date: new Date().toISOString() },
-        { id: '2', message: 'The college will reopen on 19-01-2026.', date: new Date().toISOString() },
+        { id: '1', message: 'Fee payment deadline approaching.', date: new Date().toISOString() },
+        { id: '2', message: 'New student applications pending review.', date: new Date().toISOString() },
     ];
 
     useEffect(() => {
@@ -44,16 +46,14 @@ const StaffDashboard = () => {
 
     const loadData = async () => {
         try {
-            const profileData = await staffService.getProfile(user?.uid, user?.email);
+            const profileData = await officeService.getProfile(user?.uid, user?.email);
             setProfile(profileData);
 
-            const dashboardData = await staffService.getDashboard(user?.uid);
-            const noticesData = await staffService.getNotices();
-            const eventsData = await staffService.getEvents();
+            const noticesData = await officeService.getNotices();
+            const eventsData = await officeService.getEvents();
 
             setNotices(noticesData.slice(0, 3));
             setEvents(eventsData.slice(0, 5));
-            setUpcomingExams(dashboardData?.upcomingExams || []);
         } catch (error) {
             console.error('Error loading dashboard:', error);
         } finally {
@@ -75,14 +75,15 @@ const StaffDashboard = () => {
     };
 
     const features = [
-        { title: 'My Students', path: '/staff/students', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { title: 'Attendance', path: '/staff/attendance', icon: CalendarCheck, color: 'text-green-600', bg: 'bg-green-50' },
-        { title: 'Gallery', path: '/staff/gallery', icon: ImageIcon, color: 'text-purple-600', bg: 'bg-purple-50' },
-        { title: 'Timetable', path: '/staff/timetable', icon: CalendarClock, color: 'text-orange-600', bg: 'bg-orange-50' },
-        { title: 'Exams', path: '/staff/exams', icon: FileText, color: 'text-red-600', bg: 'bg-red-50' },
-        { title: 'Internals', path: '/staff/internals', icon: BookOpen, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-        { title: 'Notices', path: '/staff/notices', icon: Bell, color: 'text-pink-600', bg: 'bg-pink-50' },
-        { title: 'Events', path: '/staff/events', icon: Calendar, color: 'text-teal-600', bg: 'bg-teal-50' },
+        { title: 'Staff Management', path: '/office/staff', icon: Users, color: 'text-rose-600', bg: 'bg-rose-50' },
+        { title: 'Student Mgmt', path: '/staff/students', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { title: 'Staff Directory', path: '/student/staff-directory', icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' },
+        { title: 'Fee Management', path: '/office/fees', icon: CreditCard, color: 'text-green-600', bg: 'bg-green-50' },
+        { title: 'Admissions', path: '/office/admissions', icon: FilePlus, color: 'text-purple-600', bg: 'bg-purple-50' },
+        { title: 'Timetable', path: '/office/timetable', icon: CalendarClock, color: 'text-orange-600', bg: 'bg-orange-50' },
+        { title: 'Notices', path: '/office/notices', icon: Bell, color: 'text-pink-600', bg: 'bg-pink-50' },
+        { title: 'Events', path: '/office/events', icon: Calendar, color: 'text-teal-600', bg: 'bg-teal-50' },
+        { title: 'Approve Letters', path: '/office/letters', icon: FileText, color: 'text-indigo-600', bg: 'bg-indigo-50' },
     ];
 
     const getCategoryColor = (category) => {
@@ -105,7 +106,8 @@ const StaffDashboard = () => {
 
     return (
         <div className="flex h-screen bg-gray-50">
-            <Sidebar role={authRole || 'Staff'} />
+            {/* We might need a generic Sidebar or OfficeSidebar later. Retaining Sidebar for now */}
+            <Sidebar role={authRole || 'Office'} />
 
             <div className="flex-1 flex flex-col overflow-hidden lg:ml-64">
                 {/* Header */}
@@ -113,8 +115,8 @@ const StaffDashboard = () => {
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center h-16">
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">Staff Portal</h1>
-                                <p className="text-sm text-gray-500">Faculty Management Dashboard</p>
+                                <h1 className="text-2xl font-bold text-gray-900">Office Portal</h1>
+                                <p className="text-sm text-gray-500">Administration Dashboard</p>
                             </div>
 
                             <div className="flex items-center space-x-4">
@@ -130,14 +132,13 @@ const StaffDashboard = () => {
 
                                 <div
                                     className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
-                                    onClick={() => navigate('/staff/profile')}
                                 >
-                                    <div className="h-9 w-9 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold border border-blue-200">
+                                    <div className="h-9 w-9 bg-purple-100 rounded-full flex items-center justify-center text-purple-700 font-bold border border-purple-200">
                                         {profile?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                                     </div>
                                     <div className="hidden md:block text-right">
-                                        <p className="text-sm font-medium text-gray-900">{profile?.name || 'Staff Member'}</p>
-                                        <p className="text-xs text-gray-500">{profile?.designation || 'Faculty'}</p>
+                                        <p className="text-sm font-medium text-gray-900">{profile?.name || 'Office Admin'}</p>
+                                        <p className="text-xs text-gray-500">Administrator</p>
                                     </div>
                                 </div>
                             </div>
@@ -150,14 +151,14 @@ const StaffDashboard = () => {
                     <div className="max-w-7xl mx-auto space-y-8">
 
                         {/* Welcome Card */}
-                        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden">
+                        <div className="bg-gradient-to-r from-purple-600 to-indigo-700 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden">
                             <div className="absolute right-0 top-0 h-full w-1/3 bg-white/10 skew-x-12 transform translate-x-12"></div>
                             <div className="relative z-10">
                                 <h2 className="text-3xl font-bold mb-2">
-                                    Welcome, {profile?.name?.split(' ')[0] || 'Staff'}!
+                                    Welcome, Office Admin!
                                 </h2>
-                                <p className="text-blue-100 text-lg">
-                                    {profile?.designation || 'Faculty'} • {profile?.department || 'Computer Science'}
+                                <p className="text-purple-100 text-lg">
+                                    Manage Department Activities & Student Records
                                 </p>
                             </div>
                         </div>
@@ -173,56 +174,18 @@ const StaffDashboard = () => {
                                     <button
                                         key={index}
                                         onClick={() => navigate(feature.path)}
-                                        className="flex flex-col items-center justify-center p-6 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-100 transition-all group"
+                                        className="flex flex-col items-center justify-center p-6 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-purple-100 transition-all group"
                                     >
                                         <div className={`p-4 rounded-full ${feature.bg} mb-4 group-hover:scale-110 transition-transform`}>
                                             <feature.icon className={`h-6 w-6 ${feature.color}`} />
                                         </div>
-                                        <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">{feature.title}</span>
+                                        <span className="text-sm font-medium text-gray-700 group-hover:text-purple-600">{feature.title}</span>
                                     </button>
                                 ))}
                             </div>
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            {/* Upcoming Exams */}
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                                <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                                    <h3 className="font-bold text-gray-900 flex items-center">
-                                        <FileText className="w-5 h-5 mr-2 text-gray-500" />
-                                        Upcoming Exams
-                                    </h3>
-                                    <button onClick={() => navigate('/staff/exams')} className="text-sm text-blue-600 hover:text-blue-800 font-medium">View All</button>
-                                </div>
-                                <div className="p-4">
-                                    {upcomingExams.length > 0 ? (
-                                        <div className="space-y-4">
-                                            {upcomingExams.slice(0, 3).map((exam) => (
-                                                <div key={exam.id || exam._id} className="flex items-start p-3 bg-gray-50 rounded-lg border border-gray-100">
-                                                    <div className="flex-1">
-                                                        <div className="flex justify-between items-start mb-1">
-                                                            <h4 className="font-semibold text-gray-900">{exam.name || exam.subject}</h4>
-                                                            <span className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800 font-medium">
-                                                                {exam.examType || 'Exam'}
-                                                            </span>
-                                                        </div>
-                                                        <p className="text-sm text-gray-600 mb-1">{exam.subject || exam.program}</p>
-                                                        <p className="text-xs text-gray-500 flex items-center">
-                                                            <Calendar className="w-3 h-3 mr-1" />
-                                                            {formatDate(exam.date)} {exam.startTime ? `• ${exam.startTime}` : ''}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-8 text-gray-500">
-                                            <p>No upcoming exams scheduled</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
                             {/* Recent Notices */}
                             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                                 <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
@@ -230,12 +193,12 @@ const StaffDashboard = () => {
                                         <Bell className="w-5 h-5 mr-2 text-gray-500" />
                                         Recent Notices
                                     </h3>
-                                    <button onClick={() => navigate('/staff/notices')} className="text-sm text-blue-600 hover:text-blue-800 font-medium">View All</button>
+                                    <button onClick={() => navigate('/office/notices')} className="text-sm text-purple-600 hover:text-purple-800 font-medium">View All</button>
                                 </div>
                                 <div className="divide-y divide-gray-100">
                                     {notices.length > 0 ? (
                                         notices.map((notice, index) => (
-                                            <div key={index} className="p-4 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => navigate('/staff/notices')}>
+                                            <div key={index} className="p-4 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => navigate('/office/notices')}>
                                                 <div className="flex justify-between items-start mb-1">
                                                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getCategoryColor(notice.category)}`}>
                                                         {notice.category || 'General'}
@@ -249,6 +212,34 @@ const StaffDashboard = () => {
                                     ) : (
                                         <div className="text-center py-8 text-gray-500">
                                             <p>No new notices</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Recent Events */}
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                                <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                                    <h3 className="font-bold text-gray-900 flex items-center">
+                                        <Calendar className="w-5 h-5 mr-2 text-gray-500" />
+                                        Upcoming Events
+                                    </h3>
+                                    <button onClick={() => navigate('/office/events')} className="text-sm text-purple-600 hover:text-purple-800 font-medium">View All</button>
+                                </div>
+                                <div className="divide-y divide-gray-100">
+                                    {events.length > 0 ? (
+                                        events.map((event, index) => (
+                                            <div key={index} className="p-4 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => navigate('/office/events')}>
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <h4 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-1">{event.name || event.title}</h4>
+                                                    <span className="text-xs text-gray-500">{formatDate(event.date)}</span>
+                                                </div>
+                                                <p className="text-xs text-gray-600 line-clamp-2 pb-1">{event.location || event.venue}</p>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-8 text-gray-500">
+                                            <p>No upcoming events</p>
                                         </div>
                                     )}
                                 </div>
@@ -314,4 +305,4 @@ const StaffDashboard = () => {
     );
 };
 
-export default StaffDashboard;
+export default OfficeDashboard;

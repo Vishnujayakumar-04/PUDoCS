@@ -36,6 +36,7 @@ const Sidebar = ({ role = 'Student' }) => {
     const studentLinks = [
         { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
         { name: 'Profile', path: '/student/profile', icon: User },
+        { name: 'Staff Directory', path: '/student/staff-directory', icon: Users },
         { name: 'Students', path: '/student/directory', icon: Users },
         { name: 'Timetable', path: '/student/timetable', icon: Calendar },
         { name: 'Syllabus', path: '/student/syllabus', icon: FileText },
@@ -48,19 +49,28 @@ const Sidebar = ({ role = 'Student' }) => {
 
     const staffLinks = [
         { name: 'Dashboard', path: '/staff/dashboard', icon: LayoutDashboard },
-        { name: 'My Students', path: '/staff/students', icon: Users },
         { name: 'Attendance', path: '/staff/attendance', icon: CheckSquare },
         { name: 'Internals', path: '/staff/internals', icon: FileText },
+        { name: 'Exams', path: '/staff/exams', icon: FileText },
         { name: 'Timetable', path: '/staff/timetable', icon: Calendar },
+        { name: 'My Students', path: '/student/directory', icon: Users },
+        { name: 'Staff Directory', path: '/student/staff-directory', icon: Users },
+        { name: 'Notices', path: '/staff/notices', icon: Bell },
+        { name: 'Events', path: '/staff/events', icon: Calendar },
+        { name: 'Gallery', path: '/staff/gallery', icon: ImageIcon },
         { name: 'Profile', path: '/staff/profile', icon: User },
     ];
 
     const officeLinks = [
         { name: 'Dashboard', path: '/office/dashboard', icon: LayoutDashboard },
-        { name: 'Student Mgmt', path: '/office/students', icon: Users },
-        { name: 'Staff Mgmt', path: '/office/staff', icon: Users },
+        { name: 'Staff Directory', path: '/student/staff-directory', icon: Users },
+        { name: 'Student Directory', path: '/student/directory', icon: Users },
         { name: 'Fee Mgmt', path: '/office/fees', icon: CreditCard },
+        { name: 'Admissions', path: '/office/admissions', icon: FileText },
+        { name: 'Timetable', path: '/office/timetable', icon: Calendar },
         { name: 'Notices', path: '/office/notices', icon: Bell },
+        { name: 'Events', path: '/office/events', icon: Calendar },
+        { name: 'Letters', path: '/office/letters', icon: FileText },
         { name: 'Settings', path: '/office/settings', icon: Settings },
     ];
 

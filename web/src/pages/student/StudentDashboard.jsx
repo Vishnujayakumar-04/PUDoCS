@@ -15,7 +15,7 @@ import { studentService } from '../../services/studentService';
 import Sidebar from '../../components/Sidebar';
 
 const StudentDashboard = () => {
-    const { user } = useAuth();
+    const { user, role: authRole } = useAuth();
     const navigate = useNavigate();
     const [profile, setProfile] = useState(null);
     const [notices, setNotices] = useState([]);
@@ -97,7 +97,7 @@ const StudentDashboard = () => {
 
     return (
         <div className="flex min-h-screen bg-gray-50">
-            <Sidebar />
+            <Sidebar role={authRole || 'Student'} />
 
             <div className="flex-1 flex flex-col ml-0 lg:ml-64">
                 {/* Header */}

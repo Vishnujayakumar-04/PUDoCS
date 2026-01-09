@@ -1,29 +1,58 @@
-import { localDataService } from './localDataService';
-import { studentStorageService } from './studentStorageService';
-
-// Mock data for assets that might be missing
-const ALUMNI_MEET_IMAGE = '/assets/Notice/Alumini meet.jpeg'; // Ensure this path exists or use a placeholder
+import { db } from './firebaseConfig';
+import {
+    collection,
+    doc,
+    getDoc,
+    getDocs,
+    query,
+    where,
+    orderBy,
+    limit,
+    setDoc,
+    updateDoc,
+    deleteDoc
+} from 'firebase/firestore';
+import { storage } from './firebaseConfig';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getStudentCollectionName } from '../utils/collectionMapper';
 
 export const staffService = {
-    // Get staff profile (from local static data or auth)
-    getProfile: async (userId, email) => {
+    // Get staff profile
+    getProfile: async (userId, email = null) => {
         try {
             console.log('🔍 Getting staff profile for:', { userId, email });
 
-            if (email) {
-                const staff = localDataService.getStaffByEmail(email);
-                if (staff) {
-                    console.log('✅ Found staff profile locally:', staff.name);
-                    return { ...staff, id: userId || email };
+            // 1. Try fetching by ID directly from 'staff' collection
+            if (userId) {
+                const docRef = doc(db, 'staff', userId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    console.log('✅ Found staff profile in Firestore (by ID)');
+                    return { id: docSnap.id, ...docSnap.data() };
                 }
             }
 
-            // Fallback to local storage (e.g. newly registered staff)
-            const savedProfile = localStorage.getItem('staff_profile');
-            if (savedProfile) {
-                const parsed = JSON.parse(savedProfile);
-                if (parsed.email === email || parsed.id === userId) {
-                    return parsed;
+            // 2. Query by email
+            if (email) {
+                const q = query(collection(db, 'staff'), where('email', '==', email));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    const docData = querySnapshot.docs[0];
+                    console.log('✅ Found staff profile in Firestore (by Email)');
+                    return { id: docData.id, ...docData.data() };
+                }
+            }
+
+            // 3. Fallback: Search in 'users' collection
+            if (userId) {
+                const userRef = doc(db, 'users', userId);
+                const userSnap = await getDoc(userRef);
+                if (userSnap.exists()) {
+                    const userData = userSnap.data();
+                    if (userData.role === 'Staff' || userData.role === 'Office') {
+                        console.log('✅ Found user profile (Staff/Office)');
+                        return { id: userSnap.id, ...userData };
+                    }
                 }
             }
 
@@ -34,295 +63,119 @@ export const staffService = {
         }
     },
 
-    // Get staff details
-    getStaffDetails: async (email) => {
-        try {
-            const staff = localDataService.getStaffByEmail(email);
-            if (staff) return staff;
-
-            // Check dynamic storage
-            const stored = localStorage.getItem(`staff_${email.toLowerCase()}`);
-            return stored ? JSON.parse(stored) : null;
-        } catch (error) {
-            console.error("Error fetching staff details:", error);
-            return null;
-        }
-    },
-
-    // Get all staff (Static + Dynamic)
+    // Get all staff members (Deduplicated)
     getAllStaff: async () => {
         try {
-            // Get static staff
-            const staticStaff = localDataService.getAllStaff().map(s => ({ ...s, isStatic: true }));
+            console.log('🔍 Fetching all staff from Firestore...');
+            const q = query(collection(db, 'staff'), orderBy('name', 'asc'));
+            const querySnapshot = await getDocs(q);
 
-            // Get dynamic staff list
-            const existingStr = localStorage.getItem('staff_list');
-            const dynamicStaff = existingStr ? JSON.parse(existingStr) : [];
-
-            // Merge (dynamic overrides static if same email)
+            // Deduplicate by email/name
             const staffMap = new Map();
+            querySnapshot.docs.forEach(docSnap => {
+                const data = docSnap.data();
+                const key = data.email?.toLowerCase() || data.name?.toLowerCase();
 
-            // Add static first
-            staticStaff.forEach(s => staffMap.set(s.email.toLowerCase(), s));
-
-            // Add dynamic (overrides)
-            dynamicStaff.forEach(s => staffMap.set(s.email.toLowerCase(), s));
-
-            // Convert back to array
-            return Array.from(staffMap.values());
-        } catch (error) {
-            console.error("Error fetching all staff:", error);
-            const staticStaff = localDataService.getAllStaff();
-            return staticStaff;
-        }
-    },
-
-    // Add a new staff member (Local Storage)
-    addStaff: async (staff) => {
-        try {
-            const email = staff.email?.toLowerCase().trim();
-            if (!email) throw new Error('Email is required');
-
-            const newStaff = { ...staff, email, createdAt: new Date().toISOString() };
-
-            // Save details
-            localStorage.setItem(`staff_${email}`, JSON.stringify(newStaff));
-
-            // Update list
-            const existingStr = localStorage.getItem('staff_list');
-            const list = existingStr ? JSON.parse(existingStr) : [];
-
-            // Remove if exists (update)
-            const filteredList = list.filter(s => s.email.toLowerCase() !== email);
-            filteredList.push(newStaff);
-
-            localStorage.setItem('staff_list', JSON.stringify(filteredList));
-
-            return newStaff;
-        } catch (error) {
-            console.error("Error adding staff:", error);
-            throw error;
-        }
-    },
-
-    // Update existing staff member
-    updateStaff: async (email, updates) => {
-        try {
-            const normalizedEmail = email.toLowerCase().trim();
-            // Try to find in dynamic list first
-            const existingStr = localStorage.getItem('staff_list');
-            const list = existingStr ? JSON.parse(existingStr) : [];
-
-            const index = list.findIndex(s => s.email.toLowerCase() === normalizedEmail);
-
-            let updatedStaff;
-            if (index >= 0) {
-                // Dynamic update
-                updatedStaff = { ...list[index], ...updates, updatedAt: new Date().toISOString() };
-                list[index] = updatedStaff;
-                localStorage.setItem('staff_list', JSON.stringify(list));
-                localStorage.setItem(`staff_${normalizedEmail}`, JSON.stringify(updatedStaff));
-            } else {
-                // Check static
-                const staticStaff = localDataService.getStaffByEmail(normalizedEmail);
-                if (staticStaff) {
-                    // Convert to dynamic
-                    updatedStaff = { ...staticStaff, ...updates, updatedAt: new Date().toISOString() };
-                    list.push(updatedStaff);
-                    localStorage.setItem('staff_list', JSON.stringify(list));
-                    localStorage.setItem(`staff_${normalizedEmail}`, JSON.stringify(updatedStaff));
-                } else {
-                    throw new Error('Staff not found');
+                if (!staffMap.has(key) || (!staffMap.get(key).imageKey && data.imageKey)) {
+                    staffMap.set(key, { id: docSnap.id, ...data });
                 }
-            }
-            return updatedStaff;
-        } catch (error) {
-            console.error("Error updating staff:", error);
-            throw error;
-        }
-    },
-
-    // Soft delete staff member
-    deleteStaff: async (email) => {
-        try {
-            const normalizedEmail = email.toLowerCase().trim();
-
-            // Remove from dynamic list
-            const existingStr = localStorage.getItem('staff_list');
-            if (existingStr) {
-                const list = JSON.parse(existingStr);
-                const filtered = list.filter(s => s.email.toLowerCase() !== normalizedEmail);
-                localStorage.setItem('staff_list', JSON.stringify(filtered));
-            }
-
-            // Remove detail
-            localStorage.removeItem(`staff_${normalizedEmail}`);
-
-            // Mark deleted for static (soft delete implementation if needed, checking deleted keys)
-            localStorage.setItem(`staff_deleted_${normalizedEmail}`, 'true');
-
-            return true;
-        } catch (error) {
-            console.error("Error deleting staff:", error);
-            throw error;
-        }
-    },
-
-    // Get dashboard stats
-    getDashboard: async (userId) => {
-        return {
-            assignedClasses: [],
-            upcomingExams: [
-                { id: '1', subject: "Advanced Database Systems", date: new Date(Date.now() + 86400000).toISOString() },
-                { id: '2', subject: "Modern Operating Systems", date: new Date(Date.now() + 172800000).toISOString() }
-            ],
-            recentNotices: [
-                { id: '1', title: "Internal Assessment", createdAt: new Date().toISOString() }
-            ]
-        };
-    },
-
-    // Student management - fetches from localDataService
-    getStudents: async (filters = {}) => {
-        try {
-            console.log('Fetching students with filters:', filters);
-
-            // 1. Get static students
-            const programs = localDataService.getAvailablePrograms();
-            let allStudents = [];
-
-            for (const program of programs) {
-                // Search up to 5 years (for integrated/BTech)
-                const years = ["1", "2", "3", "4", "5", "6"];
-                for (const year of years) {
-                    const students = localDataService.getStudents(program, year);
-                    if (students) {
-                        const hydrated = students.map(s => ({
-                            ...s,
-                            id: s.registerNumber,
-                            program,
-                            year: parseInt(year),
-                            isStatic: true,
-                            email: s.email || `${s.registerNumber.toLowerCase()}@pondiuni.ac.in`
-                        }));
-                        allStudents = [...allStudents, ...hydrated];
-                    }
-                }
-            }
-
-            // 2. Get dynamic students (from localStorage via studentStorageService)
-            const dynamicStudents = await studentStorageService.getStudents();
-
-            // 3. Merge (dynamic overrides static)
-            const studentMap = new Map();
-            allStudents.forEach(s => studentMap.set(s.registerNumber, s));
-            dynamicStudents.forEach(s => {
-                const existing = studentMap.get(s.registerNumber);
-                studentMap.set(s.registerNumber, { ...existing, ...s, isStatic: false });
             });
 
-            let mergedStudents = Array.from(studentMap.values());
-
-            // 4. Apply Filters
-            if (filters.course) {
-                mergedStudents = mergedStudents.filter(s => s.course === filters.course);
-            }
-            if (filters.program) {
-                // Flexible matching for program names
-                const searchProgram = filters.program.toLowerCase();
-                mergedStudents = mergedStudents.filter(s =>
-                    s.program?.toLowerCase().includes(searchProgram)
-                );
-            }
-            if (filters.year) {
-                mergedStudents = mergedStudents.filter(s => String(s.year) === String(filters.year));
-            }
-
-            // Only return active students by default
-            return mergedStudents.filter(s => s.isActive !== false);
+            const staffList = Array.from(staffMap.values());
+            console.log(`✅ Returned ${staffList.length} unique staff members`);
+            return staffList;
         } catch (error) {
-            console.error('Error getting students:', error);
+            console.error("Error fetching all staff:", error);
             return [];
         }
     },
 
-    addStudent: async (studentData) => {
-        // Delegate to studentStorageService for local persistence across app
-        return studentStorageService.addStudent(studentData);
+    // Get dashboard data
+    getDashboard: async (userId) => {
+        try {
+            // Mock or fetch from Firestore collections 'exams', 'notices', etc.
+            const examsQ = query(collection(db, 'exams'), orderBy('date', 'asc'), limit(5));
+            const examsSnap = await getDocs(examsQ);
+
+            return {
+                assignedClasses: [],
+                upcomingExams: examsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
+                recentNotices: []
+            };
+        } catch (e) {
+            return { upcomingExams: [], recentNotices: [] };
+        }
     },
 
-    // Bulk add students
-    addStudentsBulk: async (studentsList) => {
-        return studentStorageService.addStudentsBulk(studentsList);
+    // Get Notices
+    getNotices: async () => {
+        try {
+            const q = query(collection(db, 'notices'), orderBy('createdAt', 'desc'), limit(10));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error("Error fetching notices:", error);
+            return [];
+        }
     },
 
-    updateStudent: async (id, studentData) => {
-        return studentStorageService.updateStudent(id, studentData);
+    // Get Events
+    getEvents: async () => {
+        try {
+            const q = query(collection(db, 'events'), orderBy('date', 'asc'), limit(5));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error("Error fetching events:", error);
+            return [];
+        }
     },
 
-    deleteStudent: async (id) => {
-        return studentStorageService.deleteStudent(id);
+    // Student Management (for staff)
+    getStudents: async (filters = {}) => {
+        try {
+            console.log("🔍 Fetching students with filters:", filters);
+
+            // If we have course, program and year, use the partitioned collection
+            if (filters.course && filters.program && filters.year) {
+                const collectionName = getStudentCollectionName(filters.course, filters.program, filters.year);
+                console.log(`📂 Attempting partitioned collection: ${collectionName}`);
+                const qPartition = query(collection(db, collectionName), orderBy('name', 'asc'));
+                const snapshotPartition = await getDocs(qPartition);
+
+                if (!snapshotPartition.empty) {
+                    return snapshotPartition.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                }
+                console.log(`⚠️ Partition ${collectionName} is empty, falling back to global collection`);
+            }
+
+            // Fallback to global 'students' collection or searching all (if needed)
+            let q = collection(db, 'students');
+
+            if (filters.program && filters.year) {
+                q = query(q, where('program', '==', filters.program), where('year', '==', parseInt(filters.year)));
+            } else if (filters.program) {
+                q = query(q, where('program', '==', filters.program));
+            }
+
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error("Error fetching students for staff:", error);
+            return [];
+        }
     },
 
-    // Attendance
-    markAttendance: async ({ studentIds, date, subject, status }) => {
-        // Save to localStorage
-        const key = `attendance_${date}_${subject}`;
-        localStorage.setItem(key, JSON.stringify({ studentIds, status }));
-        return { message: 'Attendance marked locally' };
-    },
-
-    // Timetable
-    manageTimetable: async (timetableData) => {
-        // Mock success, maybe save to localStorage override
-        const key = `timetable_${timetableData.program}_${timetableData.year}`;
-        localStorage.setItem(key, JSON.stringify(timetableData));
-        return { id: Date.now().toString(), ...timetableData };
-    },
-
-    // Exam management
-    createExam: async (examData) => {
-        const id = Date.now().toString();
-        const exam = { id, ...examData, createdAt: new Date().toISOString() };
-
-        // Save to local exams list
-        const existing = localStorage.getItem('exams') || '[]';
-        const exams = JSON.parse(existing);
-        exams.push(exam);
-        localStorage.setItem('exams', JSON.stringify(exams));
-
-        return exam;
-    },
-
-    allocateSeats: async (examId) => {
-        // Dummy allocation
-        return { id: examId, isSeatsAllocated: true, hallAllocations: [] };
-    },
-
-    lockSeats: async (examId) => {
-        return { id: examId, isSeatsLocked: true };
-    },
-
-    // Notices
-    postNotice: async (noticeData) => {
-        const id = Date.now().toString();
-        return { id, ...noticeData };
-    },
-
+    // Create Event
     createEvent: async (eventData) => {
         try {
+            const newDocRef = doc(collection(db, 'events'));
             const event = {
-                id: Date.now().toString(),
+                id: newDocRef.id,
                 ...eventData,
-                createdAt: new Date().toISOString(),
-                type: 'event'
+                createdAt: new Date().toISOString()
             };
-
-            // Save to localStorage (shared with all roles)
-            const existingStr = localStorage.getItem('events');
-            const events = existingStr ? JSON.parse(existingStr) : [];
-            events.unshift(event);
-            localStorage.setItem('events', JSON.stringify(events));
+            await setDoc(newDocRef, event);
             return event;
         } catch (error) {
             console.error('Error creating event:', error);
@@ -330,56 +183,213 @@ export const staffService = {
         }
     },
 
-    // Get notices
-    getNotices: async () => {
-        return [
-            { id: '1', title: "Internal Assessment", content: "Details...", createdAt: new Date().toISOString() }
-        ];
+    // Get Notices
+    getNotices: async (limitCount = 10) => {
+        try {
+            const q = query(collection(db, 'notices'), orderBy('createdAt', 'desc'), limit(limitCount));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error("Error fetching notices:", error);
+            return [];
+        }
     },
 
-    // Get events (shared from localStorage) – seeds Alumni Meet if missing
+    // Get Events
     getEvents: async () => {
         try {
-            const existingStr = localStorage.getItem('events');
-            let events = existingStr ? JSON.parse(existingStr) : [];
-
-            const alreadySeeded = events.some(
-                (e) => e.id === '1' || (e.name || e.title) === 'Alumni Meet 2026'
-            );
-
-            if (!alreadySeeded) {
-                // For web, we can't require images like in React Native. Use a public URL or placeholder.
-                const initialEvent = {
-                    id: '1',
-                    name: 'Alumni Meet 2026',
-                    title: 'Alumni Meet 2026',
-                    category: 'Alumni / University Event',
-                    description:
-                        'The Department of Computer Science, Pondicherry University, through PUDoCS Footprints – Alumni Association, invites alumni to Alumni Meet 2026. The event focuses on reconnecting alumni with the department and reliving memories while strengthening alumni–student–faculty relations.',
-                    theme: 'Retracing where it all began',
-                    date: '2026-01-26',
-                    time: '10:00 AM',
-                    venue: 'Cultural-cum-Convention Centre',
-                    location: 'Cultural-cum-Convention Centre, Pondicherry University',
-                    organizedBy:
-                        'PUDoCS Footprints – Alumni Association\nDepartment of Computer Science\nPondicherry University',
-                    registrationRequired: true,
-                    registrationLink: 'https://forms.gle/Rro7DNsh8VD9Zziz9',
-                    contact: '+91 9346101109',
-                    email: 'footprintscscpu@gmail.com',
-                    image: ALUMNI_MEET_IMAGE, // Use dummy or public path
-                    createdAt: new Date('2026-01-08').toISOString(),
-                    type: 'event',
-                };
-
-                events = [initialEvent, ...events];
-                localStorage.setItem('events', JSON.stringify(events));
-            }
-
-            return events;
+            const q = query(collection(db, 'events'), orderBy('date', 'asc'));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         } catch (error) {
-            console.error('Error getting events:', error);
+            console.error("Error fetching events:", error);
             return [];
+        }
+    },
+
+    addStudent: async (studentData) => {
+        try {
+            const { course, program, year, registerNumber } = studentData;
+            const collectionName = getStudentCollectionName(course || 'PG', program || '', year || 1);
+
+            console.log(`📝 Saving student to: ${collectionName}`);
+            const docRef = doc(db, collectionName, registerNumber);
+            await setDoc(docRef, {
+                ...studentData,
+                createdAt: new Date().toISOString()
+            }, { merge: true });
+
+            // Also save to global for legacy lookups
+            const globalRef = doc(db, 'students', registerNumber);
+            await setDoc(globalRef, {
+                ...studentData,
+                createdAt: new Date().toISOString()
+            }, { merge: true });
+
+            return true;
+        } catch (error) {
+            console.error("Error adding student:", error);
+            throw error;
+        }
+    },
+
+    updateStudent: async (id, studentData) => {
+        try {
+            const { course, program, year } = studentData;
+            const collectionName = getStudentCollectionName(course || 'PG', program || '', year || 1);
+
+            // Update in partitioned
+            const docRef = doc(db, collectionName, id);
+            await updateDoc(docRef, studentData);
+
+            // Update in global
+            try {
+                const globalRef = doc(db, 'students', id);
+                await updateDoc(globalRef, studentData);
+            } catch (e) { /* ignore if not in global */ }
+
+            return true;
+        } catch (error) {
+            console.error("Error updating student:", error);
+            throw error;
+        }
+    },
+
+    deleteStudent: async (id, studentData = {}) => {
+        try {
+            const { course, program, year } = studentData;
+            const collectionName = getStudentCollectionName(course || 'PG', program || '', year || 1);
+
+            // Delete from partitioned
+            const docRef = doc(db, collectionName, id);
+            await deleteDoc(docRef);
+
+            // Delete from global
+            try {
+                const globalRef = doc(db, 'students', id);
+                await deleteDoc(globalRef);
+            } catch (e) { /* ignore */ }
+
+            return true;
+        } catch (error) {
+            console.error("Error deleting student:", error);
+            throw error;
+        }
+    },
+
+    saveAttendance: async (attendanceData) => {
+        try {
+            const attendanceRef = doc(collection(db, 'attendance'));
+            await setDoc(attendanceRef, {
+                ...attendanceData,
+                timestamp: new Date().toISOString()
+            });
+            return { id: attendanceRef.id, success: true };
+        } catch (error) {
+            console.error("Error saving attendance:", error);
+            throw error;
+        }
+    },
+
+    saveInternalMarks: async (marksData) => {
+        try {
+            const marksRef = doc(collection(db, 'internal_marks'));
+            await setDoc(marksRef, {
+                ...marksData,
+                timestamp: new Date().toISOString()
+            });
+            return { id: marksRef.id, success: true };
+        } catch (error) {
+            console.error("Error saving internal marks:", error);
+            throw error;
+        }
+    },
+
+    // Staff Management (for Office)
+    getStaff: async () => {
+        try {
+            const q = query(collection(db, 'staff'), orderBy('name', 'asc'));
+            const snapshot = await getDocs(q);
+
+            // Deduplicate by email or name
+            const staffMap = new Map();
+            snapshot.docs.forEach(docSnap => {
+                const data = docSnap.data();
+                const key = data.email?.toLowerCase().trim() || data.name?.toLowerCase().trim();
+
+                // Prioritize entries with images if duplicate found
+                if (!staffMap.has(key) || (!staffMap.get(key).imageKey && data.imageKey)) {
+                    staffMap.set(key, { id: docSnap.id, ...data });
+                }
+            });
+
+            return Array.from(staffMap.values());
+        } catch (error) {
+            console.error("Error fetching staff for management:", error);
+            return [];
+        }
+    },
+
+    // Update Staff (for Office)
+    updateStaff: async (id, staffData) => {
+        try {
+            const staffRef = doc(db, 'staff', id);
+            await setDoc(staffRef, staffData, { merge: true });
+            return true;
+        } catch (error) {
+            console.error("Error updating staff:", error);
+            throw error;
+        }
+    },
+
+    addStaff: async (staffData) => {
+        try {
+            const staffRef = doc(collection(db, 'staff'));
+            await setDoc(staffRef, {
+                ...staffData,
+                createdAt: new Date().toISOString()
+            });
+            return { id: staffRef.id, success: true };
+        } catch (error) {
+            console.error("Error adding staff:", error);
+            throw error;
+        }
+    },
+
+    deleteStaff: async (id) => {
+        try {
+            const staffRef = doc(db, 'staff', id);
+            await setDoc(staffRef, { deleted: true }, { merge: true });
+            return true;
+        } catch (error) {
+            console.error("Error deleting staff:", error);
+            throw error;
+        }
+    },
+
+    // Upload Staff Image
+    uploadStaffImage: async (file) => {
+        try {
+            const storageRef = ref(storage, `staff_images/${Date.now()}_${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            return downloadURL;
+        } catch (error) {
+            console.error("Error uploading staff image:", error);
+            throw error;
+        }
+    },
+
+    // Upload Student Image
+    uploadStudentImage: async (file) => {
+        try {
+            const storageRef = ref(storage, `student_images/${Date.now()}_${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            return downloadURL;
+        } catch (error) {
+            console.error("Error uploading student image:", error);
+            throw error;
         }
     }
 };

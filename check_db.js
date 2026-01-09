@@ -31,7 +31,11 @@ async function checkDatabase() {
                 // Show first ID as sample
                 const firstDoc = snapshot.docs[0];
                 console.log(`   - Sample ID: ${firstDoc.id}`);
-                // console.log(`   - Sample Data:`, JSON.stringify(firstDoc.data()).substring(0, 100) + "...");
+                if (colName === 'staff') {
+                    snapshot.docs.slice(0, 3).forEach(d => {
+                        console.log(`     - Staff: ${d.data().name}, Key: ${d.data().imageKey}`);
+                    });
+                }
             }
             console.log("");
         } catch (e) {

@@ -10,7 +10,10 @@ import {
     Filter,
     X,
     ChevronRight,
-    Loader2
+    Loader2,
+    Upload,
+    Camera,
+    Image as ImageIcon
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { staffService } from '../../services/staffService';
@@ -22,13 +25,15 @@ import Card from '../../components/Card';
 import Button from '../../components/Button';
 
 const StaffStudentManagement = () => {
-    const { user } = useAuth();
+    const { user, role: authRole } = useAuth();
     const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [importing, setImporting] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
     const [editMode, setEditMode] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     // Filters
     const [filters, setFilters] = useState({
@@ -46,6 +51,7 @@ const StaffStudentManagement = () => {
         program: '',
         year: 1,
         section: 'A',
+        photoUrl: ''
     });
 
     useEffect(() => {
@@ -75,8 +81,25 @@ const StaffStudentManagement = () => {
             program: '',
             year: 1,
             section: 'A',
+            photoUrl: ''
         });
         setModalOpen(true);
+    };
+
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            setUploading(true);
+            const downloadURL = await staffService.uploadStudentImage(file);
+            setFormData(prev => ({ ...prev, photoUrl: downloadURL }));
+        } catch (error) {
+            console.error("Upload error:", error);
+            alert('Error uploading image: ' + error.message);
+        } finally {
+            setUploading(false);
+        }
     };
 
     const handleOpenEditModal = (student) => {
@@ -133,6 +156,14 @@ const StaffStudentManagement = () => {
             try {
                 const result = type === 'msc' ? await addMscCS1stYearStudents() : await addMtechDSStudents();
                 alert(`Successfully imported ${result.success} students. ${result.failed} failed.`);
+
+                // If it was M.Sc CS, let's set the filters to show it
+                if (type === 'msc') {
+                    setFilters({ course: 'PG', program: 'M.Sc CS', year: '1' });
+                } else if (type === 'mtech') {
+                    setFilters({ course: 'PG', program: 'M.Tech DS & AI', year: '1' });
+                }
+
                 loadStudents();
             } catch (error) {
                 alert('Import failed: ' + error.message);
@@ -156,11 +187,17 @@ const StaffStudentManagement = () => {
         }
     };
 
+    const filteredStudents = students.filter(s =>
+        (s.name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (s.registerNumber?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (s.email?.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+
     return (
         <div className="flex h-screen bg-gray-50">
-            <Sidebar />
+            <Sidebar role={authRole || 'Staff'} />
 
-            <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="flex-1 flex flex-col overflow-hidden lg:ml-64">
                 {/* Header */}
                 <header className="bg-white shadow-sm z-10">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
@@ -169,16 +206,6 @@ const StaffStudentManagement = () => {
                             <p className="text-sm text-gray-500">Manage, monitor and import student records</p>
                         </div>
                         <div className="flex space-x-3">
-                            {user?.role === 'Office' && (
-                                <button
-                                    onClick={handleCreateStaffAccounts}
-                                    disabled={importing}
-                                    className="flex items-center px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-colors text-sm font-medium"
-                                >
-                                    <UserPlus className="w-4 h-4 mr-2" />
-                                    {importing ? 'Processing...' : 'Create Staff Accounts'}
-                                </button>
-                            )}
                             <button
                                 onClick={handleOpenAddModal}
                                 className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
@@ -192,6 +219,20 @@ const StaffStudentManagement = () => {
 
                 <main className="flex-1 overflow-y-auto p-6">
                     <div className="max-w-7xl mx-auto space-y-6">
+
+                        {/* Search & Bulk Actions */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search by name, register number or email..."
+                                    className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                />
+                            </div>
+                        </div>
 
                         {/* Filters & Bulk Actions */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
@@ -230,7 +271,7 @@ const StaffStudentManagement = () => {
                                                     <option value="M.Sc DA">M.Sc DA</option>
                                                     <option value="M.Sc CS Integrated">M.Sc CS Integrated</option>
                                                     <option value="MCA">MCA</option>
-                                                    <option value="M.Tech DS">M.Tech DS</option>
+                                                    <option value="M.Tech DS & AI">M.Tech DS & AI</option>
                                                     <option value="M.Tech NIS">M.Tech NIS</option>
                                                     <option value="M.Tech CSE">M.Tech CSE</option>
                                                 </>
@@ -249,39 +290,20 @@ const StaffStudentManagement = () => {
                                         </select>
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => handleBulkImport('msc')}
-                                        disabled={importing}
-                                        className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                                    >
-                                        <Download className="w-4 h-4 mr-2 text-gray-400" />
-                                        M.Sc CS 1st
-                                    </button>
-                                    <button
-                                        onClick={() => handleBulkImport('mtech')}
-                                        disabled={importing}
-                                        className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                                    >
-                                        <Download className="w-4 h-4 mr-2 text-gray-400" />
-                                        M.Tech DS 1st
-                                    </button>
-                                </div>
                             </div>
                         </div>
 
                         {/* Student List */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
-                                <span className="text-sm font-bold text-gray-900">{students.length} Students Found</span>
+                                <span className="text-sm font-bold text-gray-900">{filteredStudents.length} Students Found</span>
                             </div>
-
                             {loading ? (
                                 <div className="flex flex-col items-center justify-center py-20">
                                     <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
                                     <p className="text-gray-500 font-medium">Loading student records...</p>
                                 </div>
-                            ) : students.length > 0 ? (
+                            ) : filteredStudents.length > 0 ? (
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left">
                                         <thead>
@@ -294,7 +316,7 @@ const StaffStudentManagement = () => {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
-                                            {students.map((student) => (
+                                            {filteredStudents.map((student) => (
                                                 <tr key={student.id || student.registerNumber} className="hover:bg-blue-50/30 transition-colors">
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center">
@@ -381,6 +403,51 @@ const StaffStudentManagement = () => {
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                     />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Student Photo</label>
+                                    <div className="space-y-3">
+                                        {formData.photoUrl ? (
+                                            <div className="relative w-full h-40 rounded-xl overflow-hidden border border-gray-100 bg-gray-50 group/img">
+                                                <img
+                                                    src={formData.photoUrl}
+                                                    alt="Student Preview"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                    <label className="p-2 bg-white text-blue-600 rounded-lg cursor-pointer hover:scale-110 transition-transform">
+                                                        <Camera className="w-5 h-5" />
+                                                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                                                    </label>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setFormData(prev => ({ ...prev, photoUrl: '' }))}
+                                                        className="p-2 bg-white text-red-600 rounded-lg hover:scale-110 transition-transform"
+                                                    >
+                                                        <X className="w-5 h-5" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-blue-300 transition-all group overflow-hidden relative">
+                                                {uploading ? (
+                                                    <div className="flex flex-col items-center animate-pulse">
+                                                        <Loader2 className="w-8 h-8 text-blue-500 animate-spin mb-2" />
+                                                        <span className="text-xs font-bold text-gray-400">Uploading...</span>
+                                                    </div>
+                                                ) : (
+                                                    <>
+                                                        <div className="p-4 bg-blue-50 text-blue-600 rounded-2xl mb-2 group-hover:scale-110 transition-transform">
+                                                            <Upload className="w-6 h-6" />
+                                                        </div>
+                                                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Upload Photo</span>
+                                                        <span className="text-[10px] text-gray-400 mt-1">JPG, PNG or GIF</span>
+                                                    </>
+                                                )}
+                                                <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={uploading} />
+                                            </label>
+                                        )}
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Registration Number</label>
