@@ -37,7 +37,7 @@ const AppNavigator = () => {
                         {role === 'Student' && (
                             <Stack.Screen name="StudentApp" component={StudentNavigator} />
                         )}
-                        {role === 'Staff' && (
+                        {(role === 'Staff' || role === 'Faculty') && (
                             <Stack.Screen name="StaffApp" component={StaffNavigator} />
                         )}
                         {role === 'Office' && (

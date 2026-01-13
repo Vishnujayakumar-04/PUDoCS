@@ -40,6 +40,8 @@ import OfficeSettings from './pages/office/OfficeSettings';
 
 
 
+import ProtectedRoute from './components/ProtectedRoute';
+
 function App() {
   return (
     <Router>
@@ -47,48 +49,64 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginScreen />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
           {/* Student Routes */}
-          <Route path="/student/dashboard" element={<StudentDashboard />} />
-          <Route path="/student/profile" element={<StudentProfile />} />
-          <Route path="/student/timetable" element={<StudentTimetable />} />
-          <Route path="/student/attendance" element={<StudentAttendance />} />
-          <Route path="/student/results" element={<StudentResults />} />
-          <Route path="/student/exams" element={<StudentExams />} />
-          <Route path="/student/fees" element={<StudentFees />} />
-          <Route path="/student/syllabus" element={<StudentSyllabus />} />
-          <Route path="/student/notices" element={<StudentNotices />} />
-          <Route path="/student/events" element={<StudentEvents />} />
-          <Route path="/student/documents" element={<StudentDocuments />} />
-          <Route path="/student/letters" element={<StudentLetters />} />
-          <Route path="/student/directory" element={<StudentDirectory />} />
-          <Route path="/student/staff-directory" element={<StudentStaffDirectory />} />
-          <Route path="/student/gallery" element={<StudentGallery />} />
-          <Route path="/student/complaint" element={<StudentComplaint />} />
+          <Route path="/student/*" element={
+            <ProtectedRoute allowedRoles={['Student']}>
+              <Routes>
+                <Route path="dashboard" element={<StudentDashboard />} />
+                <Route path="profile" element={<StudentProfile />} />
+                <Route path="timetable" element={<StudentTimetable />} />
+                <Route path="attendance" element={<StudentAttendance />} />
+                <Route path="results" element={<StudentResults />} />
+                <Route path="exams" element={<StudentExams />} />
+                <Route path="fees" element={<StudentFees />} />
+                <Route path="syllabus" element={<StudentSyllabus />} />
+                <Route path="notices" element={<StudentNotices />} />
+                <Route path="events" element={<StudentEvents />} />
+                <Route path="documents" element={<StudentDocuments />} />
+                <Route path="letters" element={<StudentLetters />} />
+                <Route path="directory" element={<StudentDirectory />} />
+                <Route path="staff-directory" element={<StudentStaffDirectory />} />
+                <Route path="gallery" element={<StudentGallery />} />
+                <Route path="complaint" element={<StudentComplaint />} />
+              </Routes>
+            </ProtectedRoute>
+          } />
 
           {/* Staff Routes */}
-          <Route path="/staff/dashboard" element={<StaffDashboard />} />
-          <Route path="/staff/profile" element={<StaffProfile />} />
-          <Route path="/staff/attendance" element={<StaffAttendance />} />
-          <Route path="/staff/gallery" element={<StaffGallery />} />
-          <Route path="/staff/timetable" element={<StaffTimetable />} />
-          <Route path="/staff/exams" element={<StaffExams />} />
-          <Route path="/staff/internals" element={<StaffInternals />} />
-          <Route path="/staff/notices" element={<StaffNotices />} />
-          <Route path="/staff/events" element={<StaffEvents />} />
+          <Route path="/staff/*" element={
+            <ProtectedRoute allowedRoles={['Staff', 'Faculty']}>
+              <Routes>
+                <Route path="dashboard" element={<StaffDashboard />} />
+                <Route path="profile" element={<StaffProfile />} />
+                <Route path="attendance" element={<StaffAttendance />} />
+                <Route path="gallery" element={<StaffGallery />} />
+                <Route path="timetable" element={<StaffTimetable />} />
+                <Route path="exams" element={<StaffExams />} />
+                <Route path="internals" element={<StaffInternals />} />
+                <Route path="notices" element={<StaffNotices />} />
+                <Route path="events" element={<StaffEvents />} />
+              </Routes>
+            </ProtectedRoute>
+          } />
 
           {/* Office Routes */}
-          <Route path="/office/dashboard" element={<OfficeDashboard />} />
-          <Route path="/office/fees" element={<OfficeFeeManagement />} />
-          <Route path="/office/notices" element={<OfficeNoticeManagement />} />
-          <Route path="/office/events" element={<OfficeEventManagement />} />
-          <Route path="/office/admissions" element={<OfficeAdmissions />} />
-          <Route path="/office/timetable" element={<OfficeTimetable />} />
-          <Route path="/office/letters" element={<OfficeLetters />} />
-          <Route path="/office/settings" element={<OfficeSettings />} />
-
-
+          <Route path="/office/*" element={
+            <ProtectedRoute allowedRoles={['Office', 'Admin']}>
+              <Routes>
+                <Route path="dashboard" element={<OfficeDashboard />} />
+                <Route path="fees" element={<OfficeFeeManagement />} />
+                <Route path="notices" element={<OfficeNoticeManagement />} />
+                <Route path="events" element={<OfficeEventManagement />} />
+                <Route path="admissions" element={<OfficeAdmissions />} />
+                <Route path="timetable" element={<OfficeTimetable />} />
+                <Route path="letters" element={<OfficeLetters />} />
+                <Route path="settings" element={<OfficeSettings />} />
+              </Routes>
+            </ProtectedRoute>
+          } />
         </Routes>
       </AuthProvider>
     </Router>

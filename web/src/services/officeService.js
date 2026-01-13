@@ -114,5 +114,28 @@ export const officeService = {
         } catch (error) {
             throw error;
         }
+    },
+
+    // Timetable Management
+    getTimetables: async () => {
+        try {
+            const q = query(collection(db, 'timetables'), orderBy('createdAt', 'desc'));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error("Error fetching timetables:", error);
+            return [];
+        }
+    },
+
+    deleteTimetable: async (id) => {
+        try {
+            const { deleteDoc } = await import('firebase/firestore');
+            await deleteDoc(doc(db, 'timetables', id));
+            return { success: true };
+        } catch (error) {
+            console.error("Error deleting timetable:", error);
+            throw error;
+        }
     }
 };

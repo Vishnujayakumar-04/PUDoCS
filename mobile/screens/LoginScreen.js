@@ -16,9 +16,8 @@ import Button from '../components/Button';
 import colors from '../styles/colors';
 
 const LoginScreen = ({ route, navigation }) => {
-    const { login, register } = useAuth();
+    const { login } = useAuth();
     const { role } = route.params;
-    const [isRegistering, setIsRegistering] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -32,26 +31,26 @@ const LoginScreen = ({ route, navigation }) => {
             return;
         }
 
-        // Optional: Warn if not using university email, but allow it for flexibility if needed
-        // or strict enforcement:
-        if (!email.toLowerCase().includes('@pondiuni.ac.in') && !email.toLowerCase().includes('@pu.edu')) {
+        const lowerEmail = email.toLowerCase().trim();
+        if (!lowerEmail.endsWith('@pondiuni.ac.in')) {
             Alert.alert('Invalid Email', 'Please use your official university email (@pondiuni.ac.in)');
             return;
         }
 
         setLoading(true);
         try {
-            if (isRegistering) {
-                await register(email, password, role);
-                Alert.alert('Success', 'Account created successfully!');
-            } else {
-                await login(email, password, role);
-            }
+            await login(lowerEmail, password, role);
         } catch (error) {
-            Alert.alert(
-                isRegistering ? 'Registration Failed' : 'Login Failed',
-                error.message || 'Something went wrong.'
-            );
+            console.log("Login error:", error);
+
+            let errorMessage = error.message;
+            if (error.code === 'auth/invalid-credential' || error.message.includes('invalid-credential')) {
+                errorMessage = "Invalid credentials. Please check your email and password.";
+            } else if (error.message.includes('No user record found in Firestore')) {
+                errorMessage = "Access Denied: Your account is not authorized in the department database.";
+            }
+
+            Alert.alert('Login Failed', errorMessage);
         } finally {
             setLoading(false);
         }
@@ -64,7 +63,6 @@ const LoginScreen = ({ route, navigation }) => {
                 style={styles.keyboardView}
             >
                 <View style={[styles.content, isLargeScreen && styles.contentLarge]}>
-                    {/* Top Bar for Role Badge */}
                     <View style={styles.topBar}>
                         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backLink}>
                             <Text style={styles.backLinkText}>← Change Role</Text>
@@ -74,11 +72,10 @@ const LoginScreen = ({ route, navigation }) => {
                         </View>
                     </View>
 
-                    {/* Main Login Card Area */}
                     <View style={styles.mainSection}>
                         <View style={styles.headerTextContainer}>
-                            <Text style={styles.welcomeTitle}>{isRegistering ? 'Create Account' : 'Welcome Back'}</Text>
-                            <Text style={styles.welcomeSub}>{isRegistering ? 'Enter details to register' : 'Enter your credentials to access'}</Text>
+                            <Text style={styles.welcomeTitle}>Welcome Back</Text>
+                            <Text style={styles.welcomeSub}>Enter your credentials to access the portal</Text>
                         </View>
 
                         <View style={styles.formContainer}>
@@ -110,103 +107,15 @@ const LoginScreen = ({ route, navigation }) => {
                             </View>
 
                             <Button
-                                title={isRegistering ? "Sign Up" : "Login"}
+                                title="Login"
                                 onPress={handleLogin}
                                 loading={loading}
                                 style={styles.actionButton}
                             />
 
-                            {/* Demo Credentials Hint (Only in Login Mode) */}
-                            {!isRegistering && (
-                                <View style={styles.demoHint}>
-                                    <Text style={styles.demoText}>Use your official University ID & Password</Text>
-                                    {(role === 'Staff' || role === 'Office') && (
-                                        <View style={styles.credentialsBox}>
-                                            <Text style={styles.credentialsTitle}>Default Test Accounts:</Text>
-                                            {role === 'Staff' && (
-                                                <Text style={styles.credentialsText}>
-                                                    Email: staff@pondiuni.ac.in{'\n'}
-                                                    Password: Staff@123
-                                                </Text>
-                                            )}
-                                            {role === 'Office' && (
-                                                <Text style={styles.credentialsText}>
-                                                    Email: office@pondiuni.ac.in{'\n'}
-                                                    Password: Office@123
-                                                </Text>
-                                            )}
-
-                                            {/* Data Migration Tool */}
-                                            <TouchableOpacity
-                                                style={{ marginTop: 15, padding: 8, backgroundColor: colors.accent, borderRadius: 6, alignItems: 'center' }}
-                                                onPress={async () => {
-                                                    try {
-                                                        const { migrationService } = require('../services/migrationService');
-                                                        const { auth } = require('../services/firebaseConfig');
-                                                        const { signInWithEmailAndPassword, createUserWithEmailAndPassword } = require('firebase/auth');
-
-                                                        Alert.alert("Starting Sync...", "Connecting to Firebase...");
-
-                                                        // 1. Auto Login or Register
-                                                        if (!auth.currentUser) {
-                                                            const email = role === 'Staff' ? 'staff@pondiuni.ac.in' : 'office@pondiuni.ac.in';
-                                                            const pwd = role === 'Staff' ? 'Staff@123' : 'Office@123';
-
-                                                            try {
-                                                                console.log(`Attempting login for ${email}`);
-                                                                await signInWithEmailAndPassword(auth, email, pwd);
-                                                            } catch (loginError) {
-                                                                console.log("Login failed, attempting registration...", loginError.code);
-                                                                // If user doesn't exist or invalid credential, try creating it
-                                                                if (loginError.code === 'auth/user-not-found' || loginError.code === 'auth/invalid-credential' || loginError.code === 'auth/wrong-password') {
-                                                                    try {
-                                                                        await createUserWithEmailAndPassword(auth, email, pwd);
-                                                                        Alert.alert("Account Created", "Office/Staff account didn't exist, so it was created automatically.");
-                                                                    } catch (createError) {
-                                                                        if (createError.code === 'auth/email-already-in-use') {
-                                                                            // Edge case: Password was wrong in login, but user exists.
-                                                                            throw new Error("Account exists but password invalid. Please check default credentials.");
-                                                                        }
-                                                                        throw createError;
-                                                                    }
-                                                                } else {
-                                                                    throw loginError;
-                                                                }
-                                                            }
-                                                        }
-
-                                                        Alert.alert("Syncing...", "Uploading data to Firestore. Please wait...");
-
-                                                        // 2. Bootstrap Role
-                                                        await migrationService.bootstrapUserRole(role);
-
-                                                        // 3. Migrate
-                                                        await migrationService.migrateAllData();
-
-                                                        Alert.alert("Success", "Data synchronized to Firebase!");
-                                                    } catch (e) {
-                                                        Alert.alert("Sync Error", e.message);
-                                                        console.error(e);
-                                                    }
-                                                }}
-                                            >
-                                                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12 }}>SYNC LOCAL DATA TO FIREBASE</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    )}
-                                </View>
-                            )}
-
-                            <TouchableOpacity
-                                onPress={() => setIsRegistering(!isRegistering)}
-                                style={styles.toggleButton}
-                            >
-                                <Text style={styles.toggleText}>
-                                    {isRegistering
-                                        ? "Already valid? Login here"
-                                        : "New User? Create Account"}
-                                </Text>
-                            </TouchableOpacity>
+                            <View style={styles.demoHint}>
+                                <Text style={styles.demoText}>Use your official University ID & Password</Text>
+                            </View>
                         </View>
                     </View>
                 </View>

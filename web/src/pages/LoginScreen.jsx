@@ -4,7 +4,7 @@ import { Shield, GraduationCap, Users, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const LoginScreen = () => {
-  const { login, register } = useAuth();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedRole, setSelectedRole] = useState(null);
@@ -47,28 +47,14 @@ const LoginScreen = () => {
     } catch (error) {
       console.log("Login error:", error);
 
-      const isDefaultAccount = (selectedRole === 'Staff' && email === 'staff@pondiuni.ac.in') ||
-        (selectedRole === 'Office' && email === 'office@pondiuni.ac.in');
-
-      // Check for common firebase error codes for non-existent users
-      const isUserNotFound = error.code === 'auth/user-not-found' ||
-        error.code === 'auth/invalid-credential' ||
-        error.message.includes('invalid-credential');
-
-      if (isDefaultAccount && isUserNotFound) {
-        try {
-          if (window.confirm("Account not found. Create this default account now?")) {
-            await register(email, password, selectedRole);
-            alert("Account created! Logging you in...");
-            navigate('/dashboard');
-            return;
-          }
-        } catch (regError) {
-          alert("Registration failed: " + regError.message);
-        }
-      } else {
-        alert('Login Failed: ' + (error.code || error.message));
+      let errorMessage = error.message;
+      if (error.code === 'auth/invalid-credential' || error.message.includes('invalid-credential')) {
+        errorMessage = "Invalid credentials. Please check your email and password.";
+      } else if (error.message.includes('No user record found in Firestore')) {
+        errorMessage = "Access Denied: Your account is not authorized in the department database.";
       }
+
+      alert('Login Failed: ' + errorMessage);
     } finally {
       setLoading(false);
     }

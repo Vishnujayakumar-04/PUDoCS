@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     CalendarClock,
     Plus,
@@ -16,15 +16,47 @@ import { useAuth } from '../../context/AuthContext';
 import Sidebar from '../../components/Sidebar';
 import Card from '../../components/Card';
 
+import { officeService } from '../../services/officeService';
+
 const OfficeTimetable = () => {
     const { role: authRole } = useAuth();
+    const [timetables, setTimetables] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const timetables = [
-        { id: '1', program: 'M.Sc CS', year: '1st Year', lastUpdated: '2025-01-15', semester: 'Sem 1' },
-        { id: '2', program: 'M.Sc CS', year: '2nd Year', lastUpdated: '2025-01-12', semester: 'Sem 3' },
-        { id: '3', program: 'MCA', year: '1st Year', lastUpdated: '2025-01-10', semester: 'Sem 1' },
-        { id: '4', program: 'M.Tech DS', year: '1st Year', lastUpdated: '2025-01-18', semester: 'Sem 1' },
-    ];
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const loadData = async () => {
+        setLoading(true);
+        try {
+            const data = await officeService.getTimetables();
+            setTimetables(data);
+        } catch (error) {
+            console.error('Error loading timetables:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (window.confirm('Are you sure you want to delete this timetable?')) {
+            try {
+                await officeService.deleteTimetable(id);
+                setTimetables(prev => prev.filter(t => t.id !== id));
+            } catch (error) {
+                alert('Failed to delete timetable');
+            }
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex h-screen bg-gray-50 lg:ml-64 items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+            </div>
+        );
+    }
 
     return (
         <div className="flex h-screen bg-gray-50">
@@ -48,7 +80,7 @@ const OfficeTimetable = () => {
                     <div className="max-w-7xl mx-auto space-y-8">
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {timetables.map((tt) => (
+                            {timetables.length > 0 ? timetables.map((tt) => (
                                 <Card key={tt.id} className="p-0 border border-gray-100 hover:border-orange-200 hover:shadow-xl transition-all overflow-hidden flex flex-col group">
                                     <div className="p-6">
                                         <div className="flex justify-between items-start mb-6">
@@ -57,30 +89,34 @@ const OfficeTimetable = () => {
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Active Schedule</div>
-                                                <div className="text-xs font-bold text-orange-600">{tt.semester}</div>
+                                                <div className="text-xs font-bold text-orange-600">{tt.semester || 'Syllabus'}</div>
                                             </div>
                                         </div>
                                         <h3 className="text-xl font-black text-gray-900 leading-tight">{tt.program}</h3>
-                                        <p className="text-sm font-bold text-gray-500 mt-1">{tt.year}</p>
+                                        <p className="text-sm font-bold text-gray-500 mt-1">Year {tt.year}</p>
 
                                         <div className="mt-8 pt-4 border-t border-gray-50 flex items-center justify-between">
-                                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Modified: {tt.lastUpdated}</div>
+                                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Modified: {new Date(tt.createdAt || tt.lastUpdated).toLocaleDateString()}</div>
                                             <div className="flex space-x-1">
                                                 <button className="p-2 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors border border-transparent hover:border-orange-100">
                                                     <Edit2 className="w-4 h-4" />
                                                 </button>
-                                                <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors border border-transparent hover:border-blue-100">
-                                                    <Eye className="w-4 h-4" />
+                                                <button
+                                                    onClick={() => handleDelete(tt.id)}
+                                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-100"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
-                                    <button className="w-full bg-gray-50 py-3 text-xs font-bold uppercase tracking-widest text-gray-600 hover:bg-orange-500 hover:text-white transition-all border-t border-gray-100 flex items-center justify-center space-x-2">
-                                        <Download className="w-3.5 h-3.5" />
-                                        <span>Download PDF</span>
-                                    </button>
                                 </Card>
-                            ))}
+                            )) : (
+                                <div className="col-span-full py-20 text-center bg-white rounded-2xl border-2 border-dashed border-gray-200">
+                                    <CalendarClock className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                    <p className="text-gray-500 font-medium">No timetables found. Create one to get started.</p>
+                                </div>
+                            )}
                         </div>
 
                     </div>

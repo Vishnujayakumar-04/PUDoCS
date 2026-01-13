@@ -3,6 +3,7 @@ import Sidebar from '../../components/Sidebar';
 import Card from '../../components/Card';
 import Button from '../../components/Button';
 import { studentService } from '../../services/studentService';
+import { useAuth } from '../../context/AuthContext';
 import {
     Calendar,
     Clock,
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 
 const StudentTimetable = () => {
+    const { user, role: authRole } = useAuth();
     // Mode: 'selector' or 'viewer'
     const [mode, setMode] = useState('viewer');
     const [loading, setLoading] = useState(true);
@@ -21,9 +23,6 @@ const StudentTimetable = () => {
     const [timetable, setTimetable] = useState(null);
     const [selectedDay, setSelectedDay] = useState('Monday');
     const [availableDays, setAvailableDays] = useState([]);
-
-    // Mock User - in real app useAuth()
-    const user = { uid: 'student123', email: 'student@pondiuni.ac.in' };
 
     useEffect(() => {
         loadInitialData();
@@ -173,8 +172,8 @@ const StudentTimetable = () => {
                                             key={day}
                                             onClick={() => setSelectedDay(day)}
                                             className={`px-6 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${selectedDay === day
-                                                    ? 'bg-blue-600 text-white shadow-md'
-                                                    : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+                                                ? 'bg-blue-600 text-white shadow-md'
+                                                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                                                 }`}
                                         >
                                             {day}
@@ -216,8 +215,8 @@ const StudentTimetable = () => {
                                                                 )}
                                                             </div>
                                                             <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${slot.type === 'Lecture' ? 'bg-blue-100 text-blue-800' :
-                                                                    slot.type === 'Lab' ? 'bg-purple-100 text-purple-800' :
-                                                                        'bg-gray-100 text-gray-800'
+                                                                slot.type === 'Lab' ? 'bg-purple-100 text-purple-800' :
+                                                                    'bg-gray-100 text-gray-800'
                                                                 }`}>
                                                                 {slot.type}
                                                             </span>

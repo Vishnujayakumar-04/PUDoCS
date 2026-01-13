@@ -1,6 +1,6 @@
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
-import { auth } from "./firebaseConfig";
-import { localDataService } from './localDataService';
+import { doc, getDoc } from "firebase/firestore";
+import { signInWithEmailAndPassword, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
+import { auth, db } from "./firebaseConfig";
 
 // Helper to store session locally
 const storeSession = (user, role) => {
@@ -17,75 +17,24 @@ const storeSession = (user, role) => {
     }
 };
 
-const saveLocalUser = (userData) => {
-    try {
-        const storedProfiles = localStorage.getItem('local_users') || '[]';
-        const profiles = JSON.parse(storedProfiles);
-        const index = profiles.findIndex(p => p.email === userData.email);
-        if (index >= 0) {
-            profiles[index] = { ...profiles[index], ...userData };
-        } else {
-            profiles.push(userData);
-        }
-        localStorage.setItem('local_users', JSON.stringify(profiles));
-    } catch (e) {
-        console.error("Error saving local user:", e);
-    }
-};
-
 export const loginUser = async (email, password, role) => {
     try {
         // 1. Firebase Auth Login
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // 2. Determine User Role from Local Data or Storage
-        let derivedRole = role;
-        let userData = null;
+        // 2. STRICT: Fetch User Role from Firestore using UID
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
 
-        // Check if Staff
-        const staffProfile = localDataService.getStaffByEmail(email);
-        if (staffProfile) {
-            derivedRole = 'Staff';
-            userData = { ...staffProfile, uid: user.uid, role: 'Staff' };
+        if (!userDocSnap.exists()) {
+            // Log out if no Firestore record exists for this UID
+            await signOut(auth);
+            throw new Error('Access Denied: No user record found in Firestore.');
         }
 
-        // Check if Student (if not Staff)
-        if (!userData) {
-            const studentProfile = localDataService.getStudentByEmail(email);
-            if (studentProfile) {
-                derivedRole = 'Student';
-                userData = { ...studentProfile, uid: user.uid, role: 'Student' };
-            }
-        }
-
-        // Check Local Storage for manually registered users
-        if (!userData) {
-            const storedProfiles = localStorage.getItem('local_users');
-            if (storedProfiles) {
-                const profiles = JSON.parse(storedProfiles);
-                const localProfile = profiles.find(p => p.email === email);
-                if (localProfile) {
-                    derivedRole = localProfile.role;
-                    userData = localProfile;
-                }
-            }
-        }
-
-        // Fallback or Default
-        if (!userData) {
-            console.log("User profile missing. Auto-creating profile locally.");
-            derivedRole = derivedRole || 'Student';
-            userData = {
-                uid: user.uid,
-                email: email,
-                role: derivedRole,
-                isActive: true,
-                createdAt: new Date().toISOString()
-            };
-            // Save this new profile locally
-            saveLocalUser(userData);
-        }
+        const userData = userDocSnap.data();
+        const derivedRole = userData.role;
 
         // 3. Store Session
         storeSession(user, derivedRole);
@@ -96,32 +45,7 @@ export const loginUser = async (email, password, role) => {
             profile: userData
         };
     } catch (error) {
-        throw error;
-    }
-};
-
-export const registerUser = async (email, password, role, additionalData = {}) => {
-    try {
-        // 1. Create Auth User
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        // 2. Create User Profile Locally
-        const userData = {
-            uid: user.uid,
-            email: email,
-            role: role,
-            isActive: true,
-            createdAt: new Date().toISOString(),
-            ...additionalData
-        };
-        saveLocalUser(userData);
-
-        // 3. Store Session
-        storeSession(user, role);
-
-        return { user, role };
-    } catch (error) {
+        console.error("Login verification failed:", error.message);
         throw error;
     }
 };
@@ -166,7 +90,6 @@ export const changePassword = async (currentPassword, newPassword) => {
 
 export const authService = {
     login: loginUser,
-    register: registerUser,
     logout: logoutUser,
     getStoredUser: checkAuthStatus,
     changePassword: changePassword
