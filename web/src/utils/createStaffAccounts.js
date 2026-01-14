@@ -31,6 +31,21 @@ export const createStaffAccounts = async () => {
                     createdAt: new Date().toISOString(),
                 });
 
+                // Also create profile in 'staff' collection for Directory listing
+                await setDoc(doc(db, 'staff', userCredential.user.uid), {
+                    uid: userCredential.user.uid,
+                    name: staff.name,
+                    designation: staff.designation,
+                    department: staff.department,
+                    email: email,
+                    contact: staff.contact,
+                    subjectsHandled: staff.subjectsHandled || [],
+                    courseCoordinator: staff.courseCoordinator || null,
+                    imageKey: staff.imageKey,
+                    photoUrl: staff.photoUrl || '', // Ensure photoUrl is handled
+                    createdAt: new Date().toISOString()
+                }, { merge: true });
+
                 results.push({ email, name: staff.name, status: 'success' });
             } catch (authError) {
                 if (authError.code === 'auth/email-already-in-use') {

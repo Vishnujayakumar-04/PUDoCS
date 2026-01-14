@@ -14,7 +14,8 @@ import {
     Users,
     Settings,
     Menu,
-    X
+    X,
+    GraduationCap
 } from 'lucide-react';
 
 const Sidebar = ({ role = 'Student' }) => {
@@ -49,12 +50,13 @@ const Sidebar = ({ role = 'Student' }) => {
 
     const staffLinks = [
         { name: 'Dashboard', path: '/staff/dashboard', icon: LayoutDashboard },
+        { name: 'My Class', path: '/staff/my-class', icon: GraduationCap },
         { name: 'Attendance', path: '/staff/attendance', icon: CheckSquare },
         { name: 'Internals', path: '/staff/internals', icon: FileText },
         { name: 'Exams', path: '/staff/exams', icon: FileText },
         { name: 'Timetable', path: '/staff/timetable', icon: Calendar },
-        { name: 'My Students', path: '/student/directory', icon: Users },
-        { name: 'Staff Directory', path: '/student/staff-directory', icon: Users },
+        { name: 'My Students', path: '/staff/students', icon: Users },
+        { name: 'Staff Directory', path: '/staff/staff-directory', icon: Users },
         { name: 'Notices', path: '/staff/notices', icon: Bell },
         { name: 'Events', path: '/staff/events', icon: Calendar },
         { name: 'Gallery', path: '/staff/gallery', icon: ImageIcon },
@@ -74,7 +76,7 @@ const Sidebar = ({ role = 'Student' }) => {
         { name: 'Settings', path: '/office/settings', icon: Settings },
     ];
 
-    const links = role === 'Staff' ? staffLinks : role === 'Office' ? officeLinks : studentLinks;
+    const links = (role === 'Staff' || role === 'Faculty') ? staffLinks : (role === 'Office' || role === 'Admin') ? officeLinks : studentLinks;
 
     return (
         <>

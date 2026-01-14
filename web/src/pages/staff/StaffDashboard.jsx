@@ -16,7 +16,8 @@ import {
     MapPin,
     Mail,
     LogOut,
-    ChevronRight
+    ChevronRight,
+    Sparkles
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { staffService } from '../../services/staffService';
@@ -75,14 +76,14 @@ const StaffDashboard = () => {
     };
 
     const features = [
-        { title: 'My Students', path: '/staff/students', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { title: 'Attendance', path: '/staff/attendance', icon: CalendarCheck, color: 'text-green-600', bg: 'bg-green-50' },
-        { title: 'Gallery', path: '/staff/gallery', icon: ImageIcon, color: 'text-purple-600', bg: 'bg-purple-50' },
-        { title: 'Timetable', path: '/staff/timetable', icon: CalendarClock, color: 'text-orange-600', bg: 'bg-orange-50' },
-        { title: 'Exams', path: '/staff/exams', icon: FileText, color: 'text-red-600', bg: 'bg-red-50' },
-        { title: 'Internals', path: '/staff/internals', icon: BookOpen, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-        { title: 'Notices', path: '/staff/notices', icon: Bell, color: 'text-pink-600', bg: 'bg-pink-50' },
-        { title: 'Events', path: '/staff/events', icon: Calendar, color: 'text-teal-600', bg: 'bg-teal-50' },
+        { title: 'My Students', path: '/staff/students', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50 border-blue-100' },
+        { title: 'Attendance', path: '/staff/attendance', icon: CalendarCheck, color: 'text-green-600', bg: 'bg-green-50 border-green-100' },
+        { title: 'Gallery', path: '/staff/gallery', icon: ImageIcon, color: 'text-purple-600', bg: 'bg-purple-50 border-purple-100' },
+        { title: 'Timetable', path: '/staff/timetable', icon: CalendarClock, color: 'text-orange-600', bg: 'bg-orange-50 border-orange-100' },
+        { title: 'Exams', path: '/staff/exams', icon: FileText, color: 'text-red-600', bg: 'bg-red-50 border-red-100' },
+        { title: 'Internals', path: '/staff/internals', icon: BookOpen, color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100' },
+        { title: 'Notices', path: '/staff/notices', icon: Bell, color: 'text-pink-600', bg: 'bg-pink-50 border-pink-100' },
+        { title: 'Events', path: '/staff/events', icon: Calendar, color: 'text-teal-600', bg: 'bg-teal-50 border-teal-100' },
     ];
 
     const getCategoryColor = (category) => {
@@ -104,40 +105,48 @@ const StaffDashboard = () => {
     }
 
     return (
-        <div className="flex h-screen bg-gray-50">
+        <div className="relative min-h-screen bg-gray-50 overflow-hidden flex">
+            {/* Background Animations */}
+            <div className="absolute inset-0 z-0 pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-200/30 rounded-full blur-[100px] animate-blob"></div>
+                <div className="absolute top-[20%] right-[-10%] w-[35%] h-[35%] bg-blue-200/30 rounded-full blur-[100px] animate-blob animation-delay-2000"></div>
+                <div className="absolute bottom-[-10%] left-[20%] w-[45%] h-[45%] bg-indigo-200/30 rounded-full blur-[100px] animate-blob animation-delay-4000"></div>
+                <div className="absolute inset-0 bg-grid-pattern opacity-[0.03]"></div>
+            </div>
+
             <Sidebar role={authRole || 'Staff'} />
 
-            <div className="flex-1 flex flex-col overflow-hidden lg:ml-64">
-                {/* Header */}
-                <header className="bg-white shadow-sm z-10">
+            <div className="flex-1 flex flex-col relative z-10 lg:ml-64 transition-all duration-300">
+                {/* Glassmorphic Header */}
+                <header className="bg-white/80 backdrop-blur-md sticky top-0 z-20 border-b border-gray-200/50">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center h-16">
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">Staff Portal</h1>
-                                <p className="text-sm text-gray-500">Faculty Management Dashboard</p>
+                                <h1 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 tracking-tight">Staff Portal</h1>
+                                <p className="text-xs font-semibold text-gray-500 tracking-wide uppercase">Faculty Management Dashboard</p>
                             </div>
 
                             <div className="flex items-center space-x-4">
                                 <button
                                     onClick={() => setNotificationModalOpen(true)}
-                                    className="p-2 rounded-full hover:bg-gray-100 relative"
+                                    className="p-2 rounded-full hover:bg-gray-100/50 transition-colors relative"
                                 >
                                     <Bell className="h-6 w-6 text-gray-600" />
                                     {notifications.length > 0 && (
-                                        <span className="absolute top-1 right-1 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+                                        <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white ring-1 ring-red-100 animate-pulse"></span>
                                     )}
                                 </button>
 
                                 <div
-                                    className="flex items-center space-x-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                                    className="flex items-center space-x-3 cursor-pointer hover:bg-gray-100/50 p-2 rounded-xl transition-all duration-200"
                                     onClick={() => navigate('/staff/profile')}
                                 >
-                                    <div className="h-9 w-9 bg-blue-100 rounded-full flex items-center justify-center text-blue-700 font-bold border border-blue-200">
+                                    <div className="h-9 w-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-lg shadow-blue-500/30 flex items-center justify-center text-white font-bold border border-white/20 transform hover:rotate-3 transition-transform">
                                         {profile?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
                                     </div>
                                     <div className="hidden md:block text-right">
-                                        <p className="text-sm font-medium text-gray-900">{profile?.name || 'Staff Member'}</p>
-                                        <p className="text-xs text-gray-500">{profile?.designation || 'Faculty'}</p>
+                                        <p className="text-sm font-bold text-gray-900">{profile?.name || 'Staff Member'}</p>
+                                        <p className="text-[10px] uppercase font-bold text-indigo-500 tracking-wider">{profile?.designation || 'Faculty'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -146,39 +155,57 @@ const StaffDashboard = () => {
                 </header>
 
                 {/* Main Content */}
-                <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
-                    <div className="max-w-7xl mx-auto space-y-8">
+                <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 custom-scrollbar">
+                    <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
                         {/* Welcome Card */}
-                        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden">
-                            <div className="absolute right-0 top-0 h-full w-1/3 bg-white/10 skew-x-12 transform translate-x-12"></div>
-                            <div className="relative z-10">
-                                <h2 className="text-3xl font-bold mb-2">
-                                    Welcome, {profile?.name?.split(' ')[0] || 'Staff'}!
-                                </h2>
-                                <p className="text-blue-100 text-lg">
-                                    {profile?.designation || 'Faculty'} • {profile?.department || 'Computer Science'}
-                                </p>
+                        <div className="relative overflow-hidden rounded-3xl shadow-xl shadow-indigo-500/20 group">
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"></div>
+                            <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+
+                            {/* Decorative Circles */}
+                            <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/10 rounded-full blur-2xl group-hover:scale-110 transition-transform duration-700"></div>
+                            <div className="absolute -left-20 -bottom-20 w-48 h-48 bg-white/10 rounded-full blur-2xl group-hover:scale-110 transition-transform duration-700 delay-100"></div>
+
+                            <div className="relative p-8 md:p-10 text-white flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                                <div>
+                                    <div className="inline-flex items-center px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-medium mb-3 border border-white/10">
+                                        <Sparkles className="w-3 h-3 mr-1.5 text-yellow-300" />
+                                        Have a great day!
+                                    </div>
+                                    <h2 className="text-3xl md:text-4xl font-bold mb-2 tracking-tight">
+                                        Welcome back, {profile?.name?.split(' ')[0] || 'Staff'}!
+                                    </h2>
+                                    <p className="text-blue-100/90 text-lg font-medium max-w-xl">
+                                        {profile?.designation || 'Faculty'} • {profile?.department || 'Computer Science Department'}
+                                    </p>
+                                </div>
+                                <div className="hidden md:block">
+                                    <div className="h-24 w-24 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30 shadow-2xl flex items-center justify-center transform rotate-6 group-hover:rotate-12 transition-transform duration-500">
+                                        <CalendarClock className="w-10 h-10 text-white drop-shadow-md" />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         {/* Quick Access Grid */}
                         <div>
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                                <Clock className="w-5 h-5 mr-2 text-gray-500" />
-                                Quick Access
+                            <h3 className="text-lg font-bold text-gray-900 mb-5 flex items-center">
+                                <Clock className="w-5 h-5 mr-2 text-indigo-500" />
+                                Quick Actions
                             </h3>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
                                 {features.map((feature, index) => (
                                     <button
                                         key={index}
                                         onClick={() => navigate(feature.path)}
-                                        className="flex flex-col items-center justify-center p-6 bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-100 transition-all group"
+                                        className="relative flex flex-col items-center justify-center p-6 bg-white/60 backdrop-blur-xl rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-white/50 hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-1 transition-all duration-300 group overflow-hidden"
                                     >
-                                        <div className={`p-4 rounded-full ${feature.bg} mb-4 group-hover:scale-110 transition-transform`}>
-                                            <feature.icon className={`h-6 w-6 ${feature.color}`} />
+                                        <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br ${feature.bg.replace('bg-', 'from-').split(' ')[0]}/20 to-white`}></div>
+                                        <div className={`p-4 rounded-2xl ${feature.bg} mb-4 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 relative z-10 shadow-sm`}>
+                                            <feature.icon className={`h-7 w-7 ${feature.color}`} />
                                         </div>
-                                        <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600">{feature.title}</span>
+                                        <span className="text-sm font-bold text-gray-700 group-hover:text-gray-900 relative z-10 transition-colors">{feature.title}</span>
                                     </button>
                                 ))}
                             </div>
@@ -186,29 +213,32 @@ const StaffDashboard = () => {
 
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                             {/* Upcoming Exams */}
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                                <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                            <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-sm border border-white/50 overflow-hidden hover:shadow-md transition-all duration-300">
+                                <div className="p-5 border-b border-gray-100/50 flex justify-between items-center bg-white/50">
                                     <h3 className="font-bold text-gray-900 flex items-center">
-                                        <FileText className="w-5 h-5 mr-2 text-gray-500" />
+                                        <FileText className="w-5 h-5 mr-2 text-red-500" />
                                         Upcoming Exams
                                     </h3>
-                                    <button onClick={() => navigate('/staff/exams')} className="text-sm text-blue-600 hover:text-blue-800 font-medium">View All</button>
+                                    <button onClick={() => navigate('/staff/exams')} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider px-3 py-1 rounded-lg hover:bg-indigo-50 transition-colors">View All</button>
                                 </div>
-                                <div className="p-4">
+                                <div className="p-5">
                                     {upcomingExams.length > 0 ? (
                                         <div className="space-y-4">
                                             {upcomingExams.slice(0, 3).map((exam) => (
-                                                <div key={exam.id || exam._id} className="flex items-start p-3 bg-gray-50 rounded-lg border border-gray-100">
+                                                <div key={exam.id || exam._id} className="flex items-start p-4 bg-white rounded-xl border border-gray-100 hover:border-indigo-100 hover:shadow-sm transition-all group">
+                                                    <div className="h-10 w-10 bg-red-50 text-red-600 rounded-lg flex items-center justify-center mr-4 group-hover:bg-red-100 transition-colors">
+                                                        <FileText className="w-5 h-5" />
+                                                    </div>
                                                     <div className="flex-1">
                                                         <div className="flex justify-between items-start mb-1">
-                                                            <h4 className="font-semibold text-gray-900">{exam.name || exam.subject}</h4>
-                                                            <span className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-800 font-medium">
+                                                            <h4 className="font-bold text-gray-900">{exam.name || exam.subject}</h4>
+                                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 font-bold uppercase tracking-wide">
                                                                 {exam.examType || 'Exam'}
                                                             </span>
                                                         </div>
-                                                        <p className="text-sm text-gray-600 mb-1">{exam.subject || exam.program}</p>
-                                                        <p className="text-xs text-gray-500 flex items-center">
-                                                            <Calendar className="w-3 h-3 mr-1" />
+                                                        <p className="text-sm text-gray-600 mb-2 font-medium">{exam.subject || exam.program}</p>
+                                                        <p className="text-xs text-gray-400 font-bold flex items-center uppercase tracking-wide">
+                                                            <Calendar className="w-3 h-3 mr-1.5" />
                                                             {formatDate(exam.date)} {exam.startTime ? `• ${exam.startTime}` : ''}
                                                         </p>
                                                     </div>
@@ -216,39 +246,45 @@ const StaffDashboard = () => {
                                             ))}
                                         </div>
                                     ) : (
-                                        <div className="text-center py-8 text-gray-500">
-                                            <p>No upcoming exams scheduled</p>
+                                        <div className="text-center py-12">
+                                            <div className="inline-flex p-3 bg-gray-50 rounded-full mb-3 text-gray-300">
+                                                <FileText className="w-6 h-6" />
+                                            </div>
+                                            <p className="text-gray-400 font-medium">No upcoming exams scheduled</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
                             {/* Recent Notices */}
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                                <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                            <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-sm border border-white/50 overflow-hidden hover:shadow-md transition-all duration-300">
+                                <div className="p-5 border-b border-gray-100/50 flex justify-between items-center bg-white/50">
                                     <h3 className="font-bold text-gray-900 flex items-center">
-                                        <Bell className="w-5 h-5 mr-2 text-gray-500" />
+                                        <Bell className="w-5 h-5 mr-2 text-pink-500" />
                                         Recent Notices
                                     </h3>
-                                    <button onClick={() => navigate('/staff/notices')} className="text-sm text-blue-600 hover:text-blue-800 font-medium">View All</button>
+                                    <button onClick={() => navigate('/staff/notices')} className="text-xs font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-wider px-3 py-1 rounded-lg hover:bg-indigo-50 transition-colors">View All</button>
                                 </div>
-                                <div className="divide-y divide-gray-100">
+                                <div className="divide-y divide-gray-100/70">
                                     {notices.length > 0 ? (
                                         notices.map((notice, index) => (
-                                            <div key={index} className="p-4 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => navigate('/staff/notices')}>
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${getCategoryColor(notice.category)}`}>
+                                            <div key={index} className="p-5 hover:bg-white/80 transition-colors cursor-pointer group" onClick={() => navigate('/staff/notices')}>
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wide ${getCategoryColor(notice.category)}`}>
                                                         {notice.category || 'General'}
                                                     </span>
-                                                    <span className="text-xs text-gray-500">{formatDate(notice.createdAt)}</span>
+                                                    <span className="text-[10px] text-gray-400 font-bold">{formatDate(notice.createdAt)}</span>
                                                 </div>
-                                                <h4 className="text-sm font-semibold text-gray-900 mb-1 line-clamp-1">{notice.title}</h4>
-                                                <p className="text-xs text-gray-600 line-clamp-2">{notice.content}</p>
+                                                <h4 className="text-sm font-bold text-gray-900 mb-1 group-hover:text-indigo-600 transition-colors line-clamp-1">{notice.title}</h4>
+                                                <p className="text-xs text-gray-500 font-medium line-clamp-2 leading-relaxed">{notice.content}</p>
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="text-center py-8 text-gray-500">
-                                            <p>No new notices</p>
+                                        <div className="text-center py-12">
+                                            <div className="inline-flex p-3 bg-gray-50 rounded-full mb-3 text-gray-300">
+                                                <Bell className="w-6 h-6" />
+                                            </div>
+                                            <p className="text-gray-400 font-medium">No new notices</p>
                                         </div>
                                     )}
                                 </div>
@@ -261,51 +297,42 @@ const StaffDashboard = () => {
 
             {/* Notifications Modal */}
             {notificationModalOpen && (
-                <div className="fixed inset-0 z-50 overflow-y-auto">
-                    <div className="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                        <div className="fixed inset-0 transition-opacity" aria-hidden="true" onClick={() => setNotificationModalOpen(false)}>
-                            <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                            <h3 className="text-lg font-bold text-gray-900 flex items-center">
+                                <Bell className="w-5 h-5 mr-2 text-indigo-600" />
+                                Notifications
+                            </h3>
+                            <button onClick={() => setNotificationModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-lg transition-colors">
+                                <X className="w-5 h-5" />
+                            </button>
                         </div>
-
-                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-
-                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                <div className="sm:flex sm:items-start">
-                                    <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                                        <Bell className="h-6 w-6 text-blue-600" />
-                                    </div>
-                                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <h3 className="text-lg leading-6 font-medium text-gray-900">Notifications</h3>
-                                            <button onClick={() => setNotificationModalOpen(false)} className="text-gray-400 hover:text-gray-500">
-                                                <X className="h-5 w-5" />
-                                            </button>
-                                        </div>
-                                        <div className="mt-2 text-left">
-                                            <div className="space-y-3">
-                                                {notifications.map((notification) => (
-                                                    <div key={notification.id} className="p-3 bg-gray-50 rounded-lg">
-                                                        <p className="text-sm text-gray-800">{notification.message}</p>
-                                                        <p className="text-xs text-gray-500 mt-1">
-                                                            {new Date(notification.date).toLocaleDateString()}
-                                                        </p>
-                                                    </div>
-                                                ))}
+                        <div className="p-6 max-h-[60vh] overflow-y-auto">
+                            <div className="space-y-3">
+                                {notifications.map((notification) => (
+                                    <div key={notification.id} className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-xl relative hover:bg-indigo-50 transition-colors">
+                                        <div className="flex start gap-3">
+                                            <div className="h-2 w-2 rounded-full bg-indigo-500 mt-2"></div>
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-900 leading-relaxed">{notification.message}</p>
+                                                <p className="text-xs text-gray-400 font-bold mt-2 uppercase tracking-wide">
+                                                    {new Date(notification.date).toLocaleDateString()}
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                ))}
                             </div>
-                            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                                <button
-                                    type="button"
-                                    className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                                    onClick={() => setNotificationModalOpen(false)}
-                                >
-                                    Close
-                                </button>
-                            </div>
+                        </div>
+                        <div className="p-4 bg-gray-50/50 border-t border-gray-100">
+                            <button
+                                type="button"
+                                className="w-full inline-flex justify-center rounded-xl border border-transparent shadow-sm px-4 py-3 bg-indigo-600 text-base font-bold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm tracking-wide transition-colors"
+                                onClick={() => setNotificationModalOpen(false)}
+                            >
+                                Close
+                            </button>
                         </div>
                     </div>
                 </div>

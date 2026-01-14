@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     FileText,
     Plus,
@@ -13,109 +13,187 @@ import {
     CheckCircle,
     Edit2,
     Save,
-    X
+    X,
+    Users
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { staffService } from '../../services/staffService';
 import Sidebar from '../../components/Sidebar';
 import Card from '../../components/Card';
+import { staffMapping } from '../../data/staffMapping';
+import { staffData } from '../../data/staffData';
 
 const StaffExams = () => {
-    const { role: authRole } = useAuth();
+    const { user, role: authRole } = useAuth();
     const [modalOpen, setModalOpen] = useState(false);
+    const [exams, setExams] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const exams = [
-        { id: '1', name: 'Internal Exam 1', subject: 'Modern Operating Systems', program: 'M.Sc CS', year: '1st Year', date: '2025-02-10', time: '10:00 AM', status: 'Upcoming' },
-        { id: '2', name: 'Internal Exam 1', subject: 'Advanced Database Systems', program: 'M.Sc CS', year: '2nd Year', date: '2025-02-11', time: '10:00 AM', status: 'Upcoming' },
-        { id: '3', name: 'Class Test', subject: 'Machine Learning', program: 'M.Tech DS', year: '1st Year', date: '2025-01-25', time: '02:00 PM', status: 'Scheduled' },
-    ];
+    useEffect(() => {
+        const fetchExams = async () => {
+            if (user?.email) {
+                const staffMember = staffData.find(s => s.email.toLowerCase() === user.email.toLowerCase());
+
+                // Try Firestore Profile
+                let firestoreProfile = null;
+                try {
+                    firestoreProfile = await staffService.getProfile(user.uid, user.email);
+                } catch (e) {
+                    console.error("Failed to fetch profile", e);
+                }
+
+                if (firestoreProfile || staffMember) {
+                    const name = firestoreProfile?.name || staffMember?.name;
+                    let mappings = [];
+
+                    if (firestoreProfile?.assignments && Array.isArray(firestoreProfile.assignments)) {
+                        mappings = firestoreProfile.assignments;
+                    } else if (name && staffMapping[name]) {
+                        mappings = staffMapping[name];
+                    }
+
+                    // Generate dummy exams based on assigned subjects
+                    const generatedExams = mappings.map((item, index) => ({
+                        id: index,
+                        name: 'Internal Assessment I', // Standard title
+                        subject: item.subject,
+                        program: item.class, // Reusing class as program
+                        year: '2026',
+                        date: '2026-02-10', // Placeholder
+                        time: '10:00 AM',
+                        status: 'Upcoming'
+                    }));
+                    setExams(generatedExams);
+                }
+            }
+            setLoading(false);
+        };
+        fetchExams();
+    }, [user]);
+
+    if (loading) {
+        return (
+            <div className="flex h-screen bg-gray-50 items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+            </div>
+        );
+    }
 
     return (
-        <div className="flex h-screen bg-gray-50">
+        <div className="relative min-h-screen bg-gray-50 overflow-hidden flex">
+            {/* Background Animations */}
+            <div className="absolute inset-0 z-0 pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-200/30 rounded-full blur-[100px] animate-blob"></div>
+                <div className="absolute top-[20%] right-[-10%] w-[35%] h-[35%] bg-orange-200/30 rounded-full blur-[100px] animate-blob animation-delay-2000"></div>
+                <div className="absolute bottom-[-10%] left-[20%] w-[45%] h-[45%] bg-rose-200/30 rounded-full blur-[100px] animate-blob animation-delay-4000"></div>
+                <div className="absolute inset-0 bg-grid-pattern opacity-[0.03]"></div>
+            </div>
+
             <Sidebar role={authRole || 'Staff'} />
 
-            <div className="flex-1 flex flex-col overflow-hidden lg:ml-64">
-                <header className="bg-white shadow-sm z-10">
+            <div className="flex-1 flex flex-col relative z-10 lg:ml-64 transition-all duration-300">
+                <header className="bg-white/80 backdrop-blur-md sticky top-0 z-20 border-b border-gray-200/50">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Examination Management</h1>
-                            <p className="text-sm text-gray-500">Schedule exams and manage question papers</p>
+                            <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center">
+                                <FileText className="mr-3 text-red-600" />
+                                Examination Management
+                            </h1>
+                            <p className="text-xs font-bold text-gray-500 mt-1 uppercase tracking-widest">Schedule exams and manage question papers</p>
                         </div>
                         <button
                             onClick={() => setModalOpen(true)}
-                            className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all font-bold text-xs uppercase tracking-widest shadow-lg shadow-red-100"
+                            className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all font-bold text-xs uppercase tracking-widest shadow-lg shadow-red-200 hover:shadow-red-300 transform active:scale-95"
                         >
                             <Plus className="w-4 h-4 mr-2" />
-                            Schedule Exam
+                            Schedule
                         </button>
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto p-6">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {exams.map((exam) => (
-                                <Card key={exam.id} className="p-0 border border-gray-100 hover:shadow-xl transition-all overflow-hidden flex flex-col group">
-                                    <div className="h-2 bg-red-500"></div>
-                                    <div className="p-6">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div className="p-3 bg-red-50 rounded-2xl text-red-600 group-hover:scale-110 transition-transform">
-                                                <FileText className="w-6 h-6" />
-                                            </div>
-                                            <span className={`text-[10px] font-bold px-2 py-1 rounded uppercase tracking-widest ${exam.status === 'Upcoming' ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
-                                                {exam.status}
-                                            </span>
-                                        </div>
-                                        <h3 className="text-lg font-black text-gray-900 leading-tight">{exam.name}</h3>
-                                        <p className="text-xs font-bold text-red-600 tracking-widest uppercase mt-1">{exam.subject}</p>
+                <main className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+                    <div className="max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        {exams.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {exams.map((exam) => (
+                                    <div key={exam.id} className="group bg-white/70 backdrop-blur-xl rounded-2xl shadow-sm border border-white/50 hover:shadow-xl hover:shadow-red-500/10 hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden relative">
+                                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-red-50 to-orange-50 rounded-bl-full z-0 group-hover:scale-150 transition-transform duration-500"></div>
 
-                                        <div className="mt-6 space-y-3">
-                                            <div className="flex items-center text-xs font-bold text-gray-500 uppercase tracking-widest">
-                                                <Calendar className="w-3.5 h-3.5 mr-2 text-red-400" />
-                                                {exam.date}
+                                        <div className="p-6 relative z-10">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className="p-3 bg-red-50 rounded-2xl text-red-600 group-hover:bg-red-600 group-hover:text-white transition-colors duration-300 shadow-sm">
+                                                    <FileText className="w-6 h-6" />
+                                                </div>
+                                                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-widest ${exam.status === 'Upcoming' ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-green-100 text-green-700 border border-green-200'}`}>
+                                                    {exam.status}
+                                                </span>
                                             </div>
-                                            <div className="flex items-center text-xs font-bold text-gray-500 uppercase tracking-widest">
-                                                <Clock className="w-3.5 h-3.5 mr-2 text-red-400" />
-                                                {exam.time}
-                                            </div>
-                                            <div className="flex items-center text-xs font-bold text-gray-500 uppercase tracking-widest">
-                                                <Users className="w-3.5 h-3.5 mr-2 text-red-400" />
-                                                {exam.program} • {exam.year}
+                                            <h3 className="text-lg font-black text-gray-900 leading-tight mb-2 group-hover:text-red-700 transition-colors">{exam.name}</h3>
+                                            <p className="text-[10px] font-bold text-red-600 tracking-widest uppercase mb-6 line-clamp-2 min-h-[2.5em]">{exam.subject}</p>
+
+                                            <div className="space-y-3 bg-white/50 p-4 rounded-xl border border-gray-100/50">
+                                                <div className="flex items-center text-xs font-bold text-gray-500 uppercase tracking-widest">
+                                                    <Calendar className="w-3.5 h-3.5 mr-3 text-red-400" />
+                                                    {exam.date}
+                                                </div>
+                                                <div className="flex items-center text-xs font-bold text-gray-500 uppercase tracking-widest">
+                                                    <Clock className="w-3.5 h-3.5 mr-3 text-red-400" />
+                                                    {exam.time}
+                                                </div>
+                                                <div className="flex items-center text-xs font-bold text-gray-500 uppercase tracking-widest">
+                                                    <Users className="w-3.5 h-3.5 mr-3 text-red-400" />
+                                                    {exam.program} • {exam.year}
+                                                </div>
                                             </div>
                                         </div>
+                                        <div className="mt-auto flex border-t border-gray-100/50 divide-x divide-gray-100/50">
+                                            <button className="flex-1 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:bg-gray-50 hover:text-red-600 transition-colors">Edit Details</button>
+                                            <button className="flex-1 py-4 text-[10px] font-bold uppercase tracking-widest text-red-600 hover:bg-red-50 transition-colors">View Results</button>
+                                        </div>
                                     </div>
-                                    <div className="mt-auto flex border-t border-gray-50">
-                                        <button className="flex-1 py-3 text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:bg-gray-50 transition-colors border-r border-gray-50">Edit</button>
-                                        <button className="flex-1 py-3 text-[10px] font-bold uppercase tracking-widest text-red-600 hover:bg-red-50 transition-colors">Results</button>
-                                    </div>
-                                </Card>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-20 bg-white/50 backdrop-blur-sm rounded-3xl border border-dashed border-gray-200">
+                                <div className="inline-flex p-4 bg-gray-50 rounded-full mb-4">
+                                    <FileText className="w-8 h-8 text-gray-400" />
+                                </div>
+                                <p className="text-gray-500 font-medium">No exams currently scheduled for your subjects.</p>
+                            </div>
+                        )}
                     </div>
                 </main>
             </div>
 
             {/* Modal placeholder */}
             {modalOpen && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <Card className="w-full max-w-lg animate-in zoom-in duration-200">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-xl font-black text-gray-900 tracking-tight underline decoration-red-500 decoration-4 underline-offset-8">New Examination</h3>
-                            <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50/50">
+                            <h3 className="text-xl font-black text-gray-900 tracking-tight flex items-center">
+                                <Plus className="w-5 h-5 mr-2 text-red-600" />
+                                New Examination
+                            </h3>
+                            <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors p-1 hover:bg-red-50 rounded-lg">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
-                        <div className="space-y-4">
-                            <p className="text-gray-500 font-medium">Exam scheduling feature is being connected to the core engine...</p>
-                            <div className="flex gap-3 pt-6">
-                                <button
-                                    onClick={() => setModalOpen(false)}
-                                    className="flex-1 py-3 bg-red-600 text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-lg shadow-red-100 transition-all active:scale-95"
-                                >
-                                    Understood
-                                </button>
+                        <div className="p-8 text-center space-y-6">
+                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Clock className="w-8 h-8 text-red-600" />
                             </div>
+                            <div>
+                                <h4 className="text-lg font-bold text-gray-900 mb-2">Feature Coming Soon</h4>
+                                <p className="text-gray-500 font-medium leading-relaxed">The exam scheduling engine is currently being connected to the database. Check back shortly!</p>
+                            </div>
+                            <button
+                                onClick={() => setModalOpen(false)}
+                                className="w-full py-3 bg-gray-900 text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-gray-800 transition-all active:scale-95 shadow-lg shadow-gray-200"
+                            >
+                                Got it
+                            </button>
                         </div>
-                    </Card>
+                    </div>
                 </div>
             )}
         </div>

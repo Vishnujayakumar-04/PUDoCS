@@ -138,6 +138,12 @@ export const staffService = {
 
             // If we have course, program and year, use the partitioned collection
             if (filters.course && filters.program && filters.year) {
+                // FORCE EMPTY FOR UG as per request "in the ug there is no namelist just keep it empt"
+                if (filters.course === 'UG' || /B\.?TECH|B\.?SC/i.test(filters.program)) {
+                    console.log('⚠️ UG namelist is temporarily disabled/empty.');
+                    return [];
+                }
+
                 const collectionName = getStudentCollectionName(filters.course, filters.program, filters.year);
                 console.log(`📂 Attempting partitioned collection: ${collectionName}`);
                 const qPartition = query(collection(db, collectionName), orderBy('name', 'asc'));
@@ -153,8 +159,16 @@ export const staffService = {
             let q = collection(db, 'students');
 
             if (filters.program && filters.year) {
+                if (/B\.?TECH|B\.?SC/i.test(filters.program)) {
+                    console.log('⚠️ UG namelist is temporarily disabled/empty.');
+                    return [];
+                }
                 q = query(q, where('program', '==', filters.program), where('year', '==', parseInt(filters.year)));
             } else if (filters.program) {
+                if (/B\.?TECH|B\.?SC/i.test(filters.program)) {
+                    console.log('⚠️ UG namelist is temporarily disabled/empty.');
+                    return [];
+                }
                 q = query(q, where('program', '==', filters.program));
             }
 
@@ -389,6 +403,64 @@ export const staffService = {
             return downloadURL;
         } catch (error) {
             console.error("Error uploading student image:", error);
+            throw error;
+        }
+    },
+
+    // Upload Gallery Image
+    uploadGalleryImage: async (file) => {
+        try {
+            const storageRef = ref(storage, `gallery/${Date.now()}_${file.name}`);
+            const snapshot = await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            return downloadURL;
+        } catch (error) {
+            console.error("Error uploading gallery image:", error);
+            throw error;
+        }
+    },
+
+    // Get Staff Timetable
+    getTimetable: async (identifier) => {
+        try {
+            // Identifier can be UID or Email.
+            // First try doc with identifier (assuming it might be UID)
+            const docRef = doc(db, 'staff_timetables', identifier);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                return docSnap.data().schedule;
+            }
+
+            // If not found by ID, try querying by email field if identifier looks like email
+            if (identifier.includes('@')) {
+                const q = query(collection(db, 'staff_timetables'), where('email', '==', identifier));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    return querySnapshot.docs[0].data().schedule;
+                }
+            }
+
+            return null;
+        } catch (error) {
+            console.error("Error fetching timetable:", error);
+            return null;
+        }
+    },
+
+    // Save Staff Timetable
+    saveTimetable: async (identifier, schedule, email = '') => {
+        try {
+            // We use the identifier (UID preferred) as the doc ID
+            const docRef = doc(db, 'staff_timetables', identifier);
+            await setDoc(docRef, {
+                schedule,
+                email, // store email for secondary lookup
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+            return true;
+        } catch (error) {
+            console.error("Error saving timetable:", error);
             throw error;
         }
     }

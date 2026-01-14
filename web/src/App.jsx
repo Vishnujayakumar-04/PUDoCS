@@ -28,6 +28,7 @@ import StaffExams from './pages/staff/StaffExams';
 import StaffInternals from './pages/staff/StaffInternals';
 import StaffNotices from './pages/staff/StaffNotices';
 import StaffEvents from './pages/staff/StaffEvents';
+import StaffMyClass from './pages/staff/StaffMyClass';
 
 import OfficeDashboard from './pages/office/OfficeDashboard';
 import OfficeFeeManagement from './pages/office/OfficeFeeManagement';
@@ -88,6 +89,9 @@ function App() {
                 <Route path="internals" element={<StaffInternals />} />
                 <Route path="notices" element={<StaffNotices />} />
                 <Route path="events" element={<StaffEvents />} />
+                <Route path="students" element={<StudentDirectory />} />
+                <Route path="my-class" element={<StaffMyClass />} />
+                <Route path="staff-directory" element={<StudentStaffDirectory />} />
               </Routes>
             </ProtectedRoute>
           } />

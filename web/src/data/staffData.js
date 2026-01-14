@@ -207,6 +207,72 @@ export const staffData = [
         courseCoordinator: "AI & ML Programmes",
         contact: "0413-2654XXX",
         email: "ssingh.csc@pondiuni.ac.in"
+    },
+    {
+        name: "Dr. Vaitheki",
+        designation: "Assistant Professor",
+        department: "Computer Science",
+        imageKey: "vaitheki",
+        subjectsHandled: ["Computing", "Security"],
+        facultyInCharge: null,
+        courseCoordinator: null,
+        contact: "0413-2654XXX",
+        email: "vaitheki.csc@pondiuni.ac.in"
+    },
+    {
+        name: "Dr. Rajpriya Darshini",
+        designation: "Assistant Professor",
+        department: "Computer Science",
+        imageKey: "rajpriya_darshini",
+        subjectsHandled: ["Data Science", "Analytics"],
+        facultyInCharge: null,
+        courseCoordinator: null,
+        contact: "0413-2654XXX",
+        email: "rajpriya.csc@pondiuni.ac.in"
+    },
+    {
+        name: "Dr. Amritha Saravanan",
+        designation: "Assistant Professor",
+        department: "Computer Science",
+        imageKey: "amritha_saravanan",
+        subjectsHandled: ["Machine Learning", "AI"],
+        facultyInCharge: null,
+        courseCoordinator: null,
+        contact: "0413-2654XXX",
+        email: "amritha.csc@pondiuni.ac.in"
+    },
+    {
+        name: "Dr. Jeyakodi",
+        designation: "Assistant Professor",
+        department: "Computer Science",
+        imageKey: "jeyakodi",
+        subjectsHandled: ["Networking", "IoT"],
+        facultyInCharge: null,
+        courseCoordinator: null,
+        contact: "0413-2654XXX",
+        email: "jeyakodi.csc@pondiuni.ac.in"
+    },
+    {
+        name: "Dr. R. Lakshmi",
+        designation: "Assistant Professor",
+        department: "Computer Science",
+        imageKey: "r_lakshmi",
+        subjectsHandled: ["Software Engineering", "Testing"],
+        facultyInCharge: null,
+        courseCoordinator: null,
+        contact: "0413-2654XXX",
+        email: "rlakshmi.csc@pondiuni.ac.in"
+    },
+    {
+        name: "Dr. Jeba",
+        designation: "Assistant Professor",
+        department: "Computer Science",
+        imageKey: "jeba",
+        subjectsHandled: ["Algorithms", "Programming"],
+        facultyInCharge: null,
+        courseCoordinator: null,
+        contact: "0413-2654XXX",
+        email: "jeba.csc@pondiuni.ac.in"
     }
 ];
 
