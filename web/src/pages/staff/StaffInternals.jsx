@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom'; // Added useLocation
 import {
     BookOpen,
     Search,
@@ -17,23 +18,33 @@ import Sidebar from '../../components/Sidebar';
 import Card from '../../components/Card';
 import { staffMapping } from '../../data/staffMapping';
 import { staffData } from '../../data/staffData';
+import { MSC_CS_1ST_YEAR_STUDENTS } from '../../utils/mscCS1stYearStudentList';
 
 const StaffInternals = () => {
     const { user, role: authRole } = useAuth();
+    const location = useLocation(); // Added location hook
     const [markingMode, setMarkingMode] = useState(false);
+    const [maxMarks, setMaxMarks] = useState(20);
     const [selectedClass, setSelectedClass] = useState(null);
-    const [assignedClasses, setAssignedClasses] = useState([]); // Corrected state
-    const [students, setStudents] = useState([]); // Corrected state
+    const [assignedClasses, setAssignedClasses] = useState([]);
+    const [students, setStudents] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Mock data for student marks
-    const mockStudentMarks = [
-        { id: '1', name: 'Adarsh P S', regNo: '24MSCCS001', marks: 18, total: 20 },
-        { id: '2', name: 'Alan Shaji', regNo: '24MSCCS002', marks: 16, total: 20 },
-        { id: '3', name: 'Amal K Paulson', regNo: '24MSCCS003', marks: 14, total: 20 },
-        { id: '4', name: 'Athira G', regNo: '24MSCCS004', marks: 19, total: 20 },
-        { id: '5', name: 'Gouri Parameswaran', regNo: '24MSCCS005', marks: 11, total: 20 },
-    ];
+    // Handle passed state from navigation
+    useEffect(() => {
+        if (!loading && location.state?.classObj && assignedClasses.length > 0) {
+            const passedClass = location.state.classObj;
+            // Find the matching class in assignedClasses
+            // We match by name and subject. Note: in StaffInternals locally, 'class' prop is mapped to 'name' state
+            const matchingClass = assignedClasses.find(c => c.name === passedClass.class && c.subject === passedClass.subject);
+
+            if (matchingClass) {
+                setSelectedClass(matchingClass);
+                setMarkingMode(true);
+                window.history.replaceState({}, document.title);
+            }
+        }
+    }, [loading, location.state, assignedClasses]);
 
     useEffect(() => {
         const fetchClasses = async () => {
@@ -62,7 +73,7 @@ const StaffInternals = () => {
                         id: index,
                         name: item.class,
                         subject: item.subject,
-                        count: 25 // Mock
+                        count: 25 // Mock count
                     }));
                     setAssignedClasses(formattedClasses);
                 }
@@ -72,17 +83,54 @@ const StaffInternals = () => {
         fetchClasses();
     }, [user]);
 
-    // Effect to set students when class is selected
     useEffect(() => {
-        if (selectedClass) {
-            // Check if it's a UG class (B.Sc or B.Tech)
-            const isUG = /B\.?TECH|B\.?SC/i.test(selectedClass.name);
-            if (isUG) {
-                setStudents([]); // Empty for UG
-            } else {
-                setStudents(mockStudentMarks); // Mock data for PG
+        const fetchStudents = async () => {
+            if (selectedClass) {
+                setLoading(true);
+                try {
+                    const isUG = /B\.?TECH|B\.?SC/i.test(selectedClass.name);
+
+                    if (isUG) {
+                        setStudents([]);
+                    } else {
+                        // Derive program from class name
+                        // Extract Year and Program from class name
+                        const match = selectedClass.name.match(/^(I|II|III|IV|V|VI)\s+(.+)/);
+                        let programFilter = selectedClass.name;
+                        let yearFilter = null;
+
+                        if (match) {
+                            const romanYear = match[1];
+                            programFilter = match[2].trim();
+                            const yearMap = { 'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6 };
+                            yearFilter = yearMap[romanYear] || 1;
+                        }
+
+                        // Fetch students matching this program AND year
+                        const filters = { program: programFilter };
+                        if (yearFilter) filters.year = yearFilter;
+
+                        const fetchedStudents = await staffService.getStudents(filters);
+
+                        const formattedStudents = (Array.isArray(fetchedStudents) ? fetchedStudents : []).map(s => ({
+                            id: s.id || s.registerNumber,
+                            name: s.name,
+                            regNo: s.registerNumber,
+                            marks: s.marks || '',
+                            total: 20
+                        }));
+                        setStudents(formattedStudents);
+                    }
+                } catch (error) {
+                    console.error("Error fetching students:", error);
+                    setStudents([]);
+                } finally {
+                    setLoading(false);
+                }
             }
-        }
+        };
+
+        fetchStudents();
     }, [selectedClass]);
 
     const handleSubmitMarks = async () => {
@@ -198,7 +246,14 @@ const StaffInternals = () => {
                                         <p className="text-[10px] font-bold text-indigo-600 tracking-widest uppercase mt-1">{selectedClass?.name} • Continuous Evaluation</p>
                                     </div>
                                     <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-sm">
-                                        <div className="text-xs font-bold text-gray-500 uppercase tracking-wide">Max Marks: <span className="text-indigo-600 text-sm">20</span></div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide mr-2">Max Marks:</label>
+                                        <input
+                                            type="number"
+                                            value={maxMarks}
+                                            onChange={(e) => setMaxMarks(Number(e.target.value))}
+                                            className="w-16 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-indigo-600 font-bold text-sm text-center outline-none focus:ring-2 focus:ring-indigo-500"
+                                            min="1"
+                                        />
                                     </div>
                                 </div>
                                 <div className="overflow-x-auto">
@@ -231,11 +286,18 @@ const StaffInternals = () => {
                                                                 type="number"
                                                                 className="w-20 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-sm text-center shadow-sm"
                                                                 defaultValue={student.marks}
-                                                                max="20"
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value;
+                                                                    const newStudents = students.map(s =>
+                                                                        s.id === student.id ? { ...s, marks: val } : s
+                                                                    );
+                                                                    setStudents(newStudents);
+                                                                }}
+                                                                max={maxMarks}
                                                                 min="0"
                                                             />
                                                         </td>
-                                                        <td className="px-6 py-4 text-sm font-bold text-gray-400">/ {student.total}</td>
+                                                        <td className="px-6 py-4 text-sm font-bold text-gray-400">/ {maxMarks}</td>
                                                         <td className="px-6 py-4 text-right">
                                                             <button className="p-2 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
                                                                 <Edit2 className="w-4 h-4" />

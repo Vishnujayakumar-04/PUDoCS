@@ -7,25 +7,19 @@ import { staffService } from '../../services/staffService';
 import {
     Users,
     ChevronRight,
-    MapPin,
     Search,
     ArrowLeft,
     GraduationCap,
     BookOpen,
-    User,
-    Shield,
-    FileText,
     X,
-    Loader2,
     Plus,
     Edit2,
     Trash2,
     Upload,
     Camera,
-    Image as ImageIcon
+    Loader2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { studentStorageService } from '../../services/studentStorageService';
 
 const StudentDirectory = () => {
     const { role: authRole, user } = useAuth();
@@ -82,6 +76,7 @@ const StudentDirectory = () => {
     ];
 
     const pgPrograms = [
+        { label: 'M.Sc Computer Science – 1st Year', name: 'M.Sc CS', year: 1, category: 'PG' },
         { label: 'M.Sc Computer Science – 2nd Year', name: 'M.Sc CS', year: 2, category: 'PG' },
         { label: 'M.Sc Data Analytics – 1st Year', name: 'M.Sc DA', year: 1, category: 'PG' },
         { label: 'M.Sc CS Integrated – 1st Year', name: 'M.Sc CS Integrated', year: 1, category: 'PG' },
@@ -213,7 +208,7 @@ const StudentDirectory = () => {
             setIsManageModalOpen(false);
             // Reload the current class if in directory view
             if (selectedClass) {
-                loadStudents(selectedClass);
+                handleClassSelect(selectedClass);
             }
         } catch (error) {
             alert('Error saving student: ' + error.message);
@@ -228,7 +223,7 @@ const StudentDirectory = () => {
                 alert('Student deleted successfully');
                 // Reload the current class
                 if (selectedClass) {
-                    loadStudents(selectedClass);
+                    handleClassSelect(selectedClass);
                 }
             } catch (error) {
                 alert('Error deleting student: ' + error.message);

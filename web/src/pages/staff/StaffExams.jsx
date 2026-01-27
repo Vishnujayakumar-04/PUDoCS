@@ -27,10 +27,22 @@ const StaffExams = () => {
     const { user, role: authRole } = useAuth();
     const [modalOpen, setModalOpen] = useState(false);
     const [exams, setExams] = useState([]);
+    const [assignedClasses, setAssignedClasses] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Form State
+    const [newExam, setNewExam] = useState({
+        name: '',
+        classId: '',
+        className: '',
+        subject: '',
+        date: '',
+        time: '',
+        examType: 'internal'
+    });
+
     useEffect(() => {
-        const fetchExams = async () => {
+        const fetchData = async () => {
             if (user?.email) {
                 const staffMember = staffData.find(s => s.email.toLowerCase() === user.email.toLowerCase());
 
@@ -52,24 +64,82 @@ const StaffExams = () => {
                         mappings = staffMapping[name];
                     }
 
-                    // Generate dummy exams based on assigned subjects
-                    const generatedExams = mappings.map((item, index) => ({
-                        id: index,
-                        name: 'Internal Assessment I', // Standard title
-                        subject: item.subject,
-                        program: item.class, // Reusing class as program
-                        year: '2026',
-                        date: '2026-02-10', // Placeholder
-                        time: '10:00 AM',
-                        status: 'Upcoming'
+                    // Set Assigned Classes for Dropdown
+                    const classesList = mappings.map((item, index) => ({
+                        id: index, // Use index or generate ID if missing
+                        name: item.class,
+                        subject: item.subject
                     }));
-                    setExams(generatedExams);
+                    setAssignedClasses(classesList);
+
+                    // Fetch real exams from Firestore
+                    try {
+                        const allExams = await staffService.getExams();
+
+                        // Filter exams relevant to this staff (matching class or subject)
+                        // Normalize strings for comparison
+                        const relevantExams = allExams.filter(exam =>
+                            classesList.some(cls =>
+                                (cls.name === exam.program) ||
+                                (cls.subject === exam.subject)
+                            )
+                        );
+
+                        setExams(relevantExams);
+                    } catch (err) {
+                        console.error("Error loading exams:", err);
+                        // Fallback to empty if error
+                        setExams([]);
+                    }
                 }
             }
             setLoading(false);
         };
-        fetchExams();
+        fetchData();
     }, [user]);
+
+    const handleCreateExam = async (e) => {
+        e.preventDefault();
+        try {
+            if (!newExam.classId || !newExam.date || !newExam.name) {
+                alert("Please fill in all required fields");
+                return;
+            }
+
+            const payload = {
+                ...newExam,
+                program: newExam.className, // Simplify for display
+                status: 'Upcoming',
+                year: new Date(newExam.date).getFullYear().toString()
+            };
+
+            const result = await staffService.scheduleExam(payload);
+
+            if (result.success) {
+                // Update local state
+                setExams([...exams, { ...payload, id: result.id }]);
+                setModalOpen(false);
+                setNewExam({ name: '', classId: '', className: '', subject: '', date: '', time: '', examType: 'internal' });
+                alert("Exam scheduled successfully!");
+            }
+        } catch (error) {
+            console.error("Failed to schedule exam", error);
+            alert("Failed to schedule exam. Please try again.");
+        }
+    };
+
+    const handleClassChange = (e) => {
+        const clsId = e.target.value;
+        const cls = assignedClasses.find(c => c.id.toString() === clsId);
+        if (cls) {
+            setNewExam({
+                ...newExam,
+                classId: clsId,
+                className: cls.name,
+                subject: cls.subject
+            });
+        }
+    };
 
     if (loading) {
         return (
@@ -165,34 +235,112 @@ const StaffExams = () => {
                 </main>
             </div>
 
-            {/* Modal placeholder */}
+            {/* Modal */}
             {modalOpen && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                     <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="flex justify-between items-center p-6 border-b border-gray-100 bg-gray-50/50">
                             <h3 className="text-xl font-black text-gray-900 tracking-tight flex items-center">
                                 <Plus className="w-5 h-5 mr-2 text-red-600" />
-                                New Examination
+                                Schedule New Exam
                             </h3>
                             <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-red-500 transition-colors p-1 hover:bg-red-50 rounded-lg">
                                 <X className="w-6 h-6" />
                             </button>
                         </div>
-                        <div className="p-8 text-center space-y-6">
-                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Clock className="w-8 h-8 text-red-600" />
-                            </div>
+
+                        <form onSubmit={handleCreateExam} className="p-6 space-y-4">
                             <div>
-                                <h4 className="text-lg font-bold text-gray-900 mb-2">Feature Coming Soon</h4>
-                                <p className="text-gray-500 font-medium leading-relaxed">The exam scheduling engine is currently being connected to the database. Check back shortly!</p>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Exam Name</label>
+                                <input
+                                    type="text"
+                                    placeholder="e.g. Internal Assessment 1"
+                                    value={newExam.name}
+                                    onChange={(e) => setNewExam({ ...newExam, name: e.target.value })}
+                                    className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all font-medium"
+                                    required
+                                />
                             </div>
-                            <button
-                                onClick={() => setModalOpen(false)}
-                                className="w-full py-3 bg-gray-900 text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-gray-800 transition-all active:scale-95 shadow-lg shadow-gray-200"
-                            >
-                                Got it
-                            </button>
-                        </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Class</label>
+                                <select
+                                    value={newExam.classId}
+                                    onChange={handleClassChange}
+                                    className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all font-medium appearance-none"
+                                    required
+                                >
+                                    <option value="">Select a Class</option>
+                                    {assignedClasses.map(cls => (
+                                        <option key={cls.id} value={cls.id}>
+                                            {cls.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Subject</label>
+                                <input
+                                    type="text"
+                                    value={newExam.subject}
+                                    readOnly
+                                    className="w-full px-4 py-3 rounded-xl bg-gray-100 border border-gray-200 text-gray-500 cursor-not-allowed font-medium"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Exam Type</label>
+                                <select
+                                    value={newExam.examType}
+                                    onChange={(e) => setNewExam({ ...newExam, examType: e.target.value })}
+                                    className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all font-medium appearance-none"
+                                    required
+                                >
+                                    <option value="internal">Internal Test</option>
+                                    <option value="semester">Semester Exam</option>
+                                </select>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Date</label>
+                                    <input
+                                        type="date"
+                                        value={newExam.date}
+                                        onChange={(e) => setNewExam({ ...newExam, date: e.target.value })}
+                                        className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all font-medium"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-widest mb-2">Time</label>
+                                    <input
+                                        type="time"
+                                        value={newExam.time}
+                                        onChange={(e) => setNewExam({ ...newExam, time: e.target.value })}
+                                        className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 text-gray-900 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all font-medium"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="pt-4 flex space-x-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setModalOpen(false)}
+                                    className="flex-1 py-3 bg-white border border-gray-200 text-gray-600 font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-gray-50 transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="flex-1 py-3 bg-red-600 text-white font-bold text-xs uppercase tracking-widest rounded-xl hover:bg-red-700 transition-all active:scale-95 shadow-lg shadow-red-200"
+                                >
+                                    Create Exam
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

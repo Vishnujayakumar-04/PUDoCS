@@ -23,6 +23,9 @@ const Dashboard = () => {
         case 'Admin':
           navigate('/office/dashboard', { replace: true });
           break;
+        case 'Parent':
+          navigate('/parent/dashboard', { replace: true });
+          break;
         case 'Student':
         default:
           navigate('/student/dashboard', { replace: true });
@@ -34,7 +37,7 @@ const Dashboard = () => {
       // navigate('/login');
     }
     setChecking(false);
-  }, [user, navigate]);
+  }, [user, authRole, navigate]);
 
   return (
     <div className="flex h-screen items-center justify-center bg-gray-50">

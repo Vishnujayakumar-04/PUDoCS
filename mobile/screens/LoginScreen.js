@@ -128,6 +128,7 @@ const LoginScreen = ({ route, navigation }) => {
 const getRoleColor = (role) => {
     if (role === 'Student') return colors.primaryLight;
     if (role === 'Staff') return colors.secondary;
+    if (role === 'Parent') return '#8B5CF6';
     return colors.accent;
 };
 

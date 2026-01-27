@@ -76,8 +76,8 @@ const OfficeDashboard = () => {
 
     const features = [
         { title: 'Staff Management', path: '/office/staff', icon: Users, color: 'text-rose-600', bg: 'bg-rose-50' },
-        { title: 'Student Mgmt', path: '/staff/students', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { title: 'Staff Directory', path: '/student/staff-directory', icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' },
+        { title: 'Student Mgmt', path: '/office/students', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { title: 'Staff Directory', path: '/office/staff-directory', icon: Users, color: 'text-amber-600', bg: 'bg-amber-50' },
         { title: 'Fee Management', path: '/office/fees', icon: CreditCard, color: 'text-green-600', bg: 'bg-green-50' },
         { title: 'Admissions', path: '/office/admissions', icon: FilePlus, color: 'text-purple-600', bg: 'bg-purple-50' },
         { title: 'Timetable', path: '/office/timetable', icon: CalendarClock, color: 'text-orange-600', bg: 'bg-orange-50' },

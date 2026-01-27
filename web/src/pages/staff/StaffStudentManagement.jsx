@@ -241,6 +241,14 @@ const StaffStudentManagement = () => {
                                 Timetables
                             </button>
                             <button
+                                onClick={() => handleBulkImport('msc')}
+                                className="flex items-center px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-green-600 rounded-xl transition-all font-bold text-xs uppercase tracking-widest shadow-sm"
+                                title="Import/Update Seeded M.Sc CS Data"
+                            >
+                                <Download className="w-4 h-4 mr-2" />
+                                Import
+                            </button>
+                            <button
                                 onClick={handleOpenAddModal}
                                 className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all font-bold text-xs uppercase tracking-widest shadow-lg shadow-blue-200 hover:shadow-blue-300 transform active:scale-95"
                             >

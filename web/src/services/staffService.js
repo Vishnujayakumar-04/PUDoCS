@@ -11,9 +11,9 @@ import {
     setDoc,
     updateDoc,
     deleteDoc
-} from 'firebase/firestore';
+} from './mockFirebase';
 import { storage } from './firebaseConfig';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL } from './mockStorage';
 import { getStudentCollectionName } from '../utils/collectionMapper';
 
 export const staffService = {
@@ -60,6 +60,18 @@ export const staffService = {
         } catch (error) {
             console.error("Error fetching staff profile:", error);
             return null;
+        }
+    },
+
+    // Update staff profile
+    updateProfile: async (userId, profileData) => {
+        try {
+            const docRef = doc(db, 'staff', userId);
+            await setDoc(docRef, { ...profileData, updatedAt: new Date().toISOString() }, { merge: true });
+            return true;
+        } catch (error) {
+            console.error("Error updating profile:", error);
+            throw error;
         }
     },
 
@@ -136,40 +148,53 @@ export const staffService = {
         try {
             console.log("🔍 Fetching students with filters:", filters);
 
-            // If we have course, program and year, use the partitioned collection
-            if (filters.course && filters.program && filters.year) {
-                // FORCE EMPTY FOR UG as per request "in the ug there is no namelist just keep it empt"
-                if (filters.course === 'UG' || /B\.?TECH|B\.?SC/i.test(filters.program)) {
-                    console.log('⚠️ UG namelist is temporarily disabled/empty.');
-                    return [];
-                }
-
-                const collectionName = getStudentCollectionName(filters.course, filters.program, filters.year);
-                console.log(`📂 Attempting partitioned collection: ${collectionName}`);
-                const qPartition = query(collection(db, collectionName), orderBy('name', 'asc'));
-                const snapshotPartition = await getDocs(qPartition);
-
-                if (!snapshotPartition.empty) {
-                    return snapshotPartition.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                }
-                console.log(`⚠️ Partition ${collectionName} is empty, falling back to global collection`);
+            // 1. UG Exclusion Rule
+            if ((filters.course === 'UG') || (filters.program && /B\.?TECH|B\.?SC/i.test(filters.program))) {
+                console.log('⚠️ UG namelist is temporarily disabled/empty.');
+                return [];
             }
 
-            // Fallback to global 'students' collection or searching all (if needed)
-            let q = collection(db, 'students');
+            // 2. Try Partitioned Collection (Legacy/Seeded Data Support)
+            if (filters.course && filters.program && filters.year) {
+                try {
+                    const collectionName = getStudentCollectionName(filters.course, filters.program, filters.year);
+                    console.log(`📂 Attempting to fetch from partition: ${collectionName}`);
+                    const qPartition = query(collection(db, collectionName), orderBy('name', 'asc'));
+                    const snapshotPartition = await getDocs(qPartition);
 
-            if (filters.program && filters.year) {
-                if (/B\.?TECH|B\.?SC/i.test(filters.program)) {
-                    console.log('⚠️ UG namelist is temporarily disabled/empty.');
-                    return [];
+                    if (!snapshotPartition.empty) {
+                        console.log(`✅ Found ${snapshotPartition.size} students in partition ${collectionName}`);
+                        return snapshotPartition.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    }
+                } catch (err) {
+                    console.warn("⚠️ Partition fetch failed or empty, falling back to central query:", err);
                 }
-                q = query(q, where('program', '==', filters.program), where('year', '==', parseInt(filters.year)));
-            } else if (filters.program) {
-                if (/B\.?TECH|B\.?SC/i.test(filters.program)) {
-                    console.log('⚠️ UG namelist is temporarily disabled/empty.');
-                    return [];
-                }
-                q = query(q, where('program', '==', filters.program));
+            }
+
+            // 3. Central Query Strategy (Fallback or Primary for new data)
+            let q = collection(db, 'students');
+            const constraints = [];
+
+            // 2. Build Query Constraints
+            if (filters.course) {
+                constraints.push(where('course', '==', filters.course));
+            }
+
+            if (filters.program) {
+                constraints.push(where('program', '==', filters.program));
+            }
+
+            if (filters.year) {
+                constraints.push(where('year', '==', Number(filters.year)));
+            }
+
+            // 3. Execute Query
+            if (constraints.length > 0) {
+                q = query(q, ...constraints, orderBy('name', 'asc'));
+            } else {
+                // Should we return all? Probably too many. Limit to 50 recent/alpha.
+                console.log("⚠️ No specific filters provided. Returning limited set.");
+                q = query(q, limit(50));
             }
 
             const snapshot = await getDocs(q);
@@ -291,14 +316,53 @@ export const staffService = {
         }
     },
 
+    getAttendance: async (classId, dateStr) => {
+        try {
+            // Query by classId and date
+            // Note: dateStr should be YYYY-MM-DD format usually
+            const q = query(
+                collection(db, 'attendance'),
+                where('classId', '==', classId),
+                where('date', '==', dateStr)
+            );
+            const snapshot = await getDocs(q);
+            if (!snapshot.empty) {
+                return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+            }
+            return null;
+        } catch (error) {
+            console.error("Error fetching attendance:", error);
+            return null;
+        }
+    },
+
     saveAttendance: async (attendanceData) => {
         try {
-            const attendanceRef = doc(collection(db, 'attendance'));
-            await setDoc(attendanceRef, {
-                ...attendanceData,
-                timestamp: new Date().toISOString()
-            });
-            return { id: attendanceRef.id, success: true };
+            // Check if record exists for this day/class to update instead of create new
+            // This prevents duplicate records for same day
+            const q = query(
+                collection(db, 'attendance'),
+                where('classId', '==', attendanceData.classId),
+                where('date', '==', attendanceData.date) // Expecting 'date' in YYYY-MM-DD
+            );
+
+            const snapshot = await getDocs(q);
+
+            if (!snapshot.empty) {
+                const docId = snapshot.docs[0].id;
+                await setDoc(doc(db, 'attendance', docId), {
+                    ...attendanceData,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+                return { id: docId, success: true };
+            } else {
+                const attendanceRef = doc(collection(db, 'attendance'));
+                await setDoc(attendanceRef, {
+                    ...attendanceData,
+                    timestamp: new Date().toISOString()
+                });
+                return { id: attendanceRef.id, success: true };
+            }
         } catch (error) {
             console.error("Error saving attendance:", error);
             throw error;
@@ -420,7 +484,17 @@ export const staffService = {
         }
     },
 
-    // Get Staff Timetable
+    // Get All Exams
+    getExams: async () => {
+        try {
+            const q = query(collection(db, 'exams'), orderBy('date', 'asc'));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        } catch (error) {
+            console.error("Error fetching exams:", error);
+            return [];
+        }
+    },
     getTimetable: async (identifier) => {
         try {
             // Identifier can be UID or Email.
@@ -461,6 +535,24 @@ export const staffService = {
             return true;
         } catch (error) {
             console.error("Error saving timetable:", error);
+            throw error;
+        }
+    }
+    ,
+
+    // Schedule Exam
+    scheduleExam: async (examData) => {
+        try {
+            const examRef = doc(collection(db, 'exams'));
+            const finalData = {
+                id: examRef.id,
+                ...examData,
+                createdAt: new Date().toISOString()
+            };
+            await setDoc(examRef, finalData);
+            return { success: true, id: examRef.id };
+        } catch (error) {
+            console.error("Error scheduling exam:", error);
             throw error;
         }
     }

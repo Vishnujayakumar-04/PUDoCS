@@ -51,25 +51,12 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const register = async (email, password, role) => {
-        try {
-            const data = await authService.register(email, password, role);
-            setUser(data.user);
-            setRole(data.role);
-            setIsAuthenticated(true);
-            return data;
-        } catch (error) {
-            throw error;
-        }
-    };
-
     const value = {
         user,
         role,
         loading,
         isAuthenticated,
         login,
-        register,
         logout,
     };
 

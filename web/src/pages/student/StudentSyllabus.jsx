@@ -1,20 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import Card from '../../components/Card';
 import { FileText, Download, BookOpen, ExternalLink } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { studentService } from '../../services/studentService';
 
 const StudentSyllabus = () => {
-    const [loading, setLoading] = useState(false);
+    const { user } = useAuth();
+    const [loading, setLoading] = useState(true);
+    const [profile, setProfile] = useState(null);
 
     // Syllabus data organized by program and year
-    const syllabusData = [
+    const allSyllabusData = [
         {
             id: 1,
-            program: 'M.Sc Computer Science',
-            year: '2nd Year',
-            academicYear: '2020-21',
-            fileName: 'msc-cs-2020-21.pdf',
-            fileUrl: '/syllabus/msc-cs-2020-21.pdf',
+            program: 'M.Sc CS',
+            year: '2',
+            academicYear: '2024-25',
+            fileName: 'msc-cs-syllabus-2024.pdf',
+            fileUrl: '/syllabus/msc-cs-2024.pdf',
             subjects: [
                 'Advanced Algorithms',
                 'Machine Learning',
@@ -24,8 +28,64 @@ const StudentSyllabus = () => {
                 'Electives'
             ]
         },
-        // Add more syllabus entries here as you get them
+        {
+            id: 2,
+            program: 'M.Sc CS',
+            year: '1',
+            academicYear: '2025-26',
+            fileName: 'msc-cs-syllabus-2025.pdf',
+            fileUrl: '/syllabus/msc-cs-2025.pdf',
+            subjects: [
+                'Distributed Computing',
+                'Compiler Design',
+                'Advanced Java',
+                'Database Systems',
+                'Graph Theory',
+                'Web Technology'
+            ]
+        },
+        {
+            id: 3,
+            program: 'MCA',
+            year: '1',
+            academicYear: '2025-26',
+            fileName: 'mca-syllabus-2025.pdf',
+            fileUrl: '/syllabus/mca-2025.pdf',
+            subjects: [
+                'Database Management',
+                'Computer Networks',
+                'Operating Systems',
+                'Software Engineering',
+                'Java Programming'
+            ]
+        }
     ];
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            if (user) {
+                try {
+                    const profileData = await studentService.getProfile(user.uid, user.email);
+                    setProfile(profileData);
+                } catch (error) {
+                    console.error("Error fetching profile", error);
+                } finally {
+                    setLoading(false);
+                }
+            } else {
+                setLoading(false);
+            }
+        };
+        fetchProfile();
+    }, [user]);
+
+    // Filter syllabus based on profile
+    const syllabusData = profile
+        ? allSyllabusData.filter(s =>
+            s.program === profile.program &&
+            (s.year === profile.year?.toString() || s.year === (profile.year === 'I' ? '1' : profile.year === 'II' ? '2' : profile.year))
+        )
+        : [];
 
     const handleDownload = (fileUrl, fileName) => {
         const link = document.createElement('a');

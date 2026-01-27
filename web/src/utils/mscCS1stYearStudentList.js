@@ -58,6 +58,7 @@ export const MSC_CS_1ST_YEAR_STUDENTS = [
 export const formatMscCS1stYearStudentData = (registerNumber, name) => ({
     name: name.trim(),
     registerNumber: registerNumber.trim().toUpperCase(),
+    email: `${registerNumber.trim().toLowerCase()}@pondiuni.ac.in`,
     course: 'PG',
     program: 'M.Sc CS',
     year: 1,

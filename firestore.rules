@@ -7,7 +7,7 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Helper to fetch user role
+    // Helper to fetch user role from users collection
     function getUserRole() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
@@ -27,9 +27,12 @@ service cloud.firestore {
 
     // --- COLLECTION RULES ---
 
-    // USERS: Users can read/write their own profile
+    // USERS: 
+    // - Read: All authenticated users can read (needed for login verification)
+    // - Write: Users can only write their own profile
     match /users/{userId} {
-      allow read, write: if request.auth.uid == userId;
+      allow read: if isAuthenticated();
+      allow write: if request.auth.uid == userId;
     }
 
     // STUDENTS: 
@@ -45,7 +48,7 @@ service cloud.firestore {
     }
 
     // STAFF: 
-    // - Read: All authenticated users (for directory)
+    // - Read: All authenticated users (for directory and login)
     // - Write: Office only (or self for profile updates)
     match /staff/{staffId} {
       allow read: if isAuthenticated();

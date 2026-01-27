@@ -1,16 +1,36 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Added for navigation
 import { useAuth } from '../../context/AuthContext';
 import Sidebar from '../../components/Sidebar';
-import { Users, GraduationCap, BookOpen, Clock, AlertCircle, Calendar } from 'lucide-react';
+import {
+    Users,
+    GraduationCap,
+    BookOpen,
+    Clock,
+    AlertCircle,
+    Calendar,
+    X,
+    CalendarCheck,
+    FileText,
+    ChevronRight,
+    User
+} from 'lucide-react';
 import { staffMapping } from '../../data/staffMapping';
 import { staffData } from '../../data/staffData';
 import { staffService } from '../../services/staffService';
 
 const StaffMyClass = () => {
     const { user, role: authRole } = useAuth();
+    const navigate = useNavigate(); // Hook for navigation
     const [assignedClasses, setAssignedClasses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [staffName, setStaffName] = useState('');
+
+    // Modal State
+    const [selectedClass, setSelectedClass] = useState(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [classStudents, setClassStudents] = useState([]);
+    const [loadingStudents, setLoadingStudents] = useState(false);
 
     useEffect(() => {
         const fetchClasses = async () => {
@@ -50,6 +70,38 @@ const StaffMyClass = () => {
 
         fetchClasses();
     }, [user]);
+
+    const handleViewDetails = async (cls) => {
+        setSelectedClass(cls);
+        setModalOpen(true);
+        setLoadingStudents(true);
+        setClassStudents([]);
+
+        try {
+            // Extract Year and Program from class name (e.g. "I MCA" -> Year: 1, Program: "MCA")
+            const match = cls.class.match(/^(I|II|III|IV|V|VI)\s+(.+)/);
+            let programFilter = cls.class;
+            let yearFilter = null;
+
+            if (match) {
+                const romanYear = match[1];
+                programFilter = match[2].trim();
+                const yearMap = { 'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6 };
+                yearFilter = yearMap[romanYear] || 1;
+            }
+
+            // Fetch students matching this program AND year
+            const filters = { program: programFilter };
+            if (yearFilter) filters.year = yearFilter;
+
+            const students = await staffService.getStudents(filters);
+            setClassStudents(Array.isArray(students) ? students : []);
+        } catch (error) {
+            console.error("Error fetching class students:", error);
+        } finally {
+            setLoadingStudents(false);
+        }
+    };
 
     if (loading) {
         return (
@@ -117,10 +169,12 @@ const StaffMyClass = () => {
                                                 <Users className="w-4 h-4 mr-2.5 text-gray-400" />
                                                 <span>{item.class}</span>
                                             </div>
-                                            {/* Placeholder for schedule if available, or just keeping the card simple */}
                                         </div>
 
-                                        <button className="w-full mt-5 py-3 text-[10px] font-bold uppercase tracking-widest text-indigo-600 bg-indigo-50/50 hover:bg-indigo-600 hover:text-white rounded-xl transition-all duration-300 shadow-sm hover:shadow-md">
+                                        <button
+                                            onClick={() => handleViewDetails(item)}
+                                            className="w-full mt-5 py-3 text-[10px] font-bold uppercase tracking-widest text-indigo-600 bg-indigo-50/50 hover:bg-indigo-600 hover:text-white rounded-xl transition-all duration-300 shadow-sm hover:shadow-md"
+                                        >
                                             View Details
                                         </button>
                                     </div>
@@ -142,6 +196,106 @@ const StaffMyClass = () => {
                     </div>
                 </main>
             </div>
+
+            {/* Class Details Modal */}
+            {modalOpen && selectedClass && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-gray-100 flex flex-col max-h-[85vh]">
+                        {/* Modal Header */}
+                        <div className="px-8 py-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-start">
+                            <div>
+                                <div className="flex items-center space-x-2 mb-2">
+                                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest ${selectedClass.type === 'Lab' ? 'bg-cyan-100 text-cyan-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                                        {selectedClass.type}
+                                    </span>
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-gray-100 text-gray-600">
+                                        {selectedClass.class}
+                                    </span>
+                                </div>
+                                <h3 className="text-xl font-black text-gray-900 tracking-tight leading-tight">
+                                    {selectedClass.subject}
+                                </h3>
+                            </div>
+                            <button
+                                onClick={() => setModalOpen(false)}
+                                className="text-gray-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-xl transition-all"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="p-8 overflow-y-auto custom-scrollbar">
+                            {/* Quick Actions */}
+                            <div className="grid grid-cols-2 gap-4 mb-8">
+                                <button
+                                    onClick={() => navigate('/staff/attendance', { state: { classObj: selectedClass } })}
+                                    className="flex items-center justify-center p-4 rounded-xl border border-gray-200 bg-white hover:border-green-500 hover:bg-green-50 hover:text-green-700 transition-all group shadow-sm"
+                                >
+                                    <div className="mr-3 p-2 bg-gray-100 rounded-lg group-hover:bg-white group-hover:text-green-600 transition-colors">
+                                        <CalendarCheck className="w-5 h-5 text-gray-500 group-hover:text-green-600" />
+                                    </div>
+                                    <span className="text-sm font-bold uppercase tracking-wide">Mark Attendance</span>
+                                </button>
+                                <button
+                                    onClick={() => navigate('/staff/internals', { state: { classObj: selectedClass } })}
+                                    className="flex items-center justify-center p-4 rounded-xl border border-gray-200 bg-white hover:border-indigo-500 hover:bg-indigo-50 hover:text-indigo-700 transition-all group shadow-sm"
+                                >
+                                    <div className="mr-3 p-2 bg-gray-100 rounded-lg group-hover:bg-white group-hover:text-indigo-600 transition-colors">
+                                        <FileText className="w-5 h-5 text-gray-500 group-hover:text-indigo-600" />
+                                    </div>
+                                    <span className="text-sm font-bold uppercase tracking-wide">Internal Marks</span>
+                                </button>
+                            </div>
+
+                            {/* Student List Section */}
+                            <div>
+                                <h4 className="text-sm font-bold text-gray-900 mb-4 flex items-center">
+                                    <Users className="w-4 h-4 mr-2 text-indigo-600" />
+                                    Enrolled Students
+                                    <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] rounded-full">
+                                        {classStudents.length}
+                                    </span>
+                                </h4>
+
+                                {loadingStudents ? (
+                                    <div className="py-12 flex justify-center">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                                    </div>
+                                ) : classStudents.length > 0 ? (
+                                    <div className="bg-gray-50/50 rounded-2xl border border-gray-100 overflow-hidden">
+                                        <div className="max-h-[300px] overflow-y-auto custom-scrollbar divide-y divide-gray-100">
+                                            {classStudents.map((student, idx) => (
+                                                <div key={idx} className="p-3 flex items-center justify-between hover:bg-white transition-colors">
+                                                    <div className="flex items-center space-x-3">
+                                                        <div className="w-8 h-8 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-500">
+                                                            {idx + 1}
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-sm font-bold text-gray-900">{student.name}</div>
+                                                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{student.registerNumber}</div>
+                                                        </div>
+                                                    </div>
+                                                    {/* Optional: Student specific action */}
+                                                    <button className="text-gray-300 hover:text-indigo-600 p-1">
+                                                        <ChevronRight className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                                        <User className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                                        <p className="text-sm text-gray-500 font-medium">No students found for this class.</p>
+                                        <p className="text-xs text-gray-400 mt-1">Make sure students are registered under "{selectedClass.class}"</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

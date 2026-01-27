@@ -25,8 +25,14 @@ export const loginUser = async (email, password, role) => {
         const user = userCredential.user;
 
         // 2. STRICT: Fetch User Role from Firestore using UID
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDocSnap = await getDoc(userDocRef);
+        let userDocRef = doc(db, 'users', user.uid);
+        let userDocSnap = await getDoc(userDocRef);
+
+        if (!userDocSnap.exists()) {
+            // Fallback: Check parents collection
+            userDocRef = doc(db, 'parents', user.uid);
+            userDocSnap = await getDoc(userDocRef);
+        }
 
         if (!userDocSnap.exists()) {
             // Log out if no Firestore record exists for this UID

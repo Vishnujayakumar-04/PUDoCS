@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Shield, GraduationCap, Users, ArrowRight, ChevronLeft } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Shield, GraduationCap, Users, ArrowRight, ChevronLeft, Heart } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import createTestParent from '../utils/createTestParent';
+import createTestStaff from '../utils/createTestStaff';
+import { getDocs, collection, limit, query } from '../services/mockFirebase';
+import { db } from '../services/firebaseConfig';
 
 const LoginScreen = () => {
   const { login } = useAuth();
@@ -38,6 +42,15 @@ const LoginScreen = () => {
       bg: 'bg-cyan-50',
       icon: <Shield className="h-8 w-8 text-white" />,
       shadow: 'shadow-cyan-200'
+    },
+    {
+      id: 'Parent',
+      title: 'Parent / Guardian',
+      description: 'Monitor student progress & attendance',
+      color: 'from-emerald-500 to-teal-600',
+      bg: 'bg-emerald-50',
+      icon: <Heart className="h-8 w-8 text-white" />,
+      shadow: 'shadow-emerald-200'
     },
   ];
 
@@ -92,7 +105,7 @@ const LoginScreen = () => {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
             {roles.map((role, idx) => (
               <div
                 key={role.id}
@@ -128,6 +141,12 @@ const LoginScreen = () => {
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest hover:text-indigo-500 transition-colors cursor-default">
               © 2026 Pondicherry University
             </p>
+            <div className="mt-8">
+              <Link to="/setup" className="inline-flex items-center gap-2 text-[10px] font-bold text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-colors border border-slate-200 rounded-full px-4 py-2 hover:border-indigo-200 bg-white/50 backdrop-blur-sm shadow-sm hover:shadow">
+                <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse"></span>
+                Fix Login Issues (System Setup)
+              </Link>
+            </div>
           </div>
         </div>
       </div>

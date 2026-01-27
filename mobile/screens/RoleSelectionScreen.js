@@ -31,6 +31,13 @@ const RoleSelectionScreen = ({ navigation }) => {
             color: colors.accent,
             bg: '#ECFEFF',
         },
+        {
+            id: 'Parent',
+            title: 'Parent / Guardian',
+            description: 'Monitor student progress & attendance',
+            color: '#8B5CF6',
+            bg: '#F3E8FF',
+        },
     ];
 
     const handleRoleSelect = (role) => {

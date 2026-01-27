@@ -11,7 +11,7 @@ import {
     setDoc,
     updateDoc,
     deleteDoc
-} from 'firebase/firestore';
+} from './mockFirebase';
 import { getStudentCollectionName } from '../utils/collectionMapper';
 
 export const studentService = {

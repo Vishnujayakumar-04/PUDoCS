@@ -13,6 +13,7 @@ import LoginScreen from '../screens/LoginScreen';
 import StudentNavigator from './StudentNavigator';
 import StaffNavigator from './StaffNavigator';
 import OfficeNavigator from './OfficeNavigator';
+import ParentNavigator from './ParentNavigator';
 
 const Stack = createStackNavigator();
 
@@ -36,6 +37,9 @@ const AppNavigator = () => {
                     <>
                         {role === 'Student' && (
                             <Stack.Screen name="StudentApp" component={StudentNavigator} />
+                        )}
+                        {role === 'Parent' && (
+                            <Stack.Screen name="ParentApp" component={ParentNavigator} />
                         )}
                         {(role === 'Staff' || role === 'Faculty') && (
                             <Stack.Screen name="StaffApp" component={StaffNavigator} />

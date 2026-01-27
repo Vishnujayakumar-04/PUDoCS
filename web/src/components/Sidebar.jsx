@@ -17,13 +17,16 @@ import {
     X,
     GraduationCap
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const Sidebar = ({ role = 'Student' }) => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { logout } = useAuth();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        await logout();
         navigate('/login');
     };
 
@@ -42,7 +45,8 @@ const Sidebar = ({ role = 'Student' }) => {
         { name: 'Timetable', path: '/student/timetable', icon: Calendar },
         { name: 'Syllabus', path: '/student/syllabus', icon: FileText },
         { name: 'Attendance', path: '/student/attendance', icon: CheckSquare },
-        { name: 'Results', path: '/student/results', icon: FileText },
+        { name: 'Internal Marks', path: '/student/results', icon: FileText },
+        { name: 'Exam Schedules', path: '/student/exams', icon: Calendar },
         { name: 'Fees', path: '/student/fees', icon: CreditCard },
         { name: 'Notices', path: '/student/notices', icon: Bell },
         { name: 'Gallery', path: '/student/gallery', icon: ImageIcon },
@@ -51,9 +55,8 @@ const Sidebar = ({ role = 'Student' }) => {
     const staffLinks = [
         { name: 'Dashboard', path: '/staff/dashboard', icon: LayoutDashboard },
         { name: 'My Class', path: '/staff/my-class', icon: GraduationCap },
-        { name: 'Attendance', path: '/staff/attendance', icon: CheckSquare },
-        { name: 'Internals', path: '/staff/internals', icon: FileText },
-        { name: 'Exams', path: '/staff/exams', icon: FileText },
+        // Attendance and Internals removed as per request - accessible only via My Class
+        { name: 'Exam Schedule', path: '/staff/exams', icon: FileText },
         { name: 'Timetable', path: '/staff/timetable', icon: Calendar },
         { name: 'My Students', path: '/staff/students', icon: Users },
         { name: 'Staff Directory', path: '/staff/staff-directory', icon: Users },
@@ -65,8 +68,8 @@ const Sidebar = ({ role = 'Student' }) => {
 
     const officeLinks = [
         { name: 'Dashboard', path: '/office/dashboard', icon: LayoutDashboard },
-        { name: 'Staff Directory', path: '/student/staff-directory', icon: Users },
-        { name: 'Student Directory', path: '/student/directory', icon: Users },
+        { name: 'Staff Directory', path: '/office/staff-directory', icon: Users },
+        { name: 'Student Directory', path: '/office/students', icon: Users },
         { name: 'Fee Mgmt', path: '/office/fees', icon: CreditCard },
         { name: 'Admissions', path: '/office/admissions', icon: FileText },
         { name: 'Timetable', path: '/office/timetable', icon: Calendar },
@@ -76,7 +79,18 @@ const Sidebar = ({ role = 'Student' }) => {
         { name: 'Settings', path: '/office/settings', icon: Settings },
     ];
 
-    const links = (role === 'Staff' || role === 'Faculty') ? staffLinks : (role === 'Office' || role === 'Admin') ? officeLinks : studentLinks;
+    const parentLinks = [
+        { name: 'Dashboard', path: '/parent/dashboard', icon: LayoutDashboard },
+        { name: 'Attendance', path: '/parent/attendance', icon: CheckSquare },
+        { name: 'Results', path: '/parent/results', icon: FileText },
+        { name: 'Fees', path: '/parent/fees', icon: CreditCard },
+        { name: 'Timetable', path: '/parent/timetable', icon: Calendar },
+        { name: 'Notices', path: '/parent/notices', icon: Bell },
+    ];
+
+    const links = (role === 'Staff' || role === 'Faculty') ? staffLinks :
+        (role === 'Office' || role === 'Admin') ? officeLinks :
+            (role === 'Parent') ? parentLinks : studentLinks;
 
     return (
         <>

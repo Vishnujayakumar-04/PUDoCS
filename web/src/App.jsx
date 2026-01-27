@@ -38,6 +38,15 @@ import OfficeAdmissions from './pages/office/OfficeAdmissions';
 import OfficeTimetable from './pages/office/OfficeTimetable';
 import OfficeLetters from './pages/office/OfficeLetters';
 import OfficeSettings from './pages/office/OfficeSettings';
+import OfficeStaffManagement from './pages/office/OfficeStaffManagement';
+
+import ParentDashboard from './pages/parent/ParentDashboard';
+import SystemSetup from './pages/SystemSetup';
+import ParentAttendance from './pages/parent/ParentAttendance';
+import ParentResults from './pages/parent/ParentResults';
+import ParentFees from './pages/parent/ParentFees';
+import ParentTimetable from './pages/parent/ParentTimetable';
+import ParentNotices from './pages/parent/ParentNotices';
 
 
 
@@ -50,6 +59,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<LoginScreen />} />
+          <Route path="/setup" element={<SystemSetup />} />
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
           {/* Student Routes */}
@@ -108,6 +118,23 @@ function App() {
                 <Route path="timetable" element={<OfficeTimetable />} />
                 <Route path="letters" element={<OfficeLetters />} />
                 <Route path="settings" element={<OfficeSettings />} />
+                <Route path="staff" element={<OfficeStaffManagement />} />
+                <Route path="students" element={<StudentDirectory />} />
+                <Route path="staff-directory" element={<StudentStaffDirectory />} />
+              </Routes>
+            </ProtectedRoute>
+          } />
+
+          {/* Parent Routes */}
+          <Route path="/parent/*" element={
+            <ProtectedRoute allowedRoles={['Parent']}>
+              <Routes>
+                <Route path="dashboard" element={<ParentDashboard />} />
+                <Route path="attendance" element={<ParentAttendance />} />
+                <Route path="results" element={<ParentResults />} />
+                <Route path="fees" element={<ParentFees />} />
+                <Route path="timetable" element={<ParentTimetable />} />
+                <Route path="notices" element={<ParentNotices />} />
               </Routes>
             </ProtectedRoute>
           } />

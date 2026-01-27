@@ -16,7 +16,7 @@ import Sidebar from '../../components/Sidebar';
 import Card from '../../components/Card';
 import { staffData } from '../../data/staffData';
 import { staffTimetables } from '../../data/staffTimetable';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs } from '../../services/mockFirebase';
 import { db } from '../../services/firebaseConfig';
 import { staffService } from '../../services/staffService';
 

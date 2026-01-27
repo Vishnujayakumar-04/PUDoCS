@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 
 const StudentExams = () => {
+    const [activeTab, setActiveTab] = useState('internal');
     const [loading, setLoading] = useState(true);
     const [exams, setExams] = useState([]);
     const [profile, setProfile] = useState(null);
@@ -68,15 +69,41 @@ const StudentExams = () => {
             <Sidebar role="Student" />
 
             <main className="flex-1 ml-0 lg:ml-64 p-4 sm:p-6 lg:p-8">
-                <header className="mb-8">
+                <header className="mb-6">
                     <h1 className="text-2xl font-bold text-gray-800 flex items-center">
                         <Calendar className="mr-3 text-blue-600" />
-                        Exam Schedule
+                        Exam Schedules
                     </h1>
                     <p className="text-gray-500 mt-1">
-                        {isSecondYear ? 'Project Review & Evaluation Schedule' : 'Your upcoming examination dates'}
+                        {isSecondYear ? 'Project Review & Evaluation Schedule' : 'View your upcoming Internal and Semester examination dates'}
                     </p>
                 </header>
+
+                {/* Tabs */}
+                {!isSecondYear && (
+                    <div className="flex space-x-1 bg-gray-200 p-1 rounded-lg mb-8 w-fit">
+                        <button
+                            onClick={() => setActiveTab('internal')}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center ${activeTab === 'internal'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-800'
+                                }`}
+                        >
+                            <FileText className="w-4 h-4 mr-2" />
+                            Internal Test
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('semester')}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center ${activeTab === 'semester'
+                                ? 'bg-white text-blue-600 shadow-sm'
+                                : 'text-gray-600 hover:text-gray-800'
+                                }`}
+                        >
+                            <Calendar className="w-4 h-4 mr-2" />
+                            Semester Test
+                        </button>
+                    </div>
+                )}
 
                 {isSecondYear ? (
                     <div className="space-y-6">
@@ -117,14 +144,32 @@ const StudentExams = () => {
                     </div>
                 ) : (
                     <div className="space-y-6 relative border-l-2 border-gray-200 ml-3 pl-8">
-                        {exams.length === 0 ? (
-                            <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-100 -ml-8">
-                                <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                                <h3 className="text-xl font-bold text-gray-700">No Exams Scheduled</h3>
-                                <p className="text-gray-500">Exam schedules will appear here once published.</p>
-                            </div>
-                        ) : (
-                            exams.map((exam, idx) => (
+                        {(() => {
+                            const filteredExams = exams.filter(e =>
+                                activeTab === 'internal'
+                                    ? e.examType === 'internal'
+                                    : (!e.examType || e.examType === 'semester')
+                            );
+
+                            if (filteredExams.length === 0) {
+                                return (
+                                    <div className="text-center py-12 bg-white rounded-xl shadow-sm border border-gray-100 -ml-8">
+                                        {activeTab === 'internal' ? (
+                                            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                        ) : (
+                                            <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                                        )}
+                                        <h3 className="text-xl font-bold text-gray-700">
+                                            No {activeTab === 'internal' ? 'Internal Tests' : 'Semester Exams'} Scheduled
+                                        </h3>
+                                        <p className="text-gray-500">
+                                            Schedules will appear here once published.
+                                        </p>
+                                    </div>
+                                );
+                            }
+
+                            return filteredExams.map((exam, idx) => (
                                 <div key={idx} className="relative mb-8">
                                     {/* Timeline Dot */}
                                     <div className="absolute -left-[43px] top-6 w-5 h-5 rounded-full bg-blue-600 border-4 border-white shadow-sm"></div>
@@ -158,7 +203,7 @@ const StudentExams = () => {
                                     </Card>
                                 </div>
                             ))
-                        )}
+                        })()}
                     </div>
                 )}
 
