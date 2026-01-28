@@ -41,6 +41,7 @@ import OfficeSettings from './pages/office/OfficeSettings';
 import OfficeStaffManagement from './pages/office/OfficeStaffManagement';
 
 import ParentDashboard from './pages/parent/ParentDashboard';
+import CRDashboard from './pages/CRDashboard';
 import SystemSetup from './pages/SystemSetup';
 import ParentAttendance from './pages/parent/ParentAttendance';
 import ParentResults from './pages/parent/ParentResults';
@@ -54,7 +55,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
@@ -135,6 +136,14 @@ function App() {
                 <Route path="fees" element={<ParentFees />} />
                 <Route path="timetable" element={<ParentTimetable />} />
                 <Route path="notices" element={<ParentNotices />} />
+              </Routes>
+            </ProtectedRoute>
+          } />
+          {/* CR Routes */}
+          <Route path="/cr/*" element={
+            <ProtectedRoute allowedRoles={['cr']}>
+              <Routes>
+                <Route path="dashboard" element={<CRDashboard />} />
               </Routes>
             </ProtectedRoute>
           } />

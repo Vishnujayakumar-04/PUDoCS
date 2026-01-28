@@ -82,16 +82,34 @@ export const staffService = {
     // Get dashboard data
     getDashboard: async (userId) => {
         try {
+            console.log(`[Mobile] Getting Staff Dashboard for: ${userId}`);
+
+            // 1. Fetch Assignments from Firestore (Strict Parity)
+            const staffDocRef = doc(db, 'staff', userId);
+            const staffDocSnap = await getDoc(staffDocRef);
+            let assignments = [];
+
+            if (staffDocSnap.exists()) {
+                const data = staffDocSnap.data();
+                if (data.teachingAssignments && Array.isArray(data.teachingAssignments)) {
+                    assignments = data.teachingAssignments;
+                }
+            }
+
+            console.log(`[Mobile] Found ${assignments.length} teaching assignments.`);
+
+            // 2. Fetch Exams/Notices
             const examsQ = query(collection(db, 'exams'), orderBy('date', 'asc'), limit(5));
             const examsSnap = await getDocs(examsQ);
 
             return {
-                assignedClasses: [],
+                assignedClasses: assignments,
                 upcomingExams: examsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })),
                 recentNotices: []
             };
         } catch (e) {
-            return { upcomingExams: [], recentNotices: [] };
+            console.error("Dashboard Error:", e);
+            return { assignedClasses: [], upcomingExams: [], recentNotices: [] };
         }
     },
 

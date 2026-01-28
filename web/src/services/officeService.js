@@ -1,5 +1,5 @@
 import { db } from './firebaseConfig';
-import { collection, query, where, getDocs, orderBy, limit, doc, getDoc, setDoc, updateDoc } from './mockFirebase';
+import { collection, query, where, getDocs, orderBy, limit, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 export const officeService = {
     // Get Office Profile

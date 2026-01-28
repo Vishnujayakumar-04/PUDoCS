@@ -26,6 +26,9 @@ const Dashboard = () => {
         case 'Parent':
           navigate('/parent/dashboard', { replace: true });
           break;
+        case 'cr':
+          navigate('/cr/dashboard', { replace: true });
+          break;
         case 'Student':
         default:
           navigate('/student/dashboard', { replace: true });

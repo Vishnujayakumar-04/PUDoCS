@@ -15,6 +15,8 @@ import {
 import { studentService } from './studentService';
 import { officeService } from './officeService';
 import { getDefaultSubjects } from '../utils/defaultSubjects';
+import { offlineStorage } from './offlineStorage';
+import { syncEngine } from './syncEngine';
 
 export const attendanceService = {
     /**
@@ -55,19 +57,40 @@ export const attendanceService = {
     },
 
     /**
-     * Get attendance records for a student from Firestore
+     * Get attendance records for a student (Offline First)
      */
     getStudentAttendance: async (studentId, program, year) => {
         try {
             const subjects = await attendanceService.getStudentSubjects(program, year);
+            let records = [];
 
-            const q = query(collection(db, 'attendance'), where('studentId', '==', studentId));
-            const snapshot = await getDocs(q);
-            const records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            // 1. Try Local Cache
+            const cachedRecords = await offlineStorage.getAll(studentId, 'attendance');
+            if (cachedRecords && cachedRecords.length > 0) {
+                console.log(`✅ [Mobile] Found ${cachedRecords.length} attendance records in cache.`);
+                records = cachedRecords;
+            } else {
+                // 2. Fetch from Cloud
+                console.log(`☁️ [Mobile] Fetching attendance from Firestore for ${studentId}...`);
+                const q = query(collection(db, 'attendance'), where('studentId', '==', studentId));
+                const snapshot = await getDocs(q);
+                records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                // 3. Cache Results
+                if (records.length > 0) {
+                    // Save each record to cache
+                    // We need to wait for all saves ideally, or fire and forget
+                    records.forEach(r => {
+                        offlineStorage.save(studentId, 'attendance', r.id, r, true);
+                    });
+                }
+            }
 
             return subjects.map(subject => {
                 const subjectRecords = records.filter(r =>
-                    (subject.code && r.subjectCode === subject.code) || (r.subjectName === subject.name)
+                    (subject.code && r.subjectCode === subject.code) ||
+                    (r.subjectName === subject.name) ||
+                    (r.subjectId === subject.code) // Handle potential ID matches
                 );
 
                 const totalClasses = subjectRecords.length;
@@ -89,17 +112,47 @@ export const attendanceService = {
         }
     },
 
+
+
     /**
-     * Add single attendance record to Firestore
+     * Add single attendance record to Firestore (with Offline Write Queue)
      */
     addAttendanceRecord: async (recordData) => {
         try {
-            const attendanceRef = collection(db, 'attendance');
-            const docRef = await addDoc(attendanceRef, {
-                ...recordData,
-                timestamp: new Date().toISOString()
-            });
-            return { id: docRef.id, success: true };
+            const isOnline = await syncEngine.isOnline();
+
+            if (!isOnline) {
+                console.log('📴 [Mobile] Offline. Queuing attendance record...');
+                const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                const uid = recordData.markedBy;
+
+                if (uid) {
+                    await offlineStorage.save(uid, 'attendance', tempId, { ...recordData, id: tempId }, false);
+                    return { id: tempId, success: true, offline: true };
+                } else {
+                    console.warn('⚠️ [Mobile] No markedBy UID. Cannot queue offline.');
+                }
+            }
+
+            // Online: Try direct write
+            try {
+                const attendanceRef = collection(db, 'attendance');
+                const docRef = await addDoc(attendanceRef, {
+                    ...recordData,
+                    timestamp: new Date().toISOString()
+                });
+                return { id: docRef.id, success: true };
+            } catch (writeError) {
+                console.error('⚠️ [Mobile] Write failed. Fallback to queue.', writeError);
+                // Fallback to queue if online write fails
+                const tempId = `temp_${Date.now()}`;
+                const uid = recordData.markedBy;
+                if (uid) {
+                    await offlineStorage.save(uid, 'attendance', tempId, { ...recordData, id: tempId }, false);
+                    return { id: tempId, success: true, offline: true };
+                }
+                throw writeError;
+            }
         } catch (error) {
             console.error('Error adding attendance record:', error);
             throw error;

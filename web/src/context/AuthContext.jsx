@@ -20,6 +20,9 @@ export const AuthProvider = ({ children }) => {
                 setUser(storedUser);
                 setRole(storedUser.role);
                 setIsAuthenticated(true);
+
+                // Trigger Background Sync on App Launch
+                triggerSync(storedUser);
             }
         } catch (error) {
             console.error('Auth check error:', error);
@@ -28,12 +31,29 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const triggerSync = (userData) => {
+        // Map role to primary collection to sync first
+        const collections = ['users'];
+        if (userData.role === 'Student') collections.push('students');
+        else if (userData.role === 'Staff') collections.push('staff', 'students'); // Staff needs student list
+        else if (userData.role === 'Office') collections.push('staff', 'students', 'parents');
+
+        // Run sync (Fire & Forget for UI speed, but logs errors)
+        import('../services/syncEngine').then(({ syncEngine }) => {
+            syncEngine.runFullSync(userData.uid, collections);
+        });
+    };
+
     const login = async (email, password, selectedRole) => {
         try {
             const data = await authService.login(email, password, selectedRole);
             setUser(data.user);
             setRole(data.role);
             setIsAuthenticated(true);
+
+            // Trigger Sync
+            triggerSync({ uid: data.user.uid, role: data.role });
+
             return data;
         } catch (error) {
             throw error;
@@ -58,6 +78,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         login,
         logout,
+        userProfile: user?.profile || null // Helper for components
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

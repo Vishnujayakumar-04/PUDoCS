@@ -17,23 +17,17 @@ const ParentDashboard = ({ navigation }) => {
         const fetchStudent = async () => {
             if (!user?.uid) return;
             try {
-                let parentDoc = await getDoc(doc(db, 'users', user.uid));
-                if (!parentDoc.exists()) {
-                    // Try parents if logic separated later
-                    // But standard mobile auth uses 'users'
-                }
+                // Use parentService (Offline First)
+                const { parentService } = require('../../services/parentService');
+                const wardProfile = await parentService.getWardDetails(user.uid);
 
-                if (parentDoc.exists()) {
-                    const studentId = parentDoc.data().linkedStudentId;
-                    if (studentId) {
-                        const studentDoc = await getDoc(doc(db, 'students', studentId));
-                        if (studentDoc.exists()) {
-                            setStudent(studentDoc.data());
-                        }
-                    }
+                if (wardProfile) {
+                    setStudent(wardProfile);
+                } else {
+                    console.log('No ward details found for parent');
                 }
             } catch (e) {
-                console.log(e);
+                console.log('Error fetching ward:', e);
             } finally {
                 setLoading(false);
             }

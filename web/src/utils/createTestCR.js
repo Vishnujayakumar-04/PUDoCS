@@ -1,12 +1,12 @@
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, getDocs, collection, query, where } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebaseConfig';
 
-const createTestStaff = async () => {
-    const email = "krishnapriya.csc@pondiuni.ac.in";
+const createTestCR = async () => {
+    const email = "cr.mca1@pondiuni.ac.in";
     const password = "Pass@123";
 
-    console.log("Starting Staff Account Fix...");
+    console.log("Starting CR Account Creation...");
 
     let uid;
     try {
@@ -36,29 +36,30 @@ const createTestStaff = async () => {
         throw new Error("Could not obtain UID.");
     }
 
-    // 2. Create/Overlap Firestore Profile
+    // 2. Create/Update Firestore Profile
     console.log("Creating/Updating Firestore Profile...");
-    const staffProfile = {
+    const crProfile = {
         uid: uid,
-        name: "Dr. Krishnapriya",
+        name: "Test Class Rep",
         email: email,
-        role: "Staff",
-        designation: "Assistant Professor",
-        department: "Computer Science",
-        employeeId: "CSC018", // Dummy ID
+        role: "cr",
+        program: "MCA",
+        year: 1,
+        assignedClass: "MCA-1",
+        section: "A",
         createdAt: new Date().toISOString()
     };
 
     try {
-        // 1. Write to 'users' (mirror) FIRST to satisfy role checks in rules
-        await setDoc(doc(db, 'users', uid), staffProfile);
+        // 1. Write to 'users' (Router Rule Requirement)
+        await setDoc(doc(db, 'users', uid), crProfile);
         console.log("Written to 'users' collection.");
 
-        // 2. Write to 'staff'
-        await setDoc(doc(db, 'staff', uid), staffProfile);
-        console.log("Written to 'staff' collection.");
+        // 2. Write to 'crs' (Profile Data)
+        await setDoc(doc(db, 'crs', uid), crProfile);
+        console.log("Written to 'crs' collection.");
 
-        console.log("✅ Success! Staff account fixed.");
+        console.log("✅ Success! CR account ready.");
 
     } catch (dbError) {
         console.error("Firestore write failed:", dbError);
@@ -66,4 +67,4 @@ const createTestStaff = async () => {
     }
 };
 
-export default createTestStaff;
+export default createTestCR;

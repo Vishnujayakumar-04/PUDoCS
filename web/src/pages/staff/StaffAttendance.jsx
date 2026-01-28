@@ -23,10 +23,10 @@ import { useAuth } from '../../context/AuthContext';
 import { staffService } from '../../services/staffService';
 import Sidebar from '../../components/Sidebar';
 import Card from '../../components/Card';
-import { staffMapping } from '../../data/staffMapping';
+// import { staffMapping } from '../../data/staffMapping'; // Removed Legacy
 import { staffData } from '../../data/staffData';
 import { MSC_CS_1ST_YEAR_STUDENTS } from '../../utils/mscCS1stYearStudentList';
-import { collection, addDoc } from '../../services/mockFirebase';
+import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../../services/firebaseConfig';
 
 const StaffAttendance = () => {
@@ -162,10 +162,8 @@ const StaffAttendance = () => {
                     const name = firestoreProfile?.name || staffMember?.name;
                     let mappings = [];
 
-                    if (firestoreProfile?.assignments && Array.isArray(firestoreProfile.assignments)) {
-                        mappings = firestoreProfile.assignments;
-                    } else if (name && staffMapping[name]) {
-                        mappings = staffMapping[name];
+                    if (firestoreProfile?.teachingAssignments && Array.isArray(firestoreProfile.teachingAssignments)) {
+                        mappings = firestoreProfile.teachingAssignments;
                     }
 
                     // Transform for the view

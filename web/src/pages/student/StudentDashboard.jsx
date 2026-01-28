@@ -179,7 +179,7 @@ const StudentDashboard = () => {
                             </div>
                         </div>
 
-                        <style jsx>{`
+                        <style>{`
                             .marquee-container {
                                 overflow: hidden;
                                 white-space: nowrap;

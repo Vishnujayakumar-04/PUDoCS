@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from '../../components/Sidebar';
 import { useAuth } from '../../context/AuthContext';
-import { doc, getDoc } from '../../services/mockFirebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../services/firebaseConfig';
 import { attendanceService } from '../../services/attendanceService';
 import Card from '../../components/Card';

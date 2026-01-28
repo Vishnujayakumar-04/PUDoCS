@@ -15,8 +15,8 @@ import { useAuth } from '../../context/AuthContext';
 import Sidebar from '../../components/Sidebar';
 import Card from '../../components/Card';
 import { staffData } from '../../data/staffData';
-import { staffTimetables } from '../../data/staffTimetable';
-import { collection, query, where, getDocs } from '../../services/mockFirebase';
+// import { staffTimetables } from '../../data/staffTimetable'; // Removed Legacy
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../services/firebaseConfig';
 import { staffService } from '../../services/staffService';
 
@@ -146,14 +146,8 @@ const StaffTimetable = () => {
                     if (savedSchedule) {
                         setTimetableData(savedSchedule);
                     } else {
-                        // 2. Fallback to static file if no Firestore data
-                        if (name && staffTimetables[name]) {
-                            setTimetableData(staffTimetables[name]);
-                            // Optional: Auto-migrate static data to Firestore on first load?
-                            // await staffService.saveTimetable(user.uid, staffTimetables[name], user.email);
-                        } else {
-                            setTimetableData(null);
-                        }
+                        // 2. No Firestore data
+                        setTimetableData({});
                     }
                 }
             } catch (error) {

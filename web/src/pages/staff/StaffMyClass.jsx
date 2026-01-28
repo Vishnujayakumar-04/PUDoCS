@@ -15,8 +15,8 @@ import {
     ChevronRight,
     User
 } from 'lucide-react';
-import { staffMapping } from '../../data/staffMapping';
 import { staffData } from '../../data/staffData';
+// import { staffMapping } from '../../data/staffMapping'; // Removed Legacy
 import { staffService } from '../../services/staffService';
 
 const StaffMyClass = () => {
@@ -50,15 +50,11 @@ const StaffMyClass = () => {
                     const name = firestoreProfile?.name || staffMember?.name;
                     setStaffName(name);
 
-                    // 1. Try Firestore 'assignments' field
-                    if (firestoreProfile?.assignments && Array.isArray(firestoreProfile.assignments)) {
-                        setAssignedClasses(firestoreProfile.assignments);
-                    }
-                    // 2. Fallback to static staffMapping
-                    else if (name && staffMapping[name]) {
-                        setAssignedClasses(staffMapping[name]);
+                    // 1. Try Firestore 'teachingAssignments' field
+                    if (firestoreProfile?.teachingAssignments && Array.isArray(firestoreProfile.teachingAssignments)) {
+                        setAssignedClasses(firestoreProfile.teachingAssignments);
                     } else {
-                        console.warn(`Staff mapping not found for email: ${user.email}`);
+                        console.warn(`No teaching assignments found for: ${user.email}`);
                         setAssignedClasses([]);
                     }
                 } else {

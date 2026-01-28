@@ -1,5 +1,5 @@
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from '../services/mockAuth';
-import { doc, setDoc, getDocs, collection, query, where } from '../services/mockFirebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, getDocs, collection, query, where } from 'firebase/firestore';
 import { auth, db } from '../services/firebaseConfig';
 
 const createTestParent = async () => {

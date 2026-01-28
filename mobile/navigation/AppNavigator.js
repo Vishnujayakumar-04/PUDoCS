@@ -14,6 +14,7 @@ import StudentNavigator from './StudentNavigator';
 import StaffNavigator from './StaffNavigator';
 import OfficeNavigator from './OfficeNavigator';
 import ParentNavigator from './ParentNavigator';
+import CRDashboard from '../screens/cr/CRDashboard';
 
 const Stack = createStackNavigator();
 
@@ -46,6 +47,9 @@ const AppNavigator = () => {
                         )}
                         {role === 'Office' && (
                             <Stack.Screen name="OfficeApp" component={OfficeNavigator} />
+                        )}
+                        {role === 'cr' && (
+                            <Stack.Screen name="CRDashboard" component={CRDashboard} />
                         )}
                     </>
                 )}

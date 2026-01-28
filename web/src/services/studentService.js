@@ -11,47 +11,65 @@ import {
     setDoc,
     updateDoc,
     deleteDoc
-} from './mockFirebase';
+} from 'firebase/firestore';
 import { getStudentCollectionName } from '../utils/collectionMapper';
+import { offlineStorage } from './offlineStorage';
 
 export const studentService = {
-    // Get profile - fetches from Firestore 'students' or 'users' collection
+    // Get profile (Offline First)
     getProfile: async (studentId, email = null) => {
         try {
-            console.log('🔍 Getting profile for:', { studentId, email });
+            // 1. Try Local Cache First
+            // We assume the caller checks validity. studentId is required for Local lookup.
+            if (studentId) {
+                const localData = offlineStorage.get(studentId, 'students', studentId); // Using studentId as 'User Scope' (assuming self) AND docId
+                // NOTE: In Strict Auth, 'uid' passed to storage SHOULD be the logged-in user's UID.
+                // studentService.getProfile is often called with logged-in user's UID.
+                if (localData) {
+                    console.log('✅ Found profile in LocalStorage');
+                    return localData;
+                }
+            }
 
-            // 1. Try fetching by ID (if it looks like a register number) directly from 'students'
+            console.log('🔍 Missed Local Cache. Fetching profile for:', { studentId, email });
+
+            // 2. Fetch from Cloud
+            let userData = null;
+
+            // Strategy A: ID Lookup
             if (studentId) {
                 const docRef = doc(db, 'students', studentId);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
-                    console.log('✅ Found profile in Firestore (by ID)');
-                    return { id: docSnap.id, ...docSnap.data() };
+                    userData = { id: docSnap.id, ...docSnap.data() };
                 }
             }
 
-            // 2. If email provided, query 'students' collection by email
-            if (email) {
+            // Strategy B: Email Lookup
+            if (!userData && email) {
                 const q = query(collection(db, 'students'), where('email', '==', email));
                 const querySnapshot = await getDocs(q);
                 if (!querySnapshot.empty) {
-                    const docData = querySnapshot.docs[0];
-                    console.log('✅ Found profile in Firestore (by Email)');
-                    return { id: docData.id, ...docData.data() };
+                    userData = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() };
                 }
             }
 
-            // 3. Fallback: Search in 'users' collection if not in 'students'
-            if (studentId) {
+            // Strategy C: Users Fallback
+            if (!userData && studentId) {
                 const userRef = doc(db, 'users', studentId);
                 const userSnap = await getDoc(userRef);
                 if (userSnap.exists()) {
-                    console.log('✅ Found user profile in Firestore');
-                    return { id: userSnap.id, ...userSnap.data() };
+                    userData = { id: userSnap.id, ...userSnap.data() };
                 }
             }
 
-            console.warn('⚠️ Profile not found in Firestore for:', email || studentId);
+            // 3. Save to Local Cache if found
+            if (userData) {
+                // We use userData.id (uid) as the scope AND the docID
+                offlineStorage.save(userData.id, 'students', userData.id, userData, true);
+                return userData;
+            }
+
             return null;
         } catch (error) {
             console.error("Error fetching profile:", error);

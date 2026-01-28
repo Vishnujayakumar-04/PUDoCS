@@ -1,187 +1,93 @@
 
-import { studentService } from './studentService';
-import { getDefaultSubjects } from '../utils/defaultSubjects';
+import { db } from './firebaseConfig';
+import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 
 /**
- * Attendance Service (Web Local First)
+ * Attendance Service (Unified Firebase Backend)
+ * 
+ * Replaces legacy local-only storage.
+ * Fetches directly from 'attendance' collection populated by Staff.
  */
 
-const getAttendanceKey = (studentId) => `attendance_record_${studentId}`;
-
 export const attendanceService = {
-    /**
-     * Get student's timetable to extract subjects with credits
-     */
-    getStudentSubjects: async (program, year) => {
-        try {
-            // First try to get from timetable (check studentService web impl)
-            const timetable = await studentService.getTimetable(program, year);
-            if (timetable && timetable.subjects && timetable.subjects.length > 0) {
-                // Extract unique subjects
-                const subjectsMap = {};
-                timetable.subjects.forEach(subject => {
-                    const key = subject.code || subject.subjectCode || subject.name;
-                    if (!subjectsMap[key]) {
-                        subjectsMap[key] = {
-                            code: subject.code || subject.subjectCode || '',
-                            name: subject.name || subject.subject || '',
-                            credits: subject.hours || subject.credits || 3,
-                            type: subject.type || 'Hardcore',
-                            faculty: subject.faculty?.name || subject.faculty || '',
-                        };
-                    }
-                });
-
-                return Object.values(subjectsMap);
-            }
-
-            // Fallback to default subjects
-            const defaultSubjects = getDefaultSubjects(program, year);
-            if (defaultSubjects && defaultSubjects.length > 0) {
-                return defaultSubjects.map(subject => ({
-                    code: subject.code,
-                    name: subject.name,
-                    credits: subject.hours || 3,
-                    type: subject.type || 'Hardcore',
-                    faculty: subject.faculty || '',
-                }));
-            }
-
-            return [];
-        } catch (error) {
-            console.error('Error getting student subjects:', error);
-            const defaultSubjects = getDefaultSubjects(program, year);
-            return defaultSubjects ? defaultSubjects.map(subject => ({
-                code: subject.code,
-                name: subject.name,
-                credits: subject.hours || 3,
-                type: subject.type || 'Hardcore',
-                faculty: subject.faculty || '',
-            })) : [];
-        }
-    },
 
     /**
      * Get attendance records for a student
+     * @param {string} studentId - The student's ID (or Register Number)
+     * @param {string} program - (Optional) Program name for metadata
+     * @param {number} year - (Optional) Year for metadata
      */
     getStudentAttendance: async (studentId, program, year) => {
         try {
-            const subjects = await attendanceService.getStudentSubjects(program, year);
-            const key = getAttendanceKey(studentId);
-            const dataStr = localStorage.getItem(key);
-            const attendanceData = dataStr ? JSON.parse(dataStr) : {};
-            const records = attendanceData.records || [];
+            console.log(`Getting attendance for student: ${studentId}`);
 
-            const subjectAttendance = subjects.map(subject => {
-                const subjectCode = subject.code;
-                const subjectName = subject.name;
+            // 1. Query 'attendance' collection where studentIds array contains this studentId
+            // This relies on staffService.saveAttendance adding this field.
+            const q = query(
+                collection(db, 'attendance'),
+                where('studentIds', 'array-contains', studentId)
+            );
 
-                const subjectRecords = records.filter(r =>
-                    (subjectCode && r.subjectCode === subjectCode) || (r.subject === subjectName)
-                );
+            const snapshot = await getDocs(q);
+            const records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-                const totalClasses = subjectRecords.length;
-                const attendedClasses = subjectRecords.filter(r => r.status === 'Present' || r.status === 'present').length;
-                const notAttendedClasses = totalClasses - attendedClasses;
+            console.log(`Found ${records.length} attendance documents for student.`);
 
-                const credits = subject.credits || 3;
+            // 2. Process Records into Subject-wise breakdown
+            const subjectMap = {};
 
-                // Simple percentage for now: (attended / total) * 100
-                const attendancePercentage = totalClasses > 0 ? (attendedClasses / totalClasses) * 100 : 100;
+            records.forEach(record => {
+                const subjectName = record.subject || 'Unknown Subject';
+                const subjectCode = record.subjectCode || subjectName; // Fallback
 
-                const isEligible = attendancePercentage >= 75;
+                // Find specific student status in this record
+                const studentEntry = record.students?.find(s => s.id === studentId || s.regNo === studentId);
+
+                if (studentEntry) {
+                    const status = studentEntry.status; // 'P' or 'A' or 'Present'/'Absent'
+                    const isPresent = status === 'P' || status === 'Present' || status === 'present';
+
+                    if (!subjectMap[subjectName]) {
+                        subjectMap[subjectName] = {
+                            name: subjectName,
+                            code: subjectCode,
+                            totalClasses: 0,
+                            attendedClasses: 0,
+                            records: []
+                        };
+                    }
+
+                    subjectMap[subjectName].totalClasses++;
+                    if (isPresent) {
+                        subjectMap[subjectName].attendedClasses++;
+                    }
+
+                    subjectMap[subjectName].records.push({
+                        date: record.date,
+                        status: isPresent ? 'Present' : 'Absent',
+                        type: record.type || 'Regular'
+                    });
+                }
+            });
+
+            // 3. Format result
+            const result = Object.values(subjectMap).map(subj => {
+                const percentage = subj.totalClasses > 0
+                    ? (subj.attendedClasses / subj.totalClasses) * 100
+                    : 100;
 
                 return {
-                    ...subject,
-                    totalClasses,
-                    attendedClasses,
-                    notAttendedClasses,
-                    attendancePercentage: Math.round(attendancePercentage * 100) / 100,
-                    isEligible,
-                    records: subjectRecords,
+                    ...subj,
+                    attendancePercentage: Math.round(percentage * 100) / 100,
+                    credits: 3 // Default credit if unknown, for overall calculation
                 };
             });
 
-            return subjectAttendance;
+            return result;
+
         } catch (error) {
             console.error('Error getting student attendance:', error);
             return [];
-        }
-    },
-
-    /**
-     * Add attendance record for a student
-     */
-    addAttendanceRecord: async (studentId, subjectCode, subjectName, date, status, markedBy) => {
-        try {
-            const key = getAttendanceKey(studentId);
-            const dataStr = localStorage.getItem(key);
-            const existingData = dataStr ? JSON.parse(dataStr) : {};
-            const records = existingData.records || [];
-
-            const existingIndex = records.findIndex(r =>
-                r.date === date && (r.subjectCode === subjectCode || r.subject === subjectName)
-            );
-
-            const newRecord = {
-                subjectCode,
-                subject: subjectName,
-                date,
-                status: status === 'Present' || status === 'present' ? 'Present' : 'Absent',
-                markedBy,
-                markedAt: new Date().toISOString(),
-            };
-
-            if (existingIndex >= 0) {
-                records[existingIndex] = newRecord;
-            } else {
-                records.push(newRecord);
-            }
-
-            localStorage.setItem(key, JSON.stringify({
-                studentId,
-                records,
-                lastUpdated: new Date().toISOString(),
-            }));
-
-            return { success: true, record: newRecord };
-        } catch (error) {
-            console.error('Error adding attendance record:', error);
-            throw error;
-        }
-    },
-
-    /**
-     * Add attendance for multiple students at once (for a class)
-     */
-    addClassAttendance: async (students, subjectCode, subjectName, date, attendanceMap, markedBy) => {
-        try {
-            const results = [];
-
-            for (const student of students) {
-                const studentId = student.id || student._id || student.registerNumber;
-                const status = attendanceMap[studentId] || 'Absent';
-
-                try {
-                    await attendanceService.addAttendanceRecord(
-                        studentId,
-                        subjectCode,
-                        subjectName,
-                        date,
-                        status,
-                        markedBy
-                    );
-                    results.push({ studentId, success: true });
-                } catch (error) {
-                    console.error(`Error adding attendance for ${studentId}:`, error);
-                    results.push({ studentId, success: false, error: error.message });
-                }
-            }
-
-            return results;
-        } catch (error) {
-            console.error('Error adding class attendance:', error);
-            throw error;
         }
     }
 };

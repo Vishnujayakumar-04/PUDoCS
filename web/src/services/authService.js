@@ -1,21 +1,8 @@
-import { doc, getDoc, collection, query, where, getDocs } from "./mockFirebase";
-import { signInWithEmailAndPassword, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "./mockAuth";
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { signInWithEmailAndPassword, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "firebase/auth";
 import { auth, db } from "./firebaseConfig";
 
-// Helper to store session locally
-const storeSession = (user, role) => {
-    try {
-        const session = {
-            uid: user.uid,
-            email: user.email,
-            role: role,
-        };
-        localStorage.setItem('userSession', JSON.stringify(session));
-        return session;
-    } catch (error) {
-        console.error('Session storage error:', error);
-    }
-};
+
 
 // Helper function to find user document by email in a collection
 const findUserByEmail = async (collectionName, email) => {
@@ -36,98 +23,74 @@ export const loginUser = async (email, password, role) => {
         // 1. Firebase Auth Login
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
-        const userEmail = user.email.toLowerCase();
+        const uid = user.uid;
 
-        // 2. Determine correct collection based on selected role
-        let collectionName = 'users';
-        if (role === 'Student') collectionName = 'students';
-        else if (role === 'Staff' || role === 'Office') collectionName = 'staff';
-        else if (role === 'Parent') collectionName = 'parents';
+        console.log(`[Auth] User authenticated: ${uid}. Checking 'users' router...`);
 
-        console.log(`Attempting login for role: ${role}, checking collection: ${collectionName}`);
+        // 2. Strict Router Pattern Check (users/{uid})
+        // The 'users' collection is the SOURCE OF TRUTH for Role and Profile location.
+        const userRouterRef = doc(db, 'users', uid);
+        const userRouterSnap = await getDoc(userRouterRef);
 
-        // 3. Fetch User Role from Firestore - Try multiple lookup strategies
-        let userDocSnap = null;
-        let userData = null;
-
-        // Strategy 1: Try to find by UID in the role-specific collection
-        try {
-            const userDocRef = doc(db, collectionName, user.uid);
-            userDocSnap = await getDoc(userDocRef);
-            if (userDocSnap.exists()) {
-                console.log(`Found user in ${collectionName} by UID`);
-                userData = userDocSnap.data();
-            }
-        } catch (error) {
-            console.warn(`Error reading from ${collectionName} by UID:`, error);
+        if (!userRouterSnap.exists()) {
+            console.error(`[Auth] Access Denied. No router document in 'users/${uid}'.`);
+            await signOut(auth); // Access Denied
+            throw new Error(`Access Denied: Your account is not properly configured. Please contact the office.`);
         }
 
-        // Strategy 2: If not found by UID, try to find by email in the role-specific collection
-        if (!userData) {
-            console.log(`Trying to find user in ${collectionName} by email...`);
-            const emailDoc = await findUserByEmail(collectionName, userEmail);
-            if (emailDoc) {
-                console.log(`Found user in ${collectionName} by email`);
-                userData = emailDoc.data();
+        const routerData = userRouterSnap.data();
+        const dbRole = routerData.role;
+
+        // 3. Role Validation
+        if (role && dbRole.toLowerCase() !== role.toLowerCase() && role !== 'Office') {
+            // For strict parity, we warn but prioritize DB Role unless blocked by logic
+            console.warn(`[Auth] Role Mismatch. DB: ${dbRole}, Requested: ${role}`);
+            if (dbRole !== 'Office' && role !== dbRole) {
+                // Option: Throw error if strict role matching is desired on login screen
             }
         }
 
-        // Strategy 3: Try to find in 'users' collection by UID
-        if (!userData) {
-            console.log("Trying 'users' collection by UID...");
-            try {
-                const usersDocRef = doc(db, 'users', user.uid);
-                const usersDocSnap = await getDoc(usersDocRef);
-                if (usersDocSnap.exists()) {
-                    const usersData = usersDocSnap.data();
-                    // Verify the role matches what they selected
-                    if (usersData.role === role ||
-                        (role === 'Staff' && usersData.role === 'Staff') ||
-                        (role === 'Office' && (usersData.role === 'Office' || usersData.role === 'Admin'))) {
-                        console.log(`Found user in 'users' collection by UID`);
-                        userData = usersData;
-                    }
-                }
-            } catch (error) {
-                console.warn("Error reading from 'users' by UID:", error);
+        console.log(`[Auth] Router Verified. Role: ${dbRole}. Fetching Profile...`);
+
+        // 4. Fetch Actual Profile Data
+        let profileData = null;
+        let collectionName = '';
+
+        if (dbRole === 'Student') collectionName = 'students';
+        else if (dbRole === 'Staff' || dbRole === 'Office') collectionName = 'staff';
+        else if (dbRole === 'Parent') collectionName = 'parents';
+        else if (dbRole === 'cr') collectionName = 'crs';
+
+        if (collectionName) {
+            const profileRef = doc(db, collectionName, uid);
+            const profileSnap = await getDoc(profileRef);
+
+            if (profileSnap.exists()) {
+                profileData = { id: profileSnap.id, ...profileSnap.data() };
             }
         }
 
-        // Strategy 4: Try to find in 'users' collection by email
-        if (!userData) {
-            console.log("Trying 'users' collection by email...");
-            const usersEmailDoc = await findUserByEmail('users', userEmail);
-            if (usersEmailDoc) {
-                const usersData = usersEmailDoc.data();
-                // Verify the role matches what they selected
-                if (usersData.role === role ||
-                    (role === 'Staff' && usersData.role === 'Staff') ||
-                    (role === 'Office' && (usersData.role === 'Office' || usersData.role === 'Admin'))) {
-                    console.log(`Found user in 'users' collection by email`);
-                    userData = usersData;
-                }
-            }
-        }
-
-        // If after all attempts we still don't have user data, sign out and throw error
-        if (!userData) {
-            await signOut(auth);
-            throw new Error(`Access Denied: Your account was not found in the ${role} database. Please ensure you have selected the correct role.`);
-        }
-
-        // Derive role from database or use selected role
-        const derivedRole = userData.role || role;
-
-        // 4. Store Session
-        storeSession(user, derivedRole);
-
-        return {
-            user: user,
-            role: derivedRole,
-            profile: userData
+        const finalUserData = {
+            ...routerData,
+            ...profileData,
+            uid,
+            role: dbRole
         };
+
+        // 5. Update Local Session
+        const session = {
+            uid: uid,
+            email: user.email,
+            role: dbRole,
+            name: finalUserData.name || user.displayName || 'User',
+            profile: finalUserData
+        };
+
+        localStorage.setItem('pudocs_session', JSON.stringify(session));
+        return { user, role: dbRole, profile: finalUserData };
+
     } catch (error) {
-        console.error("Login verification failed:", error.message);
+        console.error("Login Error:", error.message);
         throw error;
     }
 };
@@ -135,7 +98,7 @@ export const loginUser = async (email, password, role) => {
 export const logoutUser = async () => {
     try {
         await signOut(auth);
-        localStorage.removeItem('userSession');
+        localStorage.removeItem('pudocs_session');
     } catch (error) {
         console.error("Logout error:", error);
     }
@@ -143,11 +106,11 @@ export const logoutUser = async () => {
 
 export const checkAuthStatus = () => {
     try {
-        const sessionStr = localStorage.getItem('userSession');
+        const sessionStr = localStorage.getItem('pudocs_session');
         if (sessionStr) {
             return JSON.parse(sessionStr);
         }
-        return null;
+        return null; // Return null if session is invalid or missing
     } catch (error) {
         return null;
     }

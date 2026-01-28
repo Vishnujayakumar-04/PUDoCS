@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { authService } from '../services/authService';
+import { syncEngine } from '../services/syncEngine';
 
 const AuthContext = createContext({});
 
@@ -21,6 +22,8 @@ export const AuthProvider = ({ children }) => {
                 setUser(storedUser);
                 setRole(storedUser.role);
                 setIsAuthenticated(true);
+                // Trigger Background Sync
+                syncEngine.runFullSync(storedUser.uid, storedUser.role).catch(err => console.log('Background Sync Error:', err));
             }
         } catch (error) {
             console.error('Auth check error:', error);
@@ -36,6 +39,8 @@ export const AuthProvider = ({ children }) => {
             setUser(data.user);
             setRole(data.role);
             setIsAuthenticated(true);
+            // Trigger Sync
+            syncEngine.runFullSync(data.user.uid, data.role).catch(err => console.log('Login Sync Error:', err));
             return data;
         } catch (error) {
             throw error;

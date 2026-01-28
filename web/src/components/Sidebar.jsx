@@ -90,7 +90,8 @@ const Sidebar = ({ role = 'Student' }) => {
 
     const links = (role === 'Staff' || role === 'Faculty') ? staffLinks :
         (role === 'Office' || role === 'Admin') ? officeLinks :
-            (role === 'Parent') ? parentLinks : studentLinks;
+            (role === 'Parent') ? parentLinks :
+                (role === 'cr') ? [{ name: 'Dashboard', path: '/cr/dashboard', icon: LayoutDashboard }] : studentLinks;
 
     return (
         <>

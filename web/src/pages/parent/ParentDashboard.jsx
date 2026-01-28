@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/Sidebar';
 import { useAuth } from '../../context/AuthContext';
-import { doc, getDoc } from '../../services/mockFirebase';
+import { doc, getDoc, collection, query, where, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../../services/firebaseConfig';
 import Card from '../../components/Card';
 import {
@@ -13,13 +13,16 @@ import {
     FileText,
     Bell,
     TrendingUp,
-    AlertCircle
+    AlertCircle,
+    Info
 } from 'lucide-react';
 
 const ParentDashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [student, setStudent] = useState(null);
+    const [notifications, setNotifications] = useState([]);
+    const [generalNotices, setGeneralNotices] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -29,9 +32,9 @@ const ParentDashboard = () => {
 
             try {
                 // 1. Fetch Parent Profile to get linked Student ID
-                // Check 'parents' collection first, then 'users'
                 let parentDoc = await getDoc(doc(db, 'parents', user.uid));
                 if (!parentDoc.exists()) {
+                    // Fallback to strict router pattern if parent data is in users only (less likely due to profile creation logic)
                     parentDoc = await getDoc(doc(db, 'users', user.uid));
                 }
 
@@ -47,18 +50,28 @@ const ParentDashboard = () => {
                 }
 
                 // 2. Fetch Student Profile
-                // Try 'students' collection directly (using ID) or query by registerNumber if necessary
-                // Assuming linkedStudentId is the document ID for the student (often registerNumber or UID)
                 let studentDoc = await getDoc(doc(db, 'students', studentId));
-
-                // If not found by ID directly, it might be a query (future improvement)
-                // For now assuming direct link
 
                 if (studentDoc.exists()) {
                     setStudent({ id: studentDoc.id, ...studentDoc.data() });
                 } else {
                     throw new Error(`Student data not found for ID: ${studentId}`);
                 }
+
+                // 3. Fetch Personal Notifications
+                const notificationsQ = query(
+                    collection(db, 'notifications'),
+                    where('targetStudentId', '==', studentId),
+                    orderBy('createdAt', 'desc'),
+                    limit(10)
+                );
+                const notificationsSnap = await getDocs(notificationsQ);
+                setNotifications(notificationsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+                // 4. Fetch General Notices
+                const noticesQ = query(collection(db, 'notices'), orderBy('createdAt', 'desc'), limit(5));
+                const noticesSnap = await getDocs(noticesQ);
+                setGeneralNotices(noticesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
             } catch (err) {
                 console.error("Dashboard error:", err);
@@ -93,9 +106,7 @@ const ParentDashboard = () => {
                                 <AlertCircle className="h-5 w-5 text-red-400" />
                             </div>
                             <div className="ml-3">
-                                <p className="text-sm text-red-700">
-                                    Error: {error}
-                                </p>
+                                <p className="text-sm text-red-700">Error: {error}</p>
                             </div>
                         </div>
                     </div>
@@ -138,31 +149,50 @@ const ParentDashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <DashboardCard
                         title="Attendance"
-                        value="85%"
+                        value="Check"
                         icon={CheckSquare}
                         color="blue"
                     />
                     <DashboardCard
                         title="Fees"
-                        value="Paid"
+                        value="Status"
                         icon={CreditCard}
                         color="green"
                     />
                     <DashboardCard
-                        title="Last Result"
-                        value="8.5 GPA"
-                        icon={TrendingUp}
-                        color="purple"
+                        title="Alerts"
+                        value={`${notifications.length} New`}
+                        icon={Bell}
+                        color={notifications.length > 0 ? "orange" : "gray"}
                     />
                     <DashboardCard
                         title="Notices"
-                        value="2 New"
-                        icon={Bell}
-                        color="orange"
+                        value={`${generalNotices.length} New`}
+                        icon={Info}
+                        color="purple"
                     />
                 </div>
 
-                {/* Recent Activity / Notices Placeholder */}
+                {/* Recent Notifications Section */}
+                {notifications.length > 0 && (
+                    <div className="mb-8">
+                        <h3 className="text-lg font-bold text-gray-800 mb-4">Recent Alerts</h3>
+                        <div className="space-y-3">
+                            {notifications.map((notif) => (
+                                <div key={notif.id} className="bg-orange-50 border border-orange-100 p-4 rounded-xl flex items-start">
+                                    <Bell className="w-5 h-5 text-orange-600 mr-3 mt-0.5" />
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900">{notif.message}</p>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            {new Date(notif.createdAt).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
                 <Card title="Quick Actions">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <QuickActionButton label="Attendance" icon={CheckSquare} onClick={() => navigate('/parent/attendance')} />
@@ -182,6 +212,7 @@ const DashboardCard = ({ title, value, icon: Icon, color }) => {
         green: 'bg-green-50 text-green-600',
         purple: 'bg-purple-50 text-purple-600',
         orange: 'bg-orange-50 text-orange-600',
+        gray: 'bg-gray-50 text-gray-600'
     };
 
     return (
@@ -191,7 +222,7 @@ const DashboardCard = ({ title, value, icon: Icon, color }) => {
                     <p className="text-sm font-medium text-gray-500">{title}</p>
                     <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
                 </div>
-                <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
+                <div className={`p-3 rounded-lg ${colorClasses[color] || colorClasses.gray}`}>
                     <Icon className="w-6 h-6" />
                 </div>
             </div>

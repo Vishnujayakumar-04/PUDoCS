@@ -13,44 +13,62 @@ import {
 } from 'firebase/firestore';
 import { getStudentCollectionName } from '../utils/collectionMapper';
 
+import { offlineStorage } from './offlineStorage';
+
 export const studentService = {
-    // Get profile - fetches from Firestore 'students' or 'users' collection
+    // Get profile (Offline First)
     getProfile: async (studentId, email = null) => {
         try {
-            console.log('🔍 Getting student profile for:', { studentId, email });
+            // 1. Local Cache Lookup
+            if (studentId) {
+                const localData = await offlineStorage.get(studentId, 'students', studentId);
+                if (localData) {
+                    console.log('✅ [Mobile] Found profile in Local Cache');
+                    return localData;
+                }
+            }
 
-            // 1. Try fetching by ID (register number) directly from 'students'
+            console.log('🔍 [Mobile] Missed Local Cache. Fetching student profile for:', { studentId, email });
+
+            // 2. Cloud Lookup
+            let profileData = null;
+
+            // Strategy A: By ID
             if (studentId) {
                 const docRef = doc(db, 'students', studentId);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
-                    console.log('✅ Found profile in Firestore (by ID)');
-                    return { id: docSnap.id, ...docSnap.data() };
+                    profileData = { id: docSnap.id, ...docSnap.data() };
                 }
             }
 
-            // 2. If email provided, query 'students' collection by email
-            if (email) {
+            // Strategy B: By Email
+            if (!profileData && email) {
                 const q = query(collection(db, 'students'), where('email', '==', email));
                 const querySnapshot = await getDocs(q);
                 if (!querySnapshot.empty) {
-                    const docData = querySnapshot.docs[0];
-                    console.log('✅ Found profile in Firestore (by Email)');
-                    return { id: docData.id, ...docData.data() };
+                    profileData = { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() };
                 }
             }
 
-            // 3. Fallback: Search in 'users' collection if not in 'students'
-            if (studentId) {
+            // Strategy C: Users Fallback (Generic Profile)
+            if (!profileData && studentId) {
                 const userRef = doc(db, 'users', studentId);
                 const userSnap = await getDoc(userRef);
                 if (userSnap.exists()) {
-                    console.log('✅ Found user profile in Firestore');
-                    return { id: userSnap.id, ...userSnap.data() };
+                    const userData = userSnap.data();
+                    if (userData.role === 'Student') {
+                        profileData = { id: userSnap.id, ...userData };
+                    }
                 }
             }
 
-            console.warn('⚠️ Profile not found in Firestore for:', email || studentId);
+            // 3. Update Cache
+            if (profileData) {
+                await offlineStorage.save(profileData.id, 'students', profileData.id, profileData, true);
+                return profileData;
+            }
+
             return null;
         } catch (error) {
             console.error("Error fetching profile:", error);
@@ -58,18 +76,31 @@ export const studentService = {
         }
     },
 
-    // Get timetable
-    getTimetable: async (program, year) => {
+    // Get timetable (Strict: By ClassID -> Fallback: Program/Year)
+    getTimetable: async (program, year, classId = null) => {
         try {
-            const q = query(
-                collection(db, 'timetables'),
-                where('program', '==', program),
-                where('year', '==', parseInt(year)),
-                limit(1)
-            );
-            const snapshot = await getDocs(q);
-            if (!snapshot.empty) {
-                return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+            // 1. Strict Fetch by Class ID (if available from profile)
+            if (classId) {
+                console.log(`Getting Timetable by Class ID: ${classId}`);
+                const docRef = doc(db, 'timetables', classId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    return { id: docSnap.id, ...docSnap.data() };
+                }
+            }
+
+            // 2. Fallback: Query by Program/Year
+            if (program && year) {
+                const q = query(
+                    collection(db, 'timetables'),
+                    where('program', '==', program),
+                    where('year', '==', parseInt(year)),
+                    limit(1)
+                );
+                const snapshot = await getDocs(q);
+                if (!snapshot.empty) {
+                    return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+                }
             }
             return null;
         } catch (error) {

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Shield, GraduationCap, Users, ArrowRight, ChevronLeft, Heart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Shield, GraduationCap, Users, ArrowRight, ChevronLeft, Heart, Crown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import createTestParent from '../utils/createTestParent';
 import createTestStaff from '../utils/createTestStaff';
-import { getDocs, collection, limit, query } from '../services/mockFirebase';
+import { getDocs, collection, limit, query } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 
 const LoginScreen = () => {
@@ -52,6 +52,15 @@ const LoginScreen = () => {
       icon: <Heart className="h-8 w-8 text-white" />,
       shadow: 'shadow-emerald-200'
     },
+    {
+      id: 'cr',
+      title: 'Class Rep',
+      description: 'Manage class attendance & updates',
+      color: 'from-orange-500 to-amber-600',
+      bg: 'bg-orange-50',
+      icon: <Crown className="h-8 w-8 text-white" />,
+      shadow: 'shadow-orange-200'
+    },
   ];
 
   const handleLogin = async (e) => {
@@ -89,7 +98,7 @@ const LoginScreen = () => {
           <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
         </div>
 
-        <div className="max-w-6xl w-full z-10 space-y-12 animate-in fade-in zoom-in duration-700 relative">
+        <div className="max-w-[90rem] w-full z-10 space-y-12 animate-in fade-in zoom-in duration-700 relative">
           <div className="text-center space-y-4">
             <div className="inline-flex items-center justify-center p-4 bg-white/80 backdrop-blur-md rounded-2xl shadow-2xl shadow-indigo-100 mb-6 border border-white animate-float">
               <GraduationCap className="h-12 w-12 text-indigo-600" />
@@ -105,7 +114,7 @@ const LoginScreen = () => {
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 px-4">
             {roles.map((role, idx) => (
               <div
                 key={role.id}
@@ -141,12 +150,7 @@ const LoginScreen = () => {
             <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest hover:text-indigo-500 transition-colors cursor-default">
               © 2026 Pondicherry University
             </p>
-            <div className="mt-8">
-              <Link to="/setup" className="inline-flex items-center gap-2 text-[10px] font-bold text-slate-400 hover:text-indigo-600 uppercase tracking-widest transition-colors border border-slate-200 rounded-full px-4 py-2 hover:border-indigo-200 bg-white/50 backdrop-blur-sm shadow-sm hover:shadow">
-                <span className="w-2 h-2 rounded-full bg-orange-400 animate-pulse"></span>
-                Fix Login Issues (System Setup)
-              </Link>
-            </div>
+
           </div>
         </div>
       </div>

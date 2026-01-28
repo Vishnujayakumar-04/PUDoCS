@@ -4,14 +4,16 @@ import { auth, db } from "./firebaseConfig";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Helper to store session locally
-const storeSession = async (user, role) => {
+const storeSession = async (user, role, profile) => {
     try {
         const session = {
             uid: user.uid,
             email: user.email,
             role: role,
+            name: profile?.name || user.displayName || 'User',
+            profile: profile
         };
-        await AsyncStorage.setItem('userSession', JSON.stringify(session));
+        await AsyncStorage.setItem('pudocs_session', JSON.stringify(session));
         return session;
     } catch (error) {
         console.error('Session storage error:', error);
@@ -23,34 +25,66 @@ export const loginUser = async (email, password, role) => {
         // 1. Firebase Auth Login
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
+        const uid = user.uid;
 
-        // 2. STRICT: Fetch User Role from Firestore using UID
-        let userDocRef = doc(db, 'users', user.uid);
-        let userDocSnap = await getDoc(userDocRef);
+        console.log(`[MobileAuth] User authenticated: ${uid}. Checking 'users' router...`);
 
-        if (!userDocSnap.exists()) {
-            // Fallback: Check parents collection
-            userDocRef = doc(db, 'parents', user.uid);
-            userDocSnap = await getDoc(userDocRef);
+        // 2. Strict Router Pattern Check (users/{uid})
+        // The 'users' collection is the SOURCE OF TRUTH for Role and Profile location.
+        const userRouterRef = doc(db, 'users', uid);
+        const userRouterSnap = await getDoc(userRouterRef);
+
+        if (!userRouterSnap.exists()) {
+            console.error(`[MobileAuth] Access Denied. No router document in 'users/${uid}'.`);
+            await signOut(auth); // Access Denied
+            throw new Error(`Access Denied: Your account is not properly configured. Please contact the office.`);
         }
 
-        if (!userDocSnap.exists()) {
-            // Log out if no Firestore record exists for this UID
-            await signOut(auth);
-            throw new Error('Access Denied: No user record found in Firestore.');
+        const routerData = userRouterSnap.data();
+        const dbRole = routerData.role;
+
+        // 3. Role Validation
+        if (role && dbRole.toLowerCase() !== role.toLowerCase() && role !== 'Office') {
+            console.warn(`[MobileAuth] Role Mismatch. DB: ${dbRole}, Requested: ${role}`);
+            // Logic parity: We allow it but log warning, mirroring Web.
         }
 
-        const userData = userDocSnap.data();
-        const derivedRole = userData.role;
+        console.log(`[MobileAuth] Router Verified. Role: ${dbRole}. Fetching Profile...`);
 
-        // 3. Store Session
-        await storeSession(user, derivedRole);
+        // 4. Fetch Actual Profile Data
+        let profileData = null;
+        let collectionName = '';
+
+        if (dbRole === 'Student') collectionName = 'students';
+        else if (dbRole === 'Staff' || dbRole === 'Office') collectionName = 'staff';
+        else if (dbRole === 'Parent') collectionName = 'parents';
+        else if (dbRole === 'cr') collectionName = 'crs';
+
+        if (collectionName) {
+            const profileRef = doc(db, collectionName, uid);
+            const profileSnap = await getDoc(profileRef);
+
+            if (profileSnap.exists()) {
+                profileData = { id: profileSnap.id, ...profileSnap.data() };
+            }
+        }
+
+        const finalUserData = {
+            ...routerData,
+            ...profileData,
+            uid,
+            role: dbRole
+        };
+
+        // 5. Store Session
+        await storeSession(user, dbRole, finalUserData);
 
         return {
             user: user,
-            role: derivedRole,
-            profile: userData
+            role: dbRole,
+            profile: finalUserData
         };
+
     } catch (error) {
         console.error("Login verification failed:", error.message);
         throw error;
@@ -60,7 +94,7 @@ export const loginUser = async (email, password, role) => {
 export const logoutUser = async () => {
     try {
         await signOut(auth);
-        await AsyncStorage.removeItem('userSession');
+        await AsyncStorage.removeItem('pudocs_session'); // Standardized key
     } catch (error) {
         console.error("Logout error:", error);
     }
@@ -68,18 +102,18 @@ export const logoutUser = async () => {
 
 export const checkAuthStatus = async () => {
     try {
-        const sessionStr = await AsyncStorage.getItem('userSession');
+        const sessionStr = await AsyncStorage.getItem('pudocs_session'); // Standardized key
         if (sessionStr) {
             return JSON.parse(sessionStr);
         }
-        return null;
+        return null; // Return null if session is invalid or missing
     } catch (error) {
-        return null; // No session
+        return null;
     }
 };
 
 // Change password function
-export const changePassword = async (currentPassword, newPassword, userId) => {
+export const changePassword = async (currentPassword, newPassword) => {
     try {
         const user = auth.currentUser;
         if (!user) {
@@ -93,20 +127,14 @@ export const changePassword = async (currentPassword, newPassword, userId) => {
         // Update password
         await updatePassword(user, newPassword);
 
-        // Update local flag 
-        // We would ideally update 'local_users' here if we were strictly tracking it
-
         return { success: true };
     } catch (error) {
         throw error;
     }
 };
 
-// Export as an object for backward compatibility if needed, 
-// but we will mainly use named exports.
 export const authService = {
     login: loginUser,
-    register: registerUser,
     logout: logoutUser,
     getStoredUser: checkAuthStatus,
     changePassword: changePassword
